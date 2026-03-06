@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAABWsfwA////AGBgYAA7k9sACgoKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJERBREQUREIkREEUQRREQiRERBRBRERCIiJEFEFEIiIiIiIRESIiIiIiIiMyIiIiIiIiAAAiIiIiIiAAAAIiIiIiIAAAAiIiIiIEQARAIiIiIgREREAiIiIiIAAAAiIiIiIkAABCIiIiIiREREIiIiIiIkREIiIiIiIiIiIiIiIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+      rel="icon"
+      type="image/x-icon"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <title>Respuestas Rápidas</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="title-container">
+        <h1 class="title">Mensajes rápidos de soporte Lizto Software</h1>
+      </div>
+      <button id="toggleBrillo">
+        <span id="iconoBrillo" class="icon">🌞</span>
+        <span class="toggle-text">Desactivar Brillo</span>
+      </button>
+      <div class="header">
+        <div class="input-container">
+          <label for="userInput">Nombre del cliente</label>
+          <input class="input" type="text" id="userInput" />
+        </div>
+        <div class="input-container">
+          <label for="agentInput">Nombre del agente</label>
+          <input class="input" type="text" id="agentInput" />
+        </div>
+      </div>
+
+      <div class="text-fields">
+        <div class="text-box">
+          <h3>Saludo</h3>
+          <textarea id="daysMessage" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Módulos y capacitaciones</h3>
+          <textarea id="modulosCapacitaciones" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Confirmación de pago realizado</h3>
+          <textarea
+            id="validarPagoMessage"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Solicitar link de pago</h3>
+          <textarea
+            id="pagoGraciasMessage"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Solicitar comprobante de pago</h3>
+          <textarea
+            id="solicitarLinkMessage"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Puede realizar el pago</h3>
+          <textarea id="linkPago" class="text-field" readonly></textarea>
+          <div style="display: flex; flex-direction: row; gap: 20px; align-items: flex-start; margin-top: 10px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <label for="enlacePago" style="font-size: 14px; font-weight: 500; color: #fff;">Link:</label>
+            <input type="text" id="enlacePago" class="input" placeholder="https://..." style="margin: 0; max-width: none; width: 100%; height: 20px; box-sizing: border-box;" />
+            </div>
+            <button id="copiarBtn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="text-box">
+          <h3>Paso a paso</h3>
+          <textarea id="pasoaPaso" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Demoras DIAN</h3>
+          <textarea
+            id="demorasDIAN"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Caso escalado</h3>
+          <textarea
+            id="casoEscalado"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>¿Te podemos ayudar en algo más?</h3>
+          <textarea id="algoMas" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Despedida</h3>
+          <textarea
+            id="despedidaMessage"
+            class="text-field"
+            readonly
+          ></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box" style="grid-column: span 2;">
+          <h3>Enlace para reunión</h3>
+          <div style="display: flex; flex-direction: row; gap: 20px; align-items: flex-start;">
+            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 280px;">
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <label for="fechaReunionSelect" style="font-size: 14px; font-weight: 500; min-width: 70px;">Fecha:</label>
+                <select id="fechaReunionSelect" style="padding: 6px 8px; width: 80%; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+                  <option value="">Selecciona una fecha</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <label for="agenteReunion" style="font-size: 14px; font-weight: 500; min-width: 70px;">Agente:</label>
+                <select id="agenteReunion" style="padding: 6px 8px; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+                  <option value="">Selecciona un agente</option>
+                  <option value="yeison">Yeison</option>
+                  <option value="paola">Paola</option>
+                  <option value="backup">Backup</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <label for="horaReunionSelect" style="font-size: 14px; font-weight: 500; min-width: 70px;">Hora:</label>
+                <select id="horaReunionSelect" style="padding: 6px 8px; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+                  <option value="">Selecciona una hora</option>
+                </select>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+              <textarea
+                id="linkReunionMessage"
+                class="text-field"
+                readonly
+                style="min-width: 400px; margin: 0;"
+              ></textarea>
+              <button id="copiarBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,277 @@
+body {
+  --bg-color: #140f14;
+  --principal-color: #fff;
+  --secondary-color: #00f;
+  --dark-color: #000;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: poppins;
+  background: linear-gradient(rgba(20, 15, 20, 0.6), rgba(20, 15, 20, 0.6)),
+    url(logo-removebg-preview.png);
+  background-color: var(--bg-color);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 400px 400px;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+
+.container {
+  display: grid;
+  place-items: center;
+}
+
+.title {
+  color: var(--principal-color);
+  padding: 20px;
+}
+
+#copiarBtn {
+  background: none;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s ease-in-out;
+}
+
+#copiarBtn:hover {
+  color: #333;
+}
+
+.header {
+  display: flex;
+  flex-direction: row;
+}
+
+.input,
+label {
+  font-family: poppins;
+  color: var(--principal-color);
+}
+
+.input-container {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-container label {
+  position: absolute;
+  top: -10px;
+  left: 10px;
+  padding: 0 5px;
+  font-size: 16px;
+}
+
+.input-container input {
+  width: 100%;
+  padding: 12px 8px;
+}
+
+.input {
+  margin: 30px;
+  text-align: center;
+  background: none;
+  border: none;
+  outline: none;
+  max-width: 190px;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-family: poppins;
+  border-radius: 100px;
+  color: var(--principal-color);
+  padding: 1em;
+  background-color: #333;
+  box-shadow: inset 2px 5px 10px rgba(0, 0, 0, 0.3);
+  transition: 300ms ease-in-out;
+}
+
+.input:focus {
+  color: var(--dark-color);
+  background-color: #fff;
+  transform: scale(1.05);
+  box-shadow: 13px 13px 100px #969696, -13px -13px 100px #fff;
+}
+
+#fechaReunionSelect,
+#agenteReunion,
+#horaReunionSelect {
+  font-family: poppins;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  background-color: #333;
+  color: #fff;
+  padding: 6px 10px;
+  cursor: pointer;
+  transition: 300ms ease-in-out;
+  box-shadow: inset 2px 5px 10px rgba(0, 0, 0, 0.3);
+}
+
+#fechaReunionSelect:hover,
+#agenteReunion:hover,
+#horaReunionSelect:hover {
+  background-color: #444;
+}
+
+#fechaReunionSelect:focus,
+#agenteReunion:focus,
+#horaReunionSelect:focus {
+  outline: none;
+  background-color: #fff;
+  color: #000;
+  transform: scale(1.02);
+  box-shadow: 13px 13px 100px #969696, -13px -13px 100px #fff;
+}
+
+#fechaReunionSelect option,
+#agenteReunion option,
+#horaReunionSelect option {
+  background-color: #333;
+  color: #fff;
+}
+
+h3 {
+  color: var(--principal-color);
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.text-fields {
+  width: 90%;
+  margin: 50px auto;
+  margin-top: 0;
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  grid-template-rows: repeat(auto-fit, 200px);
+  gap: 50px;
+  max-width: 1200px;
+}
+
+.text-box {
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  resize: none;
+  font-family: poppins;
+  font-size: 14px;
+  border-radius: 8px;
+  min-height: 5lh;
+  max-height: 105px;
+  min-width: 300px;
+  max-width: 345px;
+  padding: 10px;
+  scrollbar-width: none;
+  box-shadow: inset 2px 5px 10px rgba(0, 0, 0, 0.3);
+  transition: 300ms ease-in-out;
+}
+
+textarea:hover {
+  background-color: #fff;
+  transform: scale(1.05);
+  box-shadow: 13px 13px 100px #969696, -13px -13px 100px #555;
+}
+
+#toggleBrillo {
+  position: absolute;
+  left: 20px;
+  top: 25px;
+  margin: 20px;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: poppins;
+  font-size: 16px;
+  border: none;
+  transition: background-color 300ms ease, color 300ms, width 0.3s;
+  color: #fff;
+  background-color: #403149;
+  width: fit-content;
+  min-width: 44px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+#toggleBrillo .toggle-text {
+  transition: opacity 0.3s, max-width 0.3s, margin 0.3s;
+  opacity: 1;
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+#toggleBrillo.off {
+  background-color: #555;
+  color: #ddd;
+}
+
+.no-brillo {
+  box-shadow: none !important;
+  transform: none !important;
+  background-color: #333 !important;
+  color: var(--principal-color) !important;
+}
+
+@media screen and (max-width: 1200px) {
+  .text-fields {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    gap: 20px;
+  }
+
+  textarea {
+    max-height: 105px;
+    max-width: 450px;
+  }
+
+  h3 {
+    max-width: 450px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .text-fields {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    gap: 20px;
+  }
+
+  textarea,
+  h3 {
+    margin: auto;
+    min-width: 500px;
+    max-width: 600px;
+  }
+}
+
+@media screen and (max-width: 1240px) {
+  #toggleBrillo {
+    transition: background-color 300ms, color 300ms, width 0.3s, padding 0.3s;
+    width: fit-content;
+    padding-right: 10px;
+    padding-left: 10px;
+  }
+  #toggleBrillo .toggle-text {
+    opacity: 0;
+    max-width: 0;
+    margin-left: 0;
+    pointer-events: none;
+  }
+  #toggleBrillo .icon {
+    display: inline-block;
+    margin-right: 0;
+  }
+}
