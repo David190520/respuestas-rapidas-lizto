@@ -37,7 +37,13 @@
         </div>
       </div>
 
-      <div class="text-fields">
+      <div class="tabs">
+        <button class="tab-button active" data-tab="respuestas">Respuestas</button>
+        <button class="tab-button" data-tab="plantillas">Plantillas</button>
+      </div>
+
+      <div id="respuestas" class="tab-content active">
+        <div class="text-fields">
         <div class="text-box">
           <h3>Saludo</h3>
           <textarea id="daysMessage" class="text-field" readonly></textarea>
@@ -222,6 +228,72 @@
         </div>
       </div>
     </div>
-    <script src="index.js"></script>
+
+    <div id="plantillas" class="tab-content">
+      <div class="text-fields">
+        <div class="text-box">
+          <h3>Facturación electrónica</h3>
+          <textarea id="facturacionElectronica" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Nómina electrónica</h3>
+          <textarea id="nominaElectronica" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>API WhatsApp</h3>
+          <textarea id="apiWhatsapp" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Solicitud correo</h3>
+          <textarea id="solicitudCorreo" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Solicitud recuperar especialista</h3>
+          <textarea id="solicitudRecuperarEspecialista" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="text-box">
+          <h3>Solicitud cambio de razón social</h3>
+          <textarea id="solicitudCambioRazonSocial" class="text-field" readonly></textarea>
+          <button id="copiarBtn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="index.js"></script>
   </body>
 </html>

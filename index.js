@@ -70,7 +70,18 @@ function updateMessages() {
     "Con muchísimo gusto, ¿hay algo más en lo que te podamos colaborar? 😁";
   document.getElementById("despedidaMessage").value =
     "Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉";
-  
+  document.getElementById("facturacionElectronica").value =
+    "Para integrar la facturación electrónica en la cuenta es necesario que nos envíes un correo con la solicitud, en este deben adjuntar 3 archivos: \n1. RUT actualizado para verificar la información en la cuenta. \n2. Set de pruebas. Este lo recibes cuando te habilitas para facturar electrónicamente desde la DIAN \n\nCómo habilitarse\nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/habilitaci%C3%B3n-de-facturaci%C3%B3n-electr%C3%B3nica-5-7-2024 \n\nConfigurar modos de operación con SOLUCIONES ALEGRA SAS \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-1-5-22-4-2025 \n\nSet de pruebas \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-3-53 \n\n 3. Archivo de la resolución para facturación electrónica que también solicitan desde el portal de la DIAN \n\nSolicitar resolución \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-5-5 \n\nAsociar prefijos con SOLUCIONES ALEGRA SAS o Alegra \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-4-5 \n\nSi tienes alguna duda con el proceso, te compartimos un paso a paso de cómo realizar el proceso: \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-clase-grupal-24-02-2026"
+  document.getElementById("nominaElectronica").value =
+    "La nómina electrónica es uno de los documentos digitales que puedes gestionar a través de Lizto. Este proceso está regulado por la DIAN y permite emitir o respaldar electrónicamente los pagos de salario a tus empleados. Para utilizar la nómina electrónica en Lizto, es necesario contratar un plan de facturación electrónica que incluya el módulo de Nómina Electrónica, actualmente este tiene un valor de $30,900 COP mensuales."
+  document.getElementById("apiWhatsapp").value =
+    "Si deseas integrar el API de WhatsApp con Lizto, es importante que tengas en cuenta que este proceso se realiza directamente con Meta (Facebook), y requiere cumplir ciertos requisitos para garantizar la autenticidad y seguridad del negocio.\nAquí te comparto los puntos más importantes:\n\n1. Fanpage activa: Debes contar con una página de Facebook para tu negocio, que tenga actividad e interacciones reales (por ejemplo: publicaciones, comentarios, likes, reseñas).\n\n 2. Dominio web propio: Se recomienda tener un sitio web con un dominio que represente el nombre de tu negocio (por ejemplo: www.tusalon.com), ya que esto facilita la verificación del negocio ante Meta.\n\n 3. Documentos legales: Meta pedirá validar los datos legales del negocio, por lo que debes contar con documentos como el RUT, Cámara de Comercio o equivalente, donde el nombre coincida con el registrado en tu cuenta empresarial de Facebook.\n\n 4. Número exclusivo para el API: El número de WhatsApp que vas a usar en la integración no debe estar vinculado a ninguna cuenta de WhatsApp (ni personal ni Business). Este número se asociará únicamente al canal de mensajería empresarial y no podrá usarse de forma tradicional una vez quede vinculado.\n\n 5. Capacidad de recibir llamadas o SMS: El número debe poder recibir llamadas o mensajes de texto para completar la verificación con código.\n\nSi cumples con estos puntos, podemos ayudarte a iniciar el proceso junto con nuestro equipo de soporte. Una vez aprobado, podrás enviar notificaciones a tus clientes por WhatsApp de forma automática desde Lizto."
+  document.getElementById("solicitudCorreo").value =
+    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos:\n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud [motivo de la solicitud]\n\nEjemplo: Solicitud cambio de razón social"
+  document.getElementById("solicitudRecuperarEspecialista").value =
+    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre del especialista eliminado: \nCorreo electrónico del especialista: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud recuperar especialista [nombre del negocio]"
+  document.getElementById("solicitudCambioRazonSocial").value =
+    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
 }
@@ -207,10 +218,23 @@ toggleButton.addEventListener("click", () => {
   });
 });
 
+// Manejo de pestañas
+document.querySelectorAll('.tab-button').forEach(button => {
+  button.addEventListener('click', () => {
+    // Remover active de todos los botones y contenidos
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+    // Agregar active al botón clickeado y su contenido
+    button.classList.add('active');
+    const tabId = button.getAttribute('data-tab');
+    document.getElementById(tabId).classList.add('active');
+  });
+});
+
 // Permitir copiar el contenido de cada textarea con su botón 'Copiar'
 document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
   btn.addEventListener('click', function() {
-    const textarea = btn.parentElement.querySelector('textarea');
+    const textarea = btn.closest('.text-box').querySelector('textarea');
     if (textarea) {
       textarea.select();
       document.execCommand('copy');
