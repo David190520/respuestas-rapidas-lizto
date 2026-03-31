@@ -1,3 +1,7 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 body {
   --bg-color: #140f14;
   --principal-color: #fff;
@@ -9,6 +13,8 @@ body {
   margin: 0;
   padding: 0;
   font-family: poppins;
+  min-width: 0;
+  overflow-x: hidden;
   background: linear-gradient(rgba(20, 15, 20, 0.6), rgba(20, 15, 20, 0.6)),
     url(logo-removebg-preview.png);
   background-color: var(--bg-color);
@@ -16,14 +22,14 @@ body {
   background-position: center;
   background-size: 400px 400px;
   background-attachment: fixed;
-  margin: 0;
-  padding: 0;
   max-width: 100%;
 }
 
 .container {
   display: grid;
   place-items: center;
+  width: 100%;
+  padding: 0 10px;
 }
 
 .title {
@@ -79,7 +85,9 @@ label {
   background: none;
   border: none;
   outline: none;
-  max-width: 190px;
+  max-width: 100%;
+  width: calc(100% - 2em);
+  min-width: 160px;
   padding: 10px 20px;
   font-size: 16px;
   font-family: poppins;
@@ -169,8 +177,9 @@ textarea {
   border-radius: 8px;
   min-height: 5lh;
   max-height: 105px;
-  min-width: 300px;
-  max-width: 345px;
+  min-width: auto;
+  max-width: 100%;
+  width: 100%;
   padding: 10px;
   scrollbar-width: none;
   box-shadow: inset 2px 5px 10px rgba(0, 0, 0, 0.3);
@@ -227,33 +236,92 @@ textarea:hover {
 
 @media screen and (max-width: 1200px) {
   .text-fields {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
     grid-template-rows: auto;
     gap: 20px;
+    width: 100%;
+    margin: 20px auto;
+    padding: 0;
   }
 
   textarea {
     max-height: 105px;
-    max-width: 450px;
+    max-width: 100%;
   }
 
   h3 {
-    max-width: 450px;
+    max-width: 100%;
   }
 }
 
 @media screen and (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .input {
+    margin: 10px auto;
+    max-width: 360px;
+    width: calc(100% - 2em);
+  }
+
+  #toggleBrillo {
+    position: fixed;
+    left: 8px;
+    top: 8px;
+    margin: 0;
+    z-index: 99;
+  }
+
+  #toggleBrillo .toggle-text {
+    display: none;
+  }
+
   .text-fields {
-    grid-template-columns: 1fr;
+    width: 100%;
+    padding: 0 10px;
+    grid-template-columns: 1fr !important;
     grid-template-rows: auto;
-    gap: 20px;
+    gap: 15px;
+  }
+
+  .text-box {
+    width: 100%;
+    max-width: 100%;
+    grid-column: auto !important;
+  }
+
+  .text-box > div,
+  .text-box > div > div {
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   textarea,
-  h3 {
-    margin: auto;
-    min-width: 500px;
-    max-width: 600px;
+  h3,
+  .text-field,
+  #linkReunionMessage {
+    margin: 0;
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  input,
+  select,
+  #enlacePago {
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .text-fields * {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
