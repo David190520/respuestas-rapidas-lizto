@@ -53,6 +53,9 @@ body {
 .header {
   display: flex;
   flex-direction: row;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .input,
@@ -85,7 +88,7 @@ label {
   background: none;
   border: none;
   outline: none;
-  max-width: 100%;
+  max-width: 70%;
   width: calc(100% - 2em);
   min-width: 160px;
   padding: 10px 20px;
@@ -160,7 +163,7 @@ h3 {
   padding: 20px;
   display: grid;
   grid-template-columns: repeat(3, minmax(200px, 1fr));
-  grid-template-rows: repeat(auto-fit, 200px);
+  grid-auto-rows: auto;
   gap: 50px;
   max-width: 1200px;
 }
@@ -248,7 +251,17 @@ textarea:hover {
     max-height: 105px;
     max-width: 100%;
   }
+  /* Arreglar enlace para reunión en mobile */
+  .text-box[style*="grid-column: span 2"] > div[style*="flex-direction: row"] {
+    flex-direction: column !important;
+    gap: 15px !important;
+  }
 
+  .text-box[style*="grid-column: span 2"] textarea {
+    min-width: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
   h3 {
     max-width: 100%;
   }

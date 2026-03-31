@@ -32,24 +32,49 @@ const agentesData = {
 
 function addUserText(message) {
   const userInput = document.getElementById("userInput").value.trim();
-  const agentInput = document.getElementById("agentInput").value || "un agente";
+  const agentInput = document.getElementById("agentInput").value.trim();
+
+  if (!agentInput) {
+    return "";
+  }
+
+  const baseMessage = message.replace("nombreAgente", agentInput);
 
   if (!userInput) {
-    return message
-      .replace(
-        "¿Cómo puedo ayudarte?",
-        "¿Con quién tengo el gusto y cómo puedo ayudarte?"
-      )
-      .replace("nombreAgente", agentInput);
-  } else {
-    return userInput
-      ? `Hola ${userInput} 👋\n${message.replace("nombreAgente", agentInput)}`
-      : message.replace("nombreAgente", agentInput);
+    return baseMessage;
   }
+
+  return `Hola ${userInput} 👋\n${baseMessage}`;
 }
 
 function updateMessages() {
-  const agentInput = document.getElementById("agentInput").value || "un agente";
+  const agentInput = document.getElementById("agentInput").value.trim();
+
+  if (!agentInput) {
+    [
+      "daysMessage",
+      "modulosCapacitaciones",
+      "validarPagoMessage",
+      "pagoGraciasMessage",
+      "solicitarLinkMessage",
+      "pasoaPaso",
+      "demorasDIAN",
+      "casoEscalado",
+      "algoMas",
+      "despedidaMessage",
+      "facturacionElectronica",
+      "nominaElectronica",
+      "apiWhatsapp",
+      "solicitudCorreo",
+      "solicitudRecuperarEspecialista",
+      "solicitudCambioRazonSocial"
+    ].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    return;
+  }
+
   document.getElementById("daysMessage").value = 
     "Buen día ¿Cómo estás? hablas con " + agentInput + " del equipo de soporte de Lizto ☑. Cuéntame por favor, ¿Cómo puedo ayudarte?";
   document.getElementById("modulosCapacitaciones").value = 
@@ -88,6 +113,13 @@ function updateMessages() {
 
 // Función para actualizar el mensaje de pago con el enlace
 function updateLinkPagoMessage() {
+  const agentInput = document.getElementById("agentInput").value.trim();
+  if (!agentInput) {
+    const linkPagoEl = document.getElementById("linkPago");
+    if (linkPagoEl) linkPagoEl.value = "";
+    return;
+  }
+
   const enlacePago = document.getElementById("enlacePago").value.trim() || "https://lizto.com/pago";
   const mensaje = `Puedes realizar el pago a través de este enlace seguro: ${enlacePago} \nSi tienes alguna pregunta o necesitas ayuda con el proceso, no dudes en contactarnos. ¡Estamos aquí para ayudarte! 😊`;
   document.getElementById("linkPago").value = addUserText(mensaje);
