@@ -239,11 +239,11 @@ textarea:hover {
 
 @media screen and (max-width: 1200px) {
   .text-fields {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     grid-template-rows: auto;
-    gap: 20px;
-    width: 100%;
-    margin: 20px auto;
+    gap: 30px;
+    width: 95%;
+    margin: 30px auto;
     padding: 0;
   }
 
