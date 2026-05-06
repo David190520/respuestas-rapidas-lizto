@@ -53,6 +53,7 @@ function updateMessages() {
   if (!agentInput) {
     [
       "daysMessage",
+      "falloSistema",
       "modulosCapacitaciones",
       "validarPagoMessage",
       "pagoGraciasMessage",
@@ -76,7 +77,9 @@ function updateMessages() {
   }
 
   document.getElementById("daysMessage").value = 
-    "Buen día ¿Cómo estás? hablas con " + agentInput + " del equipo de soporte de Lizto ☑. Cuéntame por favor, ¿Cómo puedo ayudarte?";
+    "Hola, muy buen día. Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎. Cuéntame por favor, ¿Cómo puedo ayudarte?";
+  document.getElementById("falloSistema").value =
+    "Hola, muy buen día. Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.";
   document.getElementById("modulosCapacitaciones").value = 
     addUserText("Buen día, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
   document.getElementById("validarPagoMessage").value = 
