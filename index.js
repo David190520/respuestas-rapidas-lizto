@@ -276,3 +276,245 @@ document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
     }
   });
 });
+
+// ============= HELP CENTER MODULE - PASO A PASO =============
+// Módulo completamente independiente y escalable para la sección "Paso a Paso"
+
+class HelpCenter {
+  constructor() {
+    this.data = [];
+    this.filteredData = [];
+    this.selectedItem = null;
+    this.apiUrl = "https://script.google.com/macros/s/AKfycbwyin6iegICuU2DrvjEKMs-2TgtA5hgoUXyI1B5-YY97CqBrGITXENqpnYTezlSIaMY/exec";
+    
+    this.cacheDOMElements();
+    this.initEventListeners();
+    this.loadData();
+  }
+
+  /**
+   * Cachea todos los elementos del DOM para evitar búsquedas repetidas
+   */
+  cacheDOMElements() {
+    this.elements = {
+      searchInput: document.getElementById("help-search-input"),
+      itemsList: document.getElementById("help-items-list"),
+      contentEmpty: document.getElementById("help-content-empty"),
+      contentDisplay: document.getElementById("help-content-display"),
+      articleTitle: document.getElementById("help-article-title"),
+      articleContent: document.getElementById("help-article-content"),
+      copyBtn: document.getElementById("help-copy-btn"),
+      copyFeedback: document.getElementById("copy-feedback")
+    };
+  }
+
+  /**
+   * Inicializa todos los event listeners
+   */
+  initEventListeners() {
+    this.elements.searchInput.addEventListener("input", (e) => this.handleSearch(e));
+    this.elements.copyBtn.addEventListener("click", () => this.copyContent());
+  }
+
+  /**
+   * Carga los datos desde la API
+   */
+  async loadData() {
+    try {
+      const response = await fetch(this.apiUrl);
+      if (!response.ok) throw new Error("Error fetching data");
+      
+      this.data = await response.json();
+      this.filteredData = [...this.data];
+      this.renderItemsList();
+    } catch (error) {
+      console.error("Error loading help center data:", error);
+      this.showError("No se pudieron cargar los artículos");
+    }
+  }
+
+  /**
+   * Maneja el evento de búsqueda en tiempo real
+   */
+  handleSearch(event) {
+    const query = event.target.value.toLowerCase().trim();
+    
+    if (!query) {
+      this.filteredData = [...this.data];
+    } else {
+      this.filteredData = this.data.filter(item =>
+        item.titulo.toLowerCase().includes(query) ||
+        item.contenido.toLowerCase().includes(query)
+      );
+    }
+    
+    this.renderItemsList();
+    
+    // Auto-seleccionar el primer item si hay resultados
+    if (this.filteredData.length > 0 && !this.selectedItem) {
+      this.selectItem(this.filteredData[0]);
+    }
+  }
+
+  /**
+   * Renderiza la lista de items en el sidebar
+   */
+  renderItemsList() {
+    const container = this.elements.itemsList;
+    container.innerHTML = "";
+
+    if (this.filteredData.length === 0) {
+      container.innerHTML = '<div class="help-empty-list">No se encontraron artículos</div>';
+      return;
+    }
+
+    this.filteredData.forEach((item, index) => {
+      const itemElement = document.createElement("div");
+      itemElement.className = "help-item";
+      
+      if (this.selectedItem && this.selectedItem.titulo === item.titulo) {
+        itemElement.classList.add("active");
+      }
+      
+      itemElement.textContent = item.titulo;
+      itemElement.addEventListener("click", () => this.selectItem(item));
+      
+      container.appendChild(itemElement);
+    });
+  }
+
+  /**
+   * Selecciona un item y muestra su contenido
+   */
+  selectItem(item) {
+    this.selectedItem = item;
+    this.renderItemsList(); // Re-render para actualizar estado activo
+    this.displayContent();
+    
+    // Scroll del sidebar al item activo
+    const activeItem = this.elements.itemsList.querySelector(".help-item.active");
+    if (activeItem) {
+      activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  /**
+   * Muestra el contenido del item seleccionado
+   */
+  displayContent() {
+    if (!this.selectedItem) return;
+
+    // Animar transición
+    this.elements.contentEmpty.style.display = "none";
+    this.elements.contentDisplay.style.display = "block";
+
+    // Actualizar contenido
+    this.elements.articleTitle.textContent = this.selectedItem.titulo;
+    this.elements.articleContent.innerHTML = this.formatContent(this.selectedItem.contenido);
+    
+    // Reset button feedback
+    this.resetCopyButton();
+    
+    // Scroll al top del contenido
+    document.querySelector(".help-content").scrollTop = 0;
+  }
+
+  /**
+   * Formatea el contenido para mostrar correctamente
+   * Convierte saltos de línea en párrafos y preserva formato
+   */
+  formatContent(content) {
+    return content
+      .split("\n\n") // Dividir por párrafos dobles
+      .map(paragraph => {
+        paragraph = paragraph.trim();
+        if (!paragraph) return "";
+        
+        // Si comienza con números o guiones, es probablemente una lista
+        if (/^\d+\.|^-|^•/.test(paragraph)) {
+          return `<div style="margin: 12px 0;">${paragraph.replace(/\n/g, "<br>")}</div>`;
+        }
+        
+        // Si contiene una URL, hazla clickeable
+        if (paragraph.includes("http")) {
+          paragraph = paragraph.replace(
+            /(https?:\/\/[^\s]+)/g,
+            '<a href="$1" target="_blank" rel="noopener">$1</a>'
+          );
+        }
+        
+        return `<p>${paragraph}</p>`;
+      })
+      .join("");
+  }
+
+  /**
+   * Copia el contenido actual al portapapeles
+   */
+  copyContent() {
+    if (!this.selectedItem) return;
+
+    const textToCopy = `${this.selectedItem.titulo}\n\n${this.selectedItem.contenido}`;
+    
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        this.showCopyFeedback();
+      })
+      .catch(err => {
+        console.error("Error copying to clipboard:", err);
+        // Fallback para navegadores antiguos
+        this.fallbackCopy(textToCopy);
+      });
+  }
+
+  /**
+   * Muestra feedback visual cuando se copia
+   */
+  showCopyFeedback() {
+    this.elements.copyBtn.classList.add("copied");
+    this.elements.copyFeedback.textContent = "Copiado ✓";
+    
+    setTimeout(() => {
+      this.resetCopyButton();
+    }, 2000);
+  }
+
+  /**
+   * Reinicia el estado del botón copiar
+   */
+  resetCopyButton() {
+    this.elements.copyBtn.classList.remove("copied");
+    this.elements.copyFeedback.textContent = "Copiar";
+  }
+
+  /**
+   * Fallback para copiar en navegadores antiguos (sin Clipboard API)
+   */
+  fallbackCopy(text) {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+      document.execCommand("copy");
+      this.showCopyFeedback();
+    } catch (err) {
+      console.error("Fallback copy failed:", err);
+    }
+    
+    document.body.removeChild(textarea);
+  }
+
+  /**
+   * Muestra un mensaje de error
+   */
+  showError(message) {
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
+  }
+}
+
+// Inicializar Help Center cuando el contenido esté listo
+document.addEventListener("DOMContentLoaded", () => {
+  new HelpCenter();
+});
