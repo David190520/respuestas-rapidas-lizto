@@ -112,6 +112,10 @@ function updateMessages() {
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
+
+  // Re-aplicar búsqueda global si está activa (los textareas cambiaron)
+  const _gs = document.getElementById("globalSearch");
+  if (_gs && _gs.value) globalSearchFilter(_gs.value);
 }
 
 // Función para actualizar el mensaje de pago con el enlace
@@ -186,12 +190,24 @@ function updateReunionMessage() {
 // Inicializar fechas
 initializeFechaSelect();
 
+// Restaurar nombres desde localStorage
+const savedAgent = localStorage.getItem("lizto_agent_name");
+const savedClient = localStorage.getItem("lizto_client_name");
+if (savedAgent) document.getElementById("agentInput").value = savedAgent;
+if (savedClient) document.getElementById("userInput").value = savedClient;
+
 // Llamar updateMessages para inicializar todos los mensajes
 updateMessages();
 
 // Listeners para los campos de entrada de nombre
-document.getElementById("userInput").addEventListener("input", updateMessages);
-document.getElementById("agentInput").addEventListener("input", updateMessages);
+document.getElementById("userInput").addEventListener("input", function() {
+  localStorage.setItem("lizto_client_name", this.value);
+  updateMessages();
+});
+document.getElementById("agentInput").addEventListener("input", function() {
+  localStorage.setItem("lizto_agent_name", this.value);
+  updateMessages();
+});
 
 // Listener para el enlace de pago
 document.getElementById("enlacePago").addEventListener("input", updateLinkPagoMessage);
@@ -224,33 +240,34 @@ document.getElementById("horaReunionSelect").addEventListener("change", updateRe
 // Toggle de brillo
 const toggleButton = document.getElementById("toggleBrillo");
 const iconoBrillo = document.getElementById("iconoBrillo");
-const textoBrillo = toggleButton.querySelector(".toggle-text");
 let brilloActivo = false;
+
+const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 
 // Aplicar estado inicial (brillo desactivado)
 document.querySelectorAll(".input, textarea").forEach((element) => {
   element.classList.add("no-brillo");
 });
 toggleButton.classList.add("off");
-iconoBrillo.textContent = "🌙";
-textoBrillo.textContent = "Activar Brillo";
+iconoBrillo.innerHTML = SUN_SVG;
 
 toggleButton.addEventListener("click", () => {
   brilloActivo = !brilloActivo;
 
   document.querySelectorAll(".input, textarea").forEach((element) => {
-    if (brilloActivo) {
-      element.classList.remove("no-brillo");
-      toggleButton.classList.remove("off");
-      iconoBrillo.textContent = "🌞";
-      textoBrillo.textContent = "Desactivar Brillo";
-    } else {
-      element.classList.add("no-brillo");
-      toggleButton.classList.add("off");
-      iconoBrillo.textContent = "🌙";
-      textoBrillo.textContent = "Activar Brillo";
-    }
+    element.classList.toggle("no-brillo", !brilloActivo);
   });
+
+  if (brilloActivo) {
+    toggleButton.classList.remove("off");
+    iconoBrillo.innerHTML = MOON_SVG;
+    toggleButton.setAttribute("aria-label", "Desactivar brillo");
+  } else {
+    toggleButton.classList.add("off");
+    iconoBrillo.innerHTML = SUN_SVG;
+    toggleButton.setAttribute("aria-label", "Activar brillo");
+  }
 });
 
 // Manejo de pestañas
@@ -267,17 +284,175 @@ document.querySelectorAll('.tab-button').forEach(button => {
 });
 
 // Permitir copiar el contenido de cada textarea con su botón 'Copiar'
+const CLIPBOARD_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+
+function triggerCopyFeedback(btn) {
+  btn.innerHTML = '¡Copiado! ✅';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = CLIPBOARD_ICON_SVG;
+    btn.disabled = false;
+  }, 1500);
+}
+
 document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
   btn.addEventListener('click', function() {
+    if (btn.disabled) return;
     const textarea = btn.closest('.text-box').querySelector('textarea');
-    if (textarea) {
+    if (!textarea) return;
+    const text = textarea.value;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+        .then(() => triggerCopyFeedback(btn))
+        .catch(() => { textarea.select(); document.execCommand('copy'); triggerCopyFeedback(btn); });
+    } else {
       textarea.select();
       document.execCommand('copy');
+      triggerCopyFeedback(btn);
     }
   });
 });
 
+// ============= BUSCADOR GLOBAL =============
+
+let helpCenterInstance;
+
+function updateTabBadge(badgeId, count, isSearching) {
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+  if (!isSearching) {
+    badge.style.display = "none";
+    badge.textContent = "";
+    return;
+  }
+  badge.textContent = count;
+  badge.style.display = "inline-block";
+  badge.className = count === 0 ? "tab-badge no-results" : "tab-badge";
+}
+
+function showNoResults(tabId, show) {
+  const textFields = document.querySelector(`#${tabId} .text-fields`);
+  if (!textFields) return;
+  let el = document.getElementById(`no-results-${tabId}`);
+  if (!el) {
+    el = document.createElement("p");
+    el.id = `no-results-${tabId}`;
+    el.className = "search-no-results";
+    el.textContent = "No hay resultados para esta búsqueda.";
+    textFields.appendChild(el);
+  }
+  el.style.display = show ? "block" : "none";
+}
+
+function globalSearchFilter(query) {
+  const q = query.toLowerCase().trim();
+  const isSearching = q.length > 0;
+
+  // Respuestas
+  const respCards = document.querySelectorAll("#respuestas .text-box");
+  let respCount = 0;
+  respCards.forEach(card => {
+    const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
+    const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
+    const match = !isSearching || title.includes(q) || text.includes(q);
+    card.style.display = match ? "" : "none";
+    if (match) respCount++;
+  });
+  showNoResults("respuestas", isSearching && respCount === 0);
+
+  // Plantillas
+  const plantCards = document.querySelectorAll("#plantillas .text-box");
+  let plantCount = 0;
+  plantCards.forEach(card => {
+    const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
+    const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
+    const match = !isSearching || title.includes(q) || text.includes(q);
+    card.style.display = match ? "" : "none";
+    if (match) plantCount++;
+  });
+  showNoResults("plantillas", isSearching && plantCount === 0);
+
+  // Paso a paso (delega al HelpCenter)
+  let pasoCount = 0;
+  if (helpCenterInstance) pasoCount = helpCenterInstance.applySearch(q);
+
+  // Badges
+  updateTabBadge("badge-respuestas", respCount, isSearching);
+  updateTabBadge("badge-plantillas", plantCount, isSearching);
+  updateTabBadge("badge-pasoPaso",   pasoCount,  isSearching);
+}
+
 // ============= HELP CENTER MODULE - PASO A PASO =============
+
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function formatearContenidoPasoAPaso(textoPlano) {
+  const lines = textoPlano.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+
+    if (!trimmed) { i++; continue; }
+
+    // ⚠️ Importante: callout
+    if (/^⚠️/.test(trimmed)) {
+      blocks.push({ type: 'callout', text: trimmed });
+      i++;
+      continue;
+    }
+
+    // Lista numerada: 1. o 1)
+    if (/^\d+[.)]\s/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ''));
+        i++;
+      }
+      blocks.push({ type: 'ol', items });
+      continue;
+    }
+
+    // Lista con viñetas: - o •
+    if (/^[-•]\s/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^[-•]\s/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-•]\s+/, ''));
+        i++;
+      }
+      blocks.push({ type: 'ul', items });
+      continue;
+    }
+
+    // Párrafo normal
+    const paraLines = [];
+    while (i < lines.length) {
+      const t = lines[i].trim();
+      if (!t || /^⚠️/.test(t) || /^\d+[.)]\s/.test(t) || /^[-•]\s/.test(t)) break;
+      paraLines.push(t);
+      i++;
+    }
+    if (paraLines.length) blocks.push({ type: 'p', lines: paraLines });
+  }
+
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'callout':
+        return `<div class="callout-importante">${linkify(block.text)}</div>`;
+      case 'ol':
+        return `<ol>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ol>`;
+      case 'ul':
+        return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
+      case 'p':
+        return `<p>${linkify(block.lines.join('<br>'))}</p>`;
+      default:
+        return '';
+    }
+  }).join('');
+}
 // Módulo completamente independiente y escalable para la sección "Paso a Paso"
 
 class HelpCenter {
@@ -304,7 +479,9 @@ class HelpCenter {
       articleTitle: document.getElementById("help-article-title"),
       articleContent: document.getElementById("help-article-content"),
       copyBtn: document.getElementById("help-copy-btn"),
-      copyFeedback: document.getElementById("copy-feedback")
+      copyFeedback: document.getElementById("copy-feedback"),
+      backBtn: document.getElementById("help-back-btn"),
+      sidebar: document.querySelector(".help-sidebar")
     };
   }
 
@@ -314,6 +491,7 @@ class HelpCenter {
   initEventListeners() {
     this.elements.searchInput.addEventListener("input", (e) => this.handleSearch(e));
     this.elements.copyBtn.addEventListener("click", () => this.copyContent());
+    this.elements.backBtn.addEventListener("click", () => this.goBack());
   }
 
   /**
@@ -325,8 +503,8 @@ class HelpCenter {
       if (!response.ok) throw new Error("Error fetching data");
       
       this.data = await response.json();
-      this.filteredData = [...this.data];
-      this.renderItemsList();
+      const pendingQuery = (document.getElementById("globalSearch")?.value || "").toLowerCase().trim();
+      this.applySearch(pendingQuery);
     } catch (error) {
       console.error("Error loading help center data:", error);
       this.showError("No se pudieron cargar los artículos");
@@ -349,9 +527,9 @@ class HelpCenter {
     }
     
     this.renderItemsList();
-    
-    // Auto-seleccionar el primer item si hay resultados
-    if (this.filteredData.length > 0 && !this.selectedItem) {
+
+    // Auto-seleccionar el primer item solo en escritorio
+    if (this.filteredData.length > 0 && !this.selectedItem && window.innerWidth >= 768) {
       this.selectItem(this.filteredData[0]);
     }
   }
@@ -388,14 +566,27 @@ class HelpCenter {
    */
   selectItem(item) {
     this.selectedItem = item;
-    this.renderItemsList(); // Re-render para actualizar estado activo
+    this.renderItemsList();
     this.displayContent();
-    
-    // Scroll del sidebar al item activo
-    const activeItem = this.elements.itemsList.querySelector(".help-item.active");
-    if (activeItem) {
-      activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    if (window.innerWidth < 768) {
+      this.elements.sidebar.style.display = "none";
+      this.elements.backBtn.style.display = "flex";
+    } else {
+      const activeItem = this.elements.itemsList.querySelector(".help-item.active");
+      if (activeItem) {
+        activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     }
+  }
+
+  goBack() {
+    this.elements.sidebar.style.display = "";
+    this.elements.backBtn.style.display = "none";
+    this.elements.contentDisplay.style.display = "none";
+    this.elements.contentEmpty.style.display = "flex";
+    this.selectedItem = null;
+    this.renderItemsList();
   }
 
   /**
@@ -410,42 +601,13 @@ class HelpCenter {
 
     // Actualizar contenido
     this.elements.articleTitle.textContent = this.selectedItem.titulo;
-    this.elements.articleContent.innerHTML = this.formatContent(this.selectedItem.contenido);
+    this.elements.articleContent.innerHTML = formatearContenidoPasoAPaso(this.selectedItem.contenido);
     
     // Reset button feedback
     this.resetCopyButton();
     
     // Scroll al top del contenido
     document.querySelector(".help-content").scrollTop = 0;
-  }
-
-  /**
-   * Formatea el contenido para mostrar correctamente
-   * Convierte saltos de línea en párrafos y preserva formato
-   */
-  formatContent(content) {
-    return content
-      .split("\n\n") // Dividir por párrafos dobles
-      .map(paragraph => {
-        paragraph = paragraph.trim();
-        if (!paragraph) return "";
-        
-        // Si comienza con números o guiones, es probablemente una lista
-        if (/^\d+\.|^-|^•/.test(paragraph)) {
-          return `<div style="margin: 12px 0;">${paragraph.replace(/\n/g, "<br>")}</div>`;
-        }
-        
-        // Si contiene una URL, hazla clickeable
-        if (paragraph.includes("http")) {
-          paragraph = paragraph.replace(
-            /(https?:\/\/[^\s]+)/g,
-            '<a href="$1" target="_blank" rel="noopener">$1</a>'
-          );
-        }
-        
-        return `<p>${paragraph}</p>`;
-      })
-      .join("");
   }
 
   /**
@@ -472,11 +634,12 @@ class HelpCenter {
    */
   showCopyFeedback() {
     this.elements.copyBtn.classList.add("copied");
-    this.elements.copyFeedback.textContent = "Copiado ✓";
-    
+    this.elements.copyBtn.disabled = true;
+    this.elements.copyFeedback.textContent = "¡Copiado! ✅";
+
     setTimeout(() => {
       this.resetCopyButton();
-    }, 2000);
+    }, 1500);
   }
 
   /**
@@ -484,6 +647,7 @@ class HelpCenter {
    */
   resetCopyButton() {
     this.elements.copyBtn.classList.remove("copied");
+    this.elements.copyBtn.disabled = false;
     this.elements.copyFeedback.textContent = "Copiar";
   }
 
@@ -512,9 +676,63 @@ class HelpCenter {
   showError(message) {
     this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
   }
+
+  applySearch(query) {
+    this.filteredData = !query
+      ? [...this.data]
+      : this.data.filter(item =>
+          item.titulo.toLowerCase().includes(query) ||
+          item.contenido.toLowerCase().includes(query)
+        );
+    this.elements.searchInput.value = query;
+    this.renderItemsList();
+    return this.filteredData.length;
+  }
 }
 
 // Inicializar Help Center cuando el contenido esté listo
 document.addEventListener("DOMContentLoaded", () => {
-  new HelpCenter();
+  helpCenterInstance = new HelpCenter();
+
+  const globalSearch = document.getElementById("globalSearch");
+
+  globalSearch.addEventListener("input", function() {
+    globalSearchFilter(this.value);
+  });
+
+  // Atajos de teclado
+  document.addEventListener("keydown", function(e) {
+    const inField = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+
+    // Ctrl+F → enfocar buscador
+    if (e.ctrlKey && e.key === "f") {
+      e.preventDefault();
+      globalSearch.focus();
+      globalSearch.select();
+      return;
+    }
+
+    // "/" → enfocar buscador (solo si no hay otro campo activo)
+    if (e.key === "/" && !inField) {
+      e.preventDefault();
+      globalSearch.focus();
+      globalSearch.select();
+      return;
+    }
+
+    // Escape → limpiar si tiene texto, o desfocar si está vacío
+    if (e.key === "Escape" && document.activeElement === globalSearch) {
+      if (globalSearch.value) {
+        globalSearch.value = "";
+        globalSearchFilter("");
+      } else {
+        globalSearch.blur();
+      }
+    }
+  });
+
+  // Registrar service worker para PWA
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
 });

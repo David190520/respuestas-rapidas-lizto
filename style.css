@@ -50,6 +50,11 @@ body {
   color: #333;
 }
 
+#copiarBtn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .header {
   display: flex;
   flex-direction: row;
@@ -115,7 +120,7 @@ label {
   font-family: poppins;
   font-size: 14px;
   font-weight: 500;
-  border: none;
+  border: 1px solid #555;
   border-radius: 8px;
   background-color: #333;
   color: #fff;
@@ -123,6 +128,8 @@ label {
   cursor: pointer;
   transition: 300ms ease-in-out;
   box-shadow: inset 2px 5px 10px rgba(0, 0, 0, 0.3);
+  flex: 1;
+  min-width: 0;
 }
 
 #fechaReunionSelect:hover,
@@ -196,33 +203,34 @@ textarea:hover {
 }
 
 #toggleBrillo {
-  position: absolute;
-  left: 20px;
-  top: 25px;
-  margin: 20px;
-  padding: 10px 20px;
-  border-radius: 20px;
+  position: fixed;
+  right: 20px;
+  top: 20px;
+  z-index: 100;
+  padding: 0;
+  border-radius: 50%;
   cursor: pointer;
-  font-family: poppins;
-  font-size: 16px;
   border: none;
-  transition: background-color 300ms ease, color 300ms, width 0.3s;
+  transition: background-color 300ms ease, color 300ms ease, transform 200ms ease;
   color: #fff;
   background-color: #403149;
-  width: fit-content;
-  min-width: 44px;
+  width: 44px;
+  height: 44px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
 
-#toggleBrillo .toggle-text {
-  transition: opacity 0.3s, max-width 0.3s, margin 0.3s;
-  opacity: 1;
-  max-width: 200px;
-  overflow: hidden;
-  white-space: nowrap;
-  margin-left: 8px;
+#toggleBrillo:hover {
+  transform: scale(1.1);
+}
+
+#iconoBrillo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 300ms ease;
 }
 
 #toggleBrillo.off {
@@ -251,17 +259,6 @@ textarea:hover {
     max-height: 105px;
     max-width: 100%;
   }
-  /* Arreglar enlace para reunión en mobile */
-  .text-box[style*="grid-column: span 2"] > div[style*="flex-direction: row"] {
-    flex-direction: column !important;
-    gap: 15px !important;
-  }
-
-  .text-box[style*="grid-column: span 2"] textarea {
-    min-width: 0 !important;
-    width: 100% !important;
-    margin: 0 !important;
-  }
   h3 {
     max-width: 100%;
   }
@@ -281,15 +278,8 @@ textarea:hover {
   }
 
   #toggleBrillo {
-    position: fixed;
-    left: 8px;
+    right: 8px;
     top: 8px;
-    margin: 0;
-    z-index: 99;
-  }
-
-  #toggleBrillo .toggle-text {
-    display: none;
   }
 
   .text-fields {
@@ -331,36 +321,115 @@ textarea:hover {
     box-sizing: border-box;
   }
 
-  .text-fields * {
-    min-width: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+  .title-container {
+    padding-right: 55px;
+  }
+
+  #copiarBtn {
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
-@media screen and (max-width: 1240px) {
-  #toggleBrillo {
-    transition: background-color 300ms, color 300ms, width 0.3s, padding 0.3s;
-    width: fit-content;
-    padding-right: 10px;
-    padding-left: 10px;
-  }
-  #toggleBrillo .toggle-text {
-    opacity: 0;
-    max-width: 0;
-    margin-left: 0;
-    pointer-events: none;
-  }
-  #toggleBrillo .icon {
-    display: inline-block;
-    margin-right: 0;
-  }
+
+/* ============= BUSCADOR GLOBAL ============= */
+
+.global-search-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 20px;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
+
+.global-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 42px;
+  background: rgba(51, 51, 51, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  color: var(--principal-color);
+  font-family: poppins;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+  box-sizing: border-box;
+}
+
+.global-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.global-search-input:focus {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+}
+
+.search-hint {
+  position: absolute;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 11px;
+  font-family: poppins;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  padding: 2px 7px;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+  white-space: nowrap;
+}
+
+.global-search-input:focus ~ .search-hint,
+.global-search-input:not(:placeholder-shown) ~ .search-hint {
+  opacity: 0;
+}
+
+.global-search-icon {
+  position: absolute;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+/* ============= TABS Y BADGES ============= */
 
 .tabs {
   display: flex;
   justify-content: center;
   margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tab-badge {
+  display: none;
+  background: #7c5cbf;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.tab-badge.no-results {
+  background: #555;
+}
+
+.search-no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 14px;
+  padding: 40px 20px;
+  margin: 0;
 }
 
 .tab-button {
@@ -385,6 +454,68 @@ textarea:hover {
 
 .tab-content.active {
   display: block;
+}
+
+/* ============= REUNION BOX ============= */
+
+.reunion-box {
+  grid-column: span 2;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.reunion-flex {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.reunion-selects {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 280px;
+}
+
+.reunion-select-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.reunion-label {
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 70px;
+  color: var(--principal-color);
+}
+
+.reunion-textarea-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+@media screen and (max-width: 1200px) {
+  .reunion-flex {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .reunion-selects {
+    min-width: 0;
+    width: 100%;
+  }
+  .reunion-textarea-col {
+    width: 100%;
+    min-width: 0;
+  }
+  #linkReunionMessage {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 /* ============= HELP CENTER - PASO A PASO ============= */
@@ -705,6 +836,54 @@ textarea:hover {
   font-size: 13px;
 }
 
+.help-body ol,
+.help-body ul {
+  padding-left: 20px;
+  margin: 12px 0;
+}
+
+.help-body ol {
+  list-style: decimal;
+}
+
+.help-body ul {
+  list-style: disc;
+}
+
+.callout-importante {
+  border-left: 4px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+
+/* Botón volver — solo visible en mobile via JS */
+.help-back-btn {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  margin: 12px 16px 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: poppins;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+.help-back-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--principal-color);
+}
+
 /* Responsive */
 @media screen and (max-width: 1024px) {
   .help-center {
@@ -729,45 +908,53 @@ textarea:hover {
 @media screen and (max-width: 768px) {
   .help-center {
     height: auto;
+    min-height: 70vh;
     grid-template-columns: 1fr;
     max-width: calc(100vw - 20px);
-    margin: 20px 10px;
+    margin: 16px 10px;
     border-radius: 8px;
   }
 
   .help-sidebar {
+    display: flex;
+    flex-direction: column;
     border-right: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    max-height: 200px;
-    display: grid;
-    grid-template-columns: 1fr auto;
+    max-height: none;
+    overflow: visible;
   }
 
   .help-search-container {
     padding: 12px;
-    grid-column: 1;
   }
 
   .help-items-list {
     display: flex;
-    grid-column: 1 / -1;
-    max-height: 180px;
+    flex-direction: column;
+    max-height: 45vh;
+    overflow-y: auto;
   }
 
   .help-item {
-    flex-shrink: 0;
-    min-width: 200px;
-    padding: 12px;
-    border-left: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    flex-shrink: 1;
+    padding: 12px 16px;
+    border-left: 3px solid transparent;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: normal;
+    -webkit-line-clamp: 2;
+  }
+
+  .help-content {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
   }
 
   .help-content-display {
     padding: 20px;
+    flex: 1;
   }
 
   .help-header {
@@ -796,10 +983,6 @@ textarea:hover {
     margin: 15px 8px;
   }
 
-  .help-sidebar {
-    grid-template-columns: 1fr;
-  }
-
   .help-search-input {
     padding: 8px 10px 8px 32px;
     font-size: 12px;
@@ -807,19 +990,6 @@ textarea:hover {
 
   .help-search-icon {
     left: 14px;
-  }
-
-  .help-items-list {
-    flex-direction: column;
-    max-height: 150px;
-  }
-
-  .help-item {
-    min-width: auto;
-    white-space: normal;
-    -webkit-line-clamp: 1;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .help-content-display {
@@ -837,5 +1007,10 @@ textarea:hover {
   .help-copy-btn {
     font-size: 11px;
     padding: 6px 10px;
+  }
+
+  .tab-button {
+    padding: 10px 12px;
+    font-size: 13px;
   }
 }
