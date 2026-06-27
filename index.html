@@ -370,6 +370,33 @@
     </div>
 
   </div>
+  <!-- Drawer compartido para Respuestas y Plantillas -->
+  <div id="response-drawer" class="response-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <h2 id="drawer-title" class="drawer-title"></h2>
+        <div class="drawer-controls">
+          <button id="drawer-prev" class="drawer-nav-btn" title="Anterior" aria-label="Mensaje anterior">&#8592;</button>
+          <span id="drawer-counter" class="drawer-counter"></span>
+          <button id="drawer-next" class="drawer-nav-btn" title="Siguiente" aria-label="Mensaje siguiente">&#8594;</button>
+          <button id="drawer-close" class="drawer-close-btn" title="Cerrar" aria-label="Cerrar panel">&#10005;</button>
+        </div>
+      </div>
+      <div id="drawer-variants" class="drawer-variants"></div>
+      <div id="drawer-content" class="drawer-content"></div>
+      <div class="drawer-footer">
+        <button id="drawer-copy-btn" class="drawer-copy-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copiar texto
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+
   <script src="index.js"></script>
   </body>
 </html>
