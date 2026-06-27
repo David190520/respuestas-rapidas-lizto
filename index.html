@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#7c5cbf" />
+    <link rel="manifest" href="manifest.json" />
     <link
       href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAABWsfwA////AGBgYAA7k9sACgoKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJERBREQUREIkREEUQRREQiRERBRBRERCIiJEFEFEIiIiIiIRESIiIiIiIiMyIiIiIiIiAAAiIiIiIiAAAAIiIiIiIAAAAiIiIiIEQARAIiIiIgREREAiIiIiIAAAAiIiIiIkAABCIiIiIiREREIiIiIiIkREIiIiIiIiIiIiIiIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
       rel="icon"
@@ -22,9 +24,8 @@
       <div class="title-container">
         <h1 class="title">Mensajes rápidos de soporte Lizto Software</h1>
       </div>
-      <button id="toggleBrillo">
-        <span id="iconoBrillo" class="icon">🌞</span>
-        <span class="toggle-text">Desactivar Brillo</span>
+      <button id="toggleBrillo" title="Cambiar tema" aria-label="Activar brillo">
+        <span id="iconoBrillo" class="icon"></span>
       </button>
       <div class="header">
         <div class="input-container">
@@ -37,10 +38,25 @@
         </div>
       </div>
 
+      <div class="global-search-container">
+        <svg class="global-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input
+          type="text"
+          id="globalSearch"
+          class="global-search-input"
+          placeholder="Buscar en respuestas, plantillas, artículos..."
+          autocomplete="off"
+        />
+        <span class="search-hint" aria-hidden="true">/ para buscar</span>
+      </div>
+
       <div class="tabs">
-        <button class="tab-button active" data-tab="respuestas">Respuestas</button>
-        <button class="tab-button" data-tab="plantillas">Plantillas</button>
-        <button class="tab-button" data-tab="pasoPaso">Paso a paso</button>
+        <button class="tab-button active" data-tab="respuestas">Respuestas<span class="tab-badge" id="badge-respuestas"></span></button>
+        <button class="tab-button" data-tab="plantillas">Plantillas<span class="tab-badge" id="badge-plantillas"></span></button>
+        <button class="tab-button" data-tab="pasoPaso">Paso a paso<span class="tab-badge" id="badge-pasoPaso"></span></button>
       </div>
 
       <div id="respuestas" class="tab-content active">
@@ -195,39 +211,34 @@
             </svg>
           </button>
         </div>
-        <div class="text-box" style="grid-column: span 2;">
+        <div class="text-box reunion-box">
           <h3>Enlace para reunión</h3>
-          <div style="display: flex; flex-direction: row; gap: 20px; align-items: flex-start;">
-            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 280px;">
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <label for="fechaReunionSelect" style="font-size: 14px; font-weight: 500; min-width: 70px;">Fecha:</label>
-                <select id="fechaReunionSelect" style="padding: 6px 8px; width: 80%; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+          <div class="reunion-flex">
+            <div class="reunion-selects">
+              <div class="reunion-select-row">
+                <label for="fechaReunionSelect" class="reunion-label">Fecha:</label>
+                <select id="fechaReunionSelect">
                   <option value="">Selecciona una fecha</option>
                 </select>
               </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <label for="agenteReunion" style="font-size: 14px; font-weight: 500; min-width: 70px;">Agente:</label>
-                <select id="agenteReunion" style="padding: 6px 8px; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+              <div class="reunion-select-row">
+                <label for="agenteReunion" class="reunion-label">Agente:</label>
+                <select id="agenteReunion">
                   <option value="">Selecciona un agente</option>
                   <option value="yeison">Yeison</option>
                   <option value="paola">Paola</option>
                   <option value="backup">Backup</option>
                 </select>
               </div>
-              <div style="display: flex; gap: 8px; align-items: center;">
-                <label for="horaReunionSelect" style="font-size: 14px; font-weight: 500; min-width: 70px;">Hora:</label>
-                <select id="horaReunionSelect" style="padding: 6px 8px; border-radius: 6px; border: 1px solid #555; background-color: #333; color: #fff; font-family: poppins; flex: 1;">
+              <div class="reunion-select-row">
+                <label for="horaReunionSelect" class="reunion-label">Hora:</label>
+                <select id="horaReunionSelect">
                   <option value="">Selecciona una hora</option>
                 </select>
               </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
-              <textarea
-                id="linkReunionMessage"
-                class="text-field"
-                readonly
-                style="min-width: auto; margin: 0; max-width: 100%;"
-              ></textarea>
+            <div class="reunion-textarea-col">
+              <textarea id="linkReunionMessage" class="text-field" readonly></textarea>
               <button id="copiarBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -329,6 +340,7 @@
 
         <!-- Panel de contenido -->
         <main class="help-content">
+          <button id="help-back-btn" class="help-back-btn" aria-label="Volver a la lista de artículos">← Volver</button>
           <div id="help-content-empty" class="help-content-empty">
             <div class="empty-state">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5">
@@ -358,6 +370,33 @@
     </div>
 
   </div>
+  <!-- Drawer compartido para Respuestas y Plantillas -->
+  <div id="response-drawer" class="response-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <h2 id="drawer-title" class="drawer-title"></h2>
+        <div class="drawer-controls">
+          <button id="drawer-prev" class="drawer-nav-btn" title="Anterior" aria-label="Mensaje anterior">&#8592;</button>
+          <span id="drawer-counter" class="drawer-counter"></span>
+          <button id="drawer-next" class="drawer-nav-btn" title="Siguiente" aria-label="Mensaje siguiente">&#8594;</button>
+          <button id="drawer-close" class="drawer-close-btn" title="Cerrar" aria-label="Cerrar panel">&#10005;</button>
+        </div>
+      </div>
+      <div id="drawer-variants" class="drawer-variants"></div>
+      <div id="drawer-content" class="drawer-content"></div>
+      <div class="drawer-footer">
+        <button id="drawer-copy-btn" class="drawer-copy-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          Copiar texto
+        </button>
+      </div>
+    </div>
+  </div>
+  <div id="drawer-overlay" class="drawer-overlay"></div>
+
   <script src="index.js"></script>
   </body>
 </html>

@@ -1,3 +1,26 @@
+// ============= ESTADO GLOBAL — debe declararse antes de cualquier llamada =============
+
+let drawerCurrentIndex = -1;
+let drawerVisibleCards = [];
+let drawerCurrentTabId = null;
+const drawerCardMap = new Map();
+
+let saludoCard = null;
+let saludoVariante = '';
+const SALUDO_VARIANTES = [
+  { label: 'Sin variante',           value: '' },
+  { label: '¿Cómo puedo ayudarte?',  value: 'Cuéntame por favor, ¿Cómo puedo ayudarte?' },
+  { label: 'Dame un momento',        value: 'Dame un momento por favor.' },
+  { label: 'Con mucho gusto',        value: 'Con mucho gusto.' },
+];
+
+function buildSaludoText(base) {
+  if (!saludoVariante || !base) return base;
+  return base + '\n' + saludoVariante;
+}
+
+// ============= DATOS DE AGENTES Y HORARIOS =============
+
 // Datos de agentes y horarios
 const agentesData = {
   yeison: {
@@ -32,11 +55,7 @@ const agentesData = {
 
 function addUserText(message) {
   const userInput = document.getElementById("userInput").value.trim();
-  const agentInput = document.getElementById("agentInput").value.trim();
-
-  if (!agentInput) {
-    return "";
-  }
+  const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
 
   const baseMessage = message.replace("nombreAgente", agentInput);
 
@@ -48,36 +67,10 @@ function addUserText(message) {
 }
 
 function updateMessages() {
-  const agentInput = document.getElementById("agentInput").value.trim();
+  const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
 
-  if (!agentInput) {
-    [
-      "daysMessage",
-      "falloSistema",
-      "modulosCapacitaciones",
-      "validarPagoMessage",
-      "pagoGraciasMessage",
-      "solicitarLinkMessage",
-      "pasoaPaso",
-      "demorasDIAN",
-      "casoEscalado",
-      "algoMas",
-      "despedidaMessage",
-      "facturacionElectronica",
-      "nominaElectronica",
-      "apiWhatsapp",
-      "solicitudCorreo",
-      "solicitudRecuperarEspecialista",
-      "solicitudCambioRazonSocial"
-    ].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
-    return;
-  }
-
-  document.getElementById("daysMessage").value = 
-    "Hola, muy buen día. Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎. Cuéntame por favor, ¿Cómo puedo ayudarte?";
+  document.getElementById("daysMessage").value =
+    "Hola, muy buen día, ¿cómo estás? Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎.";
   document.getElementById("falloSistema").value =
     "Hola, muy buen día. Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.";
   document.getElementById("modulosCapacitaciones").value = 
@@ -112,17 +105,15 @@ function updateMessages() {
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
+  renderCardPreviews();
+
+  // Re-aplicar búsqueda global si está activa (los textareas cambiaron)
+  const _gs = document.getElementById("globalSearch");
+  if (_gs && _gs.value) globalSearchFilter(_gs.value);
 }
 
 // Función para actualizar el mensaje de pago con el enlace
 function updateLinkPagoMessage() {
-  const agentInput = document.getElementById("agentInput").value.trim();
-  if (!agentInput) {
-    const linkPagoEl = document.getElementById("linkPago");
-    if (linkPagoEl) linkPagoEl.value = "";
-    return;
-  }
-
   const enlacePago = document.getElementById("enlacePago").value.trim() || "https://lizto.com/pago";
   const mensaje = `Puedes realizar el pago a través de este enlace seguro: ${enlacePago} \nSi tienes alguna pregunta o necesitas ayuda con el proceso, no dudes en contactarnos. ¡Estamos aquí para ayudarte! 😊`;
   document.getElementById("linkPago").value = addUserText(mensaje);
@@ -186,12 +177,24 @@ function updateReunionMessage() {
 // Inicializar fechas
 initializeFechaSelect();
 
+// Restaurar nombres desde localStorage
+const savedAgent = localStorage.getItem("lizto_agent_name");
+const savedClient = localStorage.getItem("lizto_client_name");
+if (savedAgent) document.getElementById("agentInput").value = savedAgent;
+if (savedClient) document.getElementById("userInput").value = savedClient;
+
 // Llamar updateMessages para inicializar todos los mensajes
 updateMessages();
 
 // Listeners para los campos de entrada de nombre
-document.getElementById("userInput").addEventListener("input", updateMessages);
-document.getElementById("agentInput").addEventListener("input", updateMessages);
+document.getElementById("userInput").addEventListener("input", function() {
+  localStorage.setItem("lizto_client_name", this.value);
+  updateMessages();
+});
+document.getElementById("agentInput").addEventListener("input", function() {
+  localStorage.setItem("lizto_agent_name", this.value);
+  updateMessages();
+});
 
 // Listener para el enlace de pago
 document.getElementById("enlacePago").addEventListener("input", updateLinkPagoMessage);
@@ -224,38 +227,35 @@ document.getElementById("horaReunionSelect").addEventListener("change", updateRe
 // Toggle de brillo
 const toggleButton = document.getElementById("toggleBrillo");
 const iconoBrillo = document.getElementById("iconoBrillo");
-const textoBrillo = toggleButton.querySelector(".toggle-text");
 let brilloActivo = false;
 
-// Aplicar estado inicial (brillo desactivado)
-document.querySelectorAll(".input, textarea").forEach((element) => {
-  element.classList.add("no-brillo");
-});
+const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
+const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
+
+// Estado inicial: modo oscuro
 toggleButton.classList.add("off");
-iconoBrillo.textContent = "🌙";
-textoBrillo.textContent = "Activar Brillo";
+iconoBrillo.innerHTML = SUN_SVG;
+toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
 
 toggleButton.addEventListener("click", () => {
   brilloActivo = !brilloActivo;
+  document.body.classList.toggle("light-mode", brilloActivo);
 
-  document.querySelectorAll(".input, textarea").forEach((element) => {
-    if (brilloActivo) {
-      element.classList.remove("no-brillo");
-      toggleButton.classList.remove("off");
-      iconoBrillo.textContent = "🌞";
-      textoBrillo.textContent = "Desactivar Brillo";
-    } else {
-      element.classList.add("no-brillo");
-      toggleButton.classList.add("off");
-      iconoBrillo.textContent = "🌙";
-      textoBrillo.textContent = "Activar Brillo";
-    }
-  });
+  if (brilloActivo) {
+    toggleButton.classList.remove("off");
+    iconoBrillo.innerHTML = MOON_SVG;
+    toggleButton.setAttribute("aria-label", "Cambiar a modo oscuro");
+  } else {
+    toggleButton.classList.add("off");
+    iconoBrillo.innerHTML = SUN_SVG;
+    toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
+  }
 });
 
 // Manejo de pestañas
 document.querySelectorAll('.tab-button').forEach(button => {
   button.addEventListener('click', () => {
+    closeResponseDrawer();
     // Remover active de todos los botones y contenidos
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -267,17 +267,177 @@ document.querySelectorAll('.tab-button').forEach(button => {
 });
 
 // Permitir copiar el contenido de cada textarea con su botón 'Copiar'
+const CLIPBOARD_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+const EYE_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+
+function triggerCopyFeedback(btn) {
+  btn.innerHTML = '¡Copiado! ✅';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.innerHTML = CLIPBOARD_ICON_SVG;
+    btn.disabled = false;
+  }, 1500);
+}
+
 document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
   btn.addEventListener('click', function() {
+    if (btn.disabled) return;
     const textarea = btn.closest('.text-box').querySelector('textarea');
-    if (textarea) {
+    if (!textarea) return;
+    const text = textarea.value;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+        .then(() => triggerCopyFeedback(btn))
+        .catch(() => { textarea.select(); document.execCommand('copy'); triggerCopyFeedback(btn); });
+    } else {
       textarea.select();
       document.execCommand('copy');
+      triggerCopyFeedback(btn);
     }
   });
 });
 
+// ============= BUSCADOR GLOBAL =============
+
+let helpCenterInstance;
+
+function updateTabBadge(badgeId, count, isSearching) {
+  const badge = document.getElementById(badgeId);
+  if (!badge) return;
+  if (!isSearching) {
+    badge.style.display = "none";
+    badge.textContent = "";
+    return;
+  }
+  badge.textContent = count;
+  badge.style.display = "inline-block";
+  badge.className = count === 0 ? "tab-badge no-results" : "tab-badge";
+}
+
+function showNoResults(tabId, show) {
+  const textFields = document.querySelector(`#${tabId} .text-fields`);
+  if (!textFields) return;
+  let el = document.getElementById(`no-results-${tabId}`);
+  if (!el) {
+    el = document.createElement("p");
+    el.id = `no-results-${tabId}`;
+    el.className = "search-no-results";
+    el.textContent = "No hay resultados para esta búsqueda.";
+    textFields.appendChild(el);
+  }
+  el.style.display = show ? "block" : "none";
+}
+
+function globalSearchFilter(query) {
+  const q = query.toLowerCase().trim();
+  const isSearching = q.length > 0;
+
+  // Respuestas
+  const respCards = document.querySelectorAll("#respuestas .text-box");
+  let respCount = 0;
+  respCards.forEach(card => {
+    const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
+    const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
+    const match = !isSearching || title.includes(q) || text.includes(q);
+    card.style.display = match ? "" : "none";
+    if (match) respCount++;
+  });
+  showNoResults("respuestas", isSearching && respCount === 0);
+
+  // Plantillas
+  const plantCards = document.querySelectorAll("#plantillas .text-box");
+  let plantCount = 0;
+  plantCards.forEach(card => {
+    const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
+    const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
+    const match = !isSearching || title.includes(q) || text.includes(q);
+    card.style.display = match ? "" : "none";
+    if (match) plantCount++;
+  });
+  showNoResults("plantillas", isSearching && plantCount === 0);
+
+  // Paso a paso (delega al HelpCenter)
+  let pasoCount = 0;
+  if (helpCenterInstance) pasoCount = helpCenterInstance.applySearch(q);
+
+  // Badges
+  updateTabBadge("badge-respuestas", respCount, isSearching);
+  updateTabBadge("badge-plantillas", plantCount, isSearching);
+  updateTabBadge("badge-pasoPaso",   pasoCount,  isSearching);
+  updateDrawerAfterSearch();
+}
+
 // ============= HELP CENTER MODULE - PASO A PASO =============
+
+function linkify(text) {
+  return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function formatearContenidoPasoAPaso(textoPlano) {
+  const lines = textoPlano.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const trimmed = lines[i].trim();
+
+    if (!trimmed) { i++; continue; }
+
+    // ⚠️ Importante: callout
+    if (/^⚠️/.test(trimmed)) {
+      blocks.push({ type: 'callout', text: trimmed });
+      i++;
+      continue;
+    }
+
+    // Lista numerada: 1. o 1)
+    if (/^\d+[.)]\s/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ''));
+        i++;
+      }
+      blocks.push({ type: 'ol', items });
+      continue;
+    }
+
+    // Lista con viñetas: - o •
+    if (/^[-•]\s/.test(trimmed)) {
+      const items = [];
+      while (i < lines.length && /^[-•]\s/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-•]\s+/, ''));
+        i++;
+      }
+      blocks.push({ type: 'ul', items });
+      continue;
+    }
+
+    // Párrafo normal
+    const paraLines = [];
+    while (i < lines.length) {
+      const t = lines[i].trim();
+      if (!t || /^⚠️/.test(t) || /^\d+[.)]\s/.test(t) || /^[-•]\s/.test(t)) break;
+      paraLines.push(t);
+      i++;
+    }
+    if (paraLines.length) blocks.push({ type: 'p', lines: paraLines });
+  }
+
+  return blocks.map(block => {
+    switch (block.type) {
+      case 'callout':
+        return `<div class="callout-importante">${linkify(block.text)}</div>`;
+      case 'ol':
+        return `<ol>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ol>`;
+      case 'ul':
+        return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
+      case 'p':
+        return `<p>${linkify(block.lines.join('<br>'))}</p>`;
+      default:
+        return '';
+    }
+  }).join('');
+}
 // Módulo completamente independiente y escalable para la sección "Paso a Paso"
 
 class HelpCenter {
@@ -304,7 +464,9 @@ class HelpCenter {
       articleTitle: document.getElementById("help-article-title"),
       articleContent: document.getElementById("help-article-content"),
       copyBtn: document.getElementById("help-copy-btn"),
-      copyFeedback: document.getElementById("copy-feedback")
+      copyFeedback: document.getElementById("copy-feedback"),
+      backBtn: document.getElementById("help-back-btn"),
+      sidebar: document.querySelector(".help-sidebar")
     };
   }
 
@@ -314,6 +476,7 @@ class HelpCenter {
   initEventListeners() {
     this.elements.searchInput.addEventListener("input", (e) => this.handleSearch(e));
     this.elements.copyBtn.addEventListener("click", () => this.copyContent());
+    this.elements.backBtn.addEventListener("click", () => this.goBack());
   }
 
   /**
@@ -325,8 +488,8 @@ class HelpCenter {
       if (!response.ok) throw new Error("Error fetching data");
       
       this.data = await response.json();
-      this.filteredData = [...this.data];
-      this.renderItemsList();
+      const pendingQuery = (document.getElementById("globalSearch")?.value || "").toLowerCase().trim();
+      this.applySearch(pendingQuery);
     } catch (error) {
       console.error("Error loading help center data:", error);
       this.showError("No se pudieron cargar los artículos");
@@ -349,9 +512,9 @@ class HelpCenter {
     }
     
     this.renderItemsList();
-    
-    // Auto-seleccionar el primer item si hay resultados
-    if (this.filteredData.length > 0 && !this.selectedItem) {
+
+    // Auto-seleccionar el primer item solo en escritorio
+    if (this.filteredData.length > 0 && !this.selectedItem && window.innerWidth >= 768) {
       this.selectItem(this.filteredData[0]);
     }
   }
@@ -388,14 +551,27 @@ class HelpCenter {
    */
   selectItem(item) {
     this.selectedItem = item;
-    this.renderItemsList(); // Re-render para actualizar estado activo
+    this.renderItemsList();
     this.displayContent();
-    
-    // Scroll del sidebar al item activo
-    const activeItem = this.elements.itemsList.querySelector(".help-item.active");
-    if (activeItem) {
-      activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    if (window.innerWidth < 768) {
+      this.elements.sidebar.style.display = "none";
+      this.elements.backBtn.style.display = "flex";
+    } else {
+      const activeItem = this.elements.itemsList.querySelector(".help-item.active");
+      if (activeItem) {
+        activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     }
+  }
+
+  goBack() {
+    this.elements.sidebar.style.display = "";
+    this.elements.backBtn.style.display = "none";
+    this.elements.contentDisplay.style.display = "none";
+    this.elements.contentEmpty.style.display = "flex";
+    this.selectedItem = null;
+    this.renderItemsList();
   }
 
   /**
@@ -410,42 +586,13 @@ class HelpCenter {
 
     // Actualizar contenido
     this.elements.articleTitle.textContent = this.selectedItem.titulo;
-    this.elements.articleContent.innerHTML = this.formatContent(this.selectedItem.contenido);
+    this.elements.articleContent.innerHTML = formatearContenidoPasoAPaso(this.selectedItem.contenido);
     
     // Reset button feedback
     this.resetCopyButton();
     
     // Scroll al top del contenido
     document.querySelector(".help-content").scrollTop = 0;
-  }
-
-  /**
-   * Formatea el contenido para mostrar correctamente
-   * Convierte saltos de línea en párrafos y preserva formato
-   */
-  formatContent(content) {
-    return content
-      .split("\n\n") // Dividir por párrafos dobles
-      .map(paragraph => {
-        paragraph = paragraph.trim();
-        if (!paragraph) return "";
-        
-        // Si comienza con números o guiones, es probablemente una lista
-        if (/^\d+\.|^-|^•/.test(paragraph)) {
-          return `<div style="margin: 12px 0;">${paragraph.replace(/\n/g, "<br>")}</div>`;
-        }
-        
-        // Si contiene una URL, hazla clickeable
-        if (paragraph.includes("http")) {
-          paragraph = paragraph.replace(
-            /(https?:\/\/[^\s]+)/g,
-            '<a href="$1" target="_blank" rel="noopener">$1</a>'
-          );
-        }
-        
-        return `<p>${paragraph}</p>`;
-      })
-      .join("");
   }
 
   /**
@@ -472,11 +619,12 @@ class HelpCenter {
    */
   showCopyFeedback() {
     this.elements.copyBtn.classList.add("copied");
-    this.elements.copyFeedback.textContent = "Copiado ✓";
-    
+    this.elements.copyBtn.disabled = true;
+    this.elements.copyFeedback.textContent = "¡Copiado! ✅";
+
     setTimeout(() => {
       this.resetCopyButton();
-    }, 2000);
+    }, 1500);
   }
 
   /**
@@ -484,6 +632,7 @@ class HelpCenter {
    */
   resetCopyButton() {
     this.elements.copyBtn.classList.remove("copied");
+    this.elements.copyBtn.disabled = false;
     this.elements.copyFeedback.textContent = "Copiar";
   }
 
@@ -512,9 +661,378 @@ class HelpCenter {
   showError(message) {
     this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
   }
+
+  applySearch(query) {
+    this.filteredData = !query
+      ? [...this.data]
+      : this.data.filter(item =>
+          item.titulo.toLowerCase().includes(query) ||
+          item.contenido.toLowerCase().includes(query)
+        );
+    this.elements.searchInput.value = query;
+    this.renderItemsList();
+    return this.filteredData.length;
+  }
+}
+
+// ============= RESPONSE DRAWER (Respuestas y Plantillas) =============
+
+function getDrawerCards(tabId) {
+  return Array.from(document.querySelectorAll(`#${tabId} .response-card`))
+    .filter(c => c.style.display !== 'none');
+}
+
+function copyCardText(card, feedbackBtn) {
+  const textarea = drawerCardMap.get(card);
+  const base = textarea?.value || '';
+  const text = (saludoCard && card === saludoCard) ? buildSaludoText(base) : base;
+
+  const btn = feedbackBtn || card.querySelector('.card-copy-btn');
+  const showFeedback = () => {
+    if (!btn || btn.disabled) return;
+    const original = btn.innerHTML;
+    btn.innerHTML = '¡Copiado! ✅';
+    btn.disabled = true;
+    setTimeout(() => { btn.innerHTML = original; btn.disabled = false; }, 1500);
+  };
+
+  if (!text) return;
+
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(showFeedback).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); } catch {}
+      document.body.removeChild(ta);
+      showFeedback();
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+    showFeedback();
+  }
+}
+
+function setDrawerContent(content) {
+  const el = document.getElementById('drawer-content');
+  if (!el) return;
+  if (content) {
+    el.textContent = content;
+    el.removeAttribute('data-empty');
+  } else {
+    el.textContent = '';
+    el.setAttribute('data-empty', 'true');
+  }
+}
+
+function renderCardPreviews() {
+  document.querySelectorAll('.response-card').forEach(card => {
+    const textarea = drawerCardMap.get(card) || card.querySelector('.card-data');
+    const preview = card.querySelector('.card-preview');
+    if (!textarea || !preview) return;
+    const value = (saludoCard && card === saludoCard) ? buildSaludoText(textarea.value) : textarea.value;
+    const lines = value.split('\n').filter(l => l.trim());
+    preview.textContent = lines.slice(0, 2).join(' ');
+  });
+
+  // Actualizar contenido del drawer si está abierto (cambio de nombre de agente)
+  if (drawerCurrentIndex >= 0 && drawerVisibleCards[drawerCurrentIndex]) {
+    const card = drawerVisibleCards[drawerCurrentIndex];
+    const textarea = drawerCardMap.get(card);
+    if (textarea) {
+      const isSaludo = saludoCard && card === saludoCard;
+      setDrawerContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
+    }
+  }
+}
+
+function initResponseCards(cardIds) {
+  cardIds.forEach(id => {
+    const textarea = document.getElementById(id);
+    if (!textarea) return;
+    const card = textarea.closest('.text-box');
+    if (!card || card.classList.contains('response-card')) return;
+
+    card.classList.add('response-card');
+    textarea.classList.add('card-data');
+    textarea.style.display = 'none';
+    drawerCardMap.set(card, textarea);
+
+    // Ocultar botón copiar original
+    const oldCopyBtn = card.querySelector('button[id="copiarBtn"]');
+    if (oldCopyBtn) oldCopyBtn.style.display = 'none';
+
+    // Envolver h3 + botón ojo en .card-header
+    const h3 = card.querySelector('h3');
+    if (h3 && !card.querySelector('.card-header')) {
+      const header = document.createElement('div');
+      header.className = 'card-header';
+      h3.parentNode.insertBefore(header, h3);
+      header.appendChild(h3);
+
+      const viewBtn = document.createElement('button');
+      viewBtn.className = 'card-view-btn';
+      viewBtn.title = 'Ver mensaje completo';
+      viewBtn.setAttribute('aria-label', 'Ver mensaje completo');
+      viewBtn.innerHTML = EYE_SVG;
+      header.appendChild(viewBtn);
+
+      viewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openResponseDrawer(card);
+      });
+    }
+
+    // Agregar preview después del header
+    if (!card.querySelector('.card-preview')) {
+      const preview = document.createElement('p');
+      preview.className = 'card-preview';
+      const anchor = card.querySelector('.card-header') || card.querySelector('h3');
+      anchor.insertAdjacentElement('afterend', preview);
+    }
+
+    // Agregar botón Copiar al fondo
+    if (!card.querySelector('.card-copy-btn')) {
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'card-copy-btn';
+      copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar`;
+      card.appendChild(copyBtn);
+      copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        copyCardText(card, copyBtn);
+      });
+    }
+
+    // Clic en la tarjeta (fuera de botones) → copiar
+    card.setAttribute('tabindex', '0');
+    card.setAttribute('role', 'button');
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('button')) return;
+      copyCardText(card);
+    });
+    card.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyCardText(card); }
+    });
+  });
+
+  renderCardPreviews();
+}
+
+function openResponseDrawer(card) {
+  const tabContent = card.closest('.tab-content');
+  if (!tabContent) return;
+  drawerCurrentTabId = tabContent.id;
+  drawerVisibleCards = getDrawerCards(drawerCurrentTabId);
+  drawerCurrentIndex = drawerVisibleCards.indexOf(card);
+
+  document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  populateDrawer();
+
+  const drawer = document.getElementById('response-drawer');
+  drawer.classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('visible');
+  drawer.setAttribute('aria-hidden', 'false');
+}
+
+function closeResponseDrawer() {
+  const drawer = document.getElementById('response-drawer');
+  if (!drawer) return;
+  drawer.classList.remove('open');
+  drawer.setAttribute('aria-hidden', 'true');
+  const overlay = document.getElementById('drawer-overlay');
+  if (overlay) overlay.classList.remove('visible');
+  document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
+  drawerCurrentIndex = -1;
+  drawerCurrentTabId = null;
+  drawerVisibleCards = [];
+}
+
+function populateDrawer() {
+  if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
+  const card = drawerVisibleCards[drawerCurrentIndex];
+  const isSaludo = saludoCard && card === saludoCard;
+  const title = card.querySelector('h3')?.textContent.trim() || '';
+  const textarea = drawerCardMap.get(card);
+  const base = textarea?.value || '';
+  const content = isSaludo ? buildSaludoText(base) : base;
+
+  document.getElementById('drawer-title').textContent = title;
+  setDrawerContent(content);
+  updateDrawerNavState();
+
+  const variantsEl = document.getElementById('drawer-variants');
+  if (variantsEl) variantsEl.style.display = isSaludo ? 'flex' : 'none';
+
+  const copyBtn = document.getElementById('drawer-copy-btn');
+  if (copyBtn) {
+    copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+    copyBtn.disabled = false;
+  }
+
+  document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
+  card.classList.add('active');
+  card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function navigateDrawer(dir) {
+  const newIdx = drawerCurrentIndex + dir;
+  if (newIdx < 0 || newIdx >= drawerVisibleCards.length) return;
+  drawerCurrentIndex = newIdx;
+  populateDrawer();
+}
+
+function updateDrawerNavState() {
+  const total = drawerVisibleCards.length;
+  const counter = document.getElementById('drawer-counter');
+  const prev = document.getElementById('drawer-prev');
+  const next = document.getElementById('drawer-next');
+  if (counter) counter.textContent = total > 0 ? `${drawerCurrentIndex + 1} / ${total}` : '';
+  if (prev) prev.disabled = drawerCurrentIndex <= 0;
+  if (next) next.disabled = drawerCurrentIndex >= total - 1;
+}
+
+function updateDrawerAfterSearch() {
+  if (!drawerCurrentTabId) return;
+  const newVisible = getDrawerCards(drawerCurrentTabId);
+  drawerVisibleCards = newVisible;
+  if (newVisible.length === 0) {
+    closeResponseDrawer();
+  } else if (drawerCurrentIndex >= newVisible.length) {
+    drawerCurrentIndex = newVisible.length - 1;
+    populateDrawer();
+  } else {
+    updateDrawerNavState();
+  }
 }
 
 // Inicializar Help Center cuando el contenido esté listo
 document.addEventListener("DOMContentLoaded", () => {
-  new HelpCenter();
+  helpCenterInstance = new HelpCenter();
+
+  const globalSearch = document.getElementById("globalSearch");
+
+  globalSearch.addEventListener("input", function() {
+    globalSearchFilter(this.value);
+  });
+
+  // Atajos de teclado
+  document.addEventListener("keydown", function(e) {
+    const inField = ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
+
+    // Ctrl+F → enfocar buscador
+    if (e.ctrlKey && e.key === "f") {
+      e.preventDefault();
+      globalSearch.focus();
+      globalSearch.select();
+      return;
+    }
+
+    // "/" → enfocar buscador (solo si no hay otro campo activo)
+    if (e.key === "/" && !inField) {
+      e.preventDefault();
+      globalSearch.focus();
+      globalSearch.select();
+      return;
+    }
+
+    // Escape → cerrar drawer, o limpiar buscador si está enfocado
+    if (e.key === "Escape") {
+      if (drawerCurrentIndex >= 0) { closeResponseDrawer(); return; }
+      if (document.activeElement === globalSearch) {
+        if (globalSearch.value) { globalSearch.value = ""; globalSearchFilter(""); }
+        else { globalSearch.blur(); }
+      }
+    }
+  });
+
+  // Inicializar tarjetas compactas
+  const RESPUESTAS_CARD_IDS = [
+    'daysMessage', 'falloSistema', 'modulosCapacitaciones',
+    'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
+    'pasoaPaso', 'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage'
+  ];
+  const PLANTILLAS_CARD_IDS = [
+    'facturacionElectronica', 'nominaElectronica', 'apiWhatsapp',
+    'solicitudCorreo', 'solicitudRecuperarEspecialista', 'solicitudCambioRazonSocial'
+  ];
+  initResponseCards(RESPUESTAS_CARD_IDS);
+  initResponseCards(PLANTILLAS_CARD_IDS);
+
+  // Inicializar saludo card + chips de variantes
+  saludoCard = document.getElementById('daysMessage')?.closest('.text-box') || null;
+  const variantsEl = document.getElementById('drawer-variants');
+  if (variantsEl && saludoCard) {
+    SALUDO_VARIANTES.forEach(({ label, value }) => {
+      const chip = document.createElement('button');
+      chip.className = 'saludo-chip' + (value === saludoVariante ? ' saludo-chip--active' : '');
+      chip.textContent = label;
+      chip.addEventListener('click', () => {
+        saludoVariante = value;
+        variantsEl.querySelectorAll('.saludo-chip').forEach(c => {
+          c.classList.toggle('saludo-chip--active', c.textContent === label);
+        });
+        const ta = drawerCardMap.get(saludoCard);
+        setDrawerContent(buildSaludoText(ta?.value || ''));
+        renderCardPreviews();
+      });
+      variantsEl.appendChild(chip);
+    });
+  }
+
+  // Listeners del drawer
+  document.getElementById('drawer-close').addEventListener('click', closeResponseDrawer);
+  document.getElementById('drawer-overlay').addEventListener('click', closeResponseDrawer);
+  document.getElementById('drawer-prev').addEventListener('click', () => navigateDrawer(-1));
+  document.getElementById('drawer-next').addEventListener('click', () => navigateDrawer(1));
+  document.getElementById('drawer-copy-btn').addEventListener('click', function() {
+    if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
+    const card = drawerVisibleCards[drawerCurrentIndex];
+    const textarea = drawerCardMap.get(card);
+    if (!textarea || !textarea.value) return;
+    const isSaludo = saludoCard && card === saludoCard;
+    const text = isSaludo ? buildSaludoText(textarea.value) : textarea.value;
+    const btn = this;
+    const copied = () => {
+      btn.innerHTML = '¡Copiado! ✅';
+      btn.disabled = true;
+      setTimeout(() => {
+        btn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+        btn.disabled = false;
+      }, 1500);
+    };
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text).then(copied).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        try { document.execCommand('copy'); copied(); } catch {}
+        document.body.removeChild(ta);
+      });
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      try { document.execCommand('copy'); copied(); } catch {}
+      document.body.removeChild(ta);
+    }
+  });
+
+  // Registrar service worker para PWA
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
 });
