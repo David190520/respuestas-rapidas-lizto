@@ -28,6 +28,7 @@
   --accent-dim: rgba(124, 92, 191, 0.12);
   --accent-border: rgba(124, 92, 191, 0.45);
   --accent-focus: rgba(124, 92, 191, 0.28);
+  --accent-subtle: rgba(124, 92, 191, 0.06);
 
   /* Radii */
   --radius-sm: 8px;   /* chrome: cards, botones, paneles, buscador */
@@ -66,6 +67,7 @@ body.light-mode {
   --accent-dim: rgba(124, 92, 191, 0.10);
   --accent-border: rgba(124, 92, 191, 0.38);
   --accent-focus: rgba(124, 92, 191, 0.18);
+  --accent-subtle: rgba(124, 92, 191, 0.06);
 
   /* Backward compat */
   --bg-color: #f0ecf7;
@@ -74,7 +76,7 @@ body.light-mode {
   --dark-color: #1a1220;
 
   /* Fondo con logo — override del body base */
-  background: linear-gradient(rgba(240, 236, 247, 0.78), rgba(240, 236, 247, 0.78)),
+  background: linear-gradient(rgba(240, 236, 247, 0.94), rgba(240, 236, 247, 0.94)),
     url(logo-removebg-preview.png);
   background-color: var(--bg-main);
   background-repeat: no-repeat;
@@ -93,7 +95,7 @@ body {
   font-family: poppins;
   min-width: 0;
   overflow-x: hidden;
-  background: linear-gradient(rgba(20, 15, 20, 0.6), rgba(20, 15, 20, 0.6)),
+  background: linear-gradient(rgba(20, 15, 20, 0.88), rgba(20, 15, 20, 0.88)),
     url(logo-removebg-preview.png);
   background-color: var(--bg-main);
   background-repeat: no-repeat;
@@ -215,7 +217,7 @@ label {
 #fechaReunionSelect:hover,
 #agenteReunion:hover,
 #horaReunionSelect:hover {
-  border-color: var(--border-strong);
+  border-color: var(--accent-border);
 }
 
 #fechaReunionSelect:focus,
@@ -376,6 +378,10 @@ textarea:focus {
   label[for="userInput"] {
     margin-right: 15px; /* Espacio a la derecha del label */
     margin-bottom: 10px; /* Si el label está arriba del input */
+  }
+
+  .input-container label {
+    top: -15px;
   }
 
   #toggleBrillo {
@@ -586,6 +592,16 @@ textarea:focus {
 
 .tab-content.active {
   display: block;
+  animation: tab-fade-in 240ms ease-out both;
+}
+
+@keyframes tab-fade-in {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-content.active { animation: none; }
 }
 
 /* ============= REUNION BOX ============= */
@@ -759,7 +775,7 @@ textarea:focus {
 }
 
 .help-item:hover {
-  background: rgba(124, 92, 191, 0.06);
+  background: var(--accent-subtle);
   color: var(--text-primary);
   border-left-color: var(--accent-border);
 }
@@ -1107,7 +1123,7 @@ textarea:focus {
 
   .input-container label {
     font-size: 13px;
-    top: -8px;
+    top: -13px;
   }
 
   .input {
@@ -1160,17 +1176,103 @@ textarea:focus {
   }
 }
 
+/* ============= ATAJOS TAB ============= */
+
+.atajos-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 24px;
+  padding: 20px;
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto 50px;
+}
+
+.atajo-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 20px 16px;
+  background: var(--bg-surface);
+  text-align: center;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.atajo-card:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.atajo-card h3 {
+  height: auto;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  justify-content: center;
+}
+
+.atajo-open-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: poppins;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.atajo-open-btn:hover {
+  background: var(--accent-focus);
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+@media screen and (max-width: 1200px) {
+  .atajos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    width: 95%;
+    gap: 20px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .atajos-grid {
+    grid-template-columns: 1fr;
+    width: 100%;
+    padding: 0 10px;
+    gap: 15px;
+  }
+}
+
 /* ============= RESPONSE CARDS (Respuestas y Plantillas) ============= */
 
 .response-card {
   cursor: pointer;
-  transition: background-color 150ms ease, border-color 150ms ease;
+  position: relative;
+  transition: background-color 150ms ease-out, border-color 150ms ease-out,
+              transform 150ms ease-out, box-shadow 150ms ease-out;
   min-height: 0;
 }
 
 .response-card:hover {
-  background: rgba(124, 92, 191, 0.06);
+  background: var(--accent-subtle);
   border-color: var(--accent-border);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 2;
 }
 
 .response-card:focus-visible {
@@ -1187,7 +1289,7 @@ textarea:focus {
   height: auto;
   margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   justify-content: flex-start;
   flex: 1;
 }
@@ -1260,7 +1362,7 @@ textarea:focus {
 .card-preview {
   margin: 0;
   font-size: 12px;
-  color: var(--text-muted);
+  color: rgba(255, 255, 255, 0.55);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1532,6 +1634,200 @@ textarea:focus {
   }
 }
 
+/* ============= DENSITY TOGGLE BAR ============= */
+
+.density-bar {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto 8px;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.density-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.density-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-color: var(--border-strong);
+}
+
+.density-btn--active {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+@media screen and (max-width: 1200px) {
+  .density-bar { width: 95%; padding: 0; }
+}
+
+@media screen and (max-width: 768px) {
+  .density-bar { width: 100%; padding: 0 10px; }
+}
+
+/* ============= SPECIAL CARDS (siempre al final, siempre full-width en grid) ============= */
+
+.text-box.special-card {
+  order: 10;
+  grid-column: 1 / -1;
+}
+
+/* ============= SPECIAL CARDS: LAYOUT INTERNO ============= */
+
+/* h3 en special cards: auto height, alineado a la izquierda */
+.text-box.special-card > h3 {
+  height: auto;
+  justify-content: flex-start;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+/* linkPago y pasoaPaso: textarea a la izquierda, controls a la derecha */
+.special-card-body {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.special-card-body .text-field {
+  flex: 3;
+  max-height: 110px;
+}
+
+.special-card-controls {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.special-card-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.special-card-link-row label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+/* Override de .input para los campos de link dentro de special cards */
+.special-card .special-card-controls .special-card-link-input {
+  margin: 0;
+  max-width: none;
+  width: 100%;
+  flex: 1;
+  text-align: left;
+  padding: 10px 12px;
+}
+
+/* reunionBox: selects horizontales arriba, textarea abajo */
+.reunion-box.special-card .reunion-flex {
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reunion-box.special-card .reunion-selects {
+  flex-direction: row;
+  flex-wrap: nowrap;
+  min-width: 0;
+  width: 100%;
+}
+
+.reunion-box.special-card .reunion-select-row {
+  flex: 1;
+  min-width: 0;
+}
+
+.reunion-box.special-card .reunion-textarea-col {
+  width: 100%;
+}
+
+/* Mobile: revertir a layout columna */
+@media screen and (max-width: 768px) {
+  .special-card-body {
+    flex-direction: column;
+  }
+
+  .reunion-box.special-card .reunion-selects {
+    flex-direction: column;
+  }
+}
+
+/* ============= COMPACT MODE (solo tab Respuestas) ============= */
+
+.text-fields.compact-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 20px;
+}
+
+.text-fields.compact-mode .response-card {
+  flex-direction: row;
+  align-items: center;
+  padding: 10px 14px;
+  gap: 12px;
+}
+
+.text-fields.compact-mode .response-card .card-header {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.text-fields.compact-mode .response-card h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.text-fields.compact-mode .response-card .card-view-btn {
+  display: none;
+}
+
+.text-fields.compact-mode .response-card .card-preview {
+  display: none;
+}
+
+.text-fields.compact-mode .response-card .card-copy-btn {
+  margin-top: 0;
+  width: auto;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.text-fields.compact-mode .text-box.special-card {
+  margin-top: 14px;
+}
+
 /* ============= LIGHT MODE: COMPONENT OVERRIDES ============= */
 
 /* Inputs — efecto sutil de focus en modo claro */
@@ -1641,4 +1937,18 @@ body.light-mode .drawer-close-btn:hover {
 
 body.light-mode .drawer-overlay {
   background: rgba(60, 40, 80, 0.35);
+}
+
+body.light-mode .density-btn:hover {
+  background: rgba(26, 18, 32, 0.06);
+}
+
+/* Card preview — contraste AA sobre fondo claro */
+body.light-mode .card-preview {
+  color: rgba(26, 18, 32, 0.68);
+}
+
+/* Response card hover — sombra más suave sobre fondo claro */
+body.light-mode .response-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.10);
 }

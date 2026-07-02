@@ -16,8 +16,14 @@ const SALUDO_VARIANTES = [
 
 function buildSaludoText(base) {
   if (!saludoVariante || !base) return base;
-  return base + '\n' + saludoVariante;
+  return base + ' ' + saludoVariante;
 }
+
+const EXTERNAL_LINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
+
+const atajos = [
+  { nombre: "Divisor de archivos", url: "https://tecnologysmith.github.io/Dividir_archivo/" },
+];
 
 // ============= DATOS DE AGENTES Y HORARIOS =============
 
@@ -68,11 +74,13 @@ function addUserText(message) {
 
 function updateMessages() {
   const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
+  const userInput = document.getElementById("userInput").value.trim();
+  const hola = userInput ? `Hola ${userInput},` : 'Hola,';
 
   document.getElementById("daysMessage").value =
-    "Hola, muy buen día, ¿cómo estás? Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎.";
+    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
   document.getElementById("falloSistema").value =
-    "Hola, muy buen día. Hablas con " + agentInput + ", del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.";
+    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
   document.getElementById("modulosCapacitaciones").value = 
     addUserText("Buen día, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
   document.getElementById("validarPagoMessage").value = 
@@ -80,15 +88,14 @@ function updateMessages() {
   document.getElementById("pagoGraciasMessage").value = 
     addUserText("Me puedes indicar por favor el número de NIT del negocio para validar con el área contable 😊");
   document.getElementById("solicitarLinkMessage").value = 
-    addUserText("Buen día ¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
-  document.getElementById("pasoaPaso").value =
-    "En este paso a paso 💡 te mostramos cómo puedes hacerlo, si tienes alguna duda me comentas por favor";
+    addUserText("Buen día, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
+  updatePasoaPasoMessage();
   document.getElementById("demorasDIAN").value =
-    addUserText(" ¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀");
+    addUserText("¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀");
   document.getElementById("casoEscalado").value =
     "Te confirmo que ya hemos escalado tu caso a nuestro equipo especializado para que puedan ayudarnos lo más pronto posible. En cuanto tengamos una respuesta concreta, nos comunicaremos contigo para informarte sobre ello. Agradecemos tu paciencia y comprensión mientras trabajamos en la solución de tu caso 😊";
     document.getElementById("algoMas").value =
-    "Con muchísimo gusto, ¿hay algo más en lo que te podamos colaborar? 😁";
+    "Con mucho gusto, ¿la solución brindada fue de ayuda para ti? 😁";
   document.getElementById("despedidaMessage").value =
     "Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉";
   document.getElementById("facturacionElectronica").value =
@@ -97,12 +104,16 @@ function updateMessages() {
     "La nómina electrónica es uno de los documentos digitales que puedes gestionar a través de Lizto. Este proceso está regulado por la DIAN y permite emitir o respaldar electrónicamente los pagos de salario a tus empleados. Para utilizar la nómina electrónica en Lizto, es necesario contratar un plan de facturación electrónica que incluya el módulo de Nómina Electrónica, actualmente este tiene un valor de $30,900 COP mensuales."
   document.getElementById("apiWhatsapp").value =
     "Si deseas integrar el API de WhatsApp con Lizto, es importante que tengas en cuenta que este proceso se realiza directamente con Meta (Facebook), y requiere cumplir ciertos requisitos para garantizar la autenticidad y seguridad del negocio.\nAquí te comparto los puntos más importantes:\n\n1. Fanpage activa: Debes contar con una página de Facebook para tu negocio, que tenga actividad e interacciones reales (por ejemplo: publicaciones, comentarios, likes, reseñas).\n\n 2. Dominio web propio: Se recomienda tener un sitio web con un dominio que represente el nombre de tu negocio (por ejemplo: www.tusalon.com), ya que esto facilita la verificación del negocio ante Meta.\n\n 3. Documentos legales: Meta pedirá validar los datos legales del negocio, por lo que debes contar con documentos como el RUT, Cámara de Comercio o equivalente, donde el nombre coincida con el registrado en tu cuenta empresarial de Facebook.\n\n 4. Número exclusivo para el API: El número de WhatsApp que vas a usar en la integración no debe estar vinculado a ninguna cuenta de WhatsApp (ni personal ni Business). Este número se asociará únicamente al canal de mensajería empresarial y no podrá usarse de forma tradicional una vez quede vinculado.\n\n 5. Capacidad de recibir llamadas o SMS: El número debe poder recibir llamadas o mensajes de texto para completar la verificación con código.\n\nSi cumples con estos puntos, podemos ayudarte a iniciar el proceso junto con nuestro equipo de soporte. Una vez aprobado, podrás enviar notificaciones a tus clientes por WhatsApp de forma automática desde Lizto."
+  document.getElementById("whatsappLITE").value =
+    "Este comportamiento es normal. Debido a una actualización de WhatsApp, es necesario volver a escanear el código QR aproximadamente cada 14 días para mantener la conexión activa.\nPor favor, ingresa al módulo de WhatsApp LITE en Lizto y escanea nuevamente el código QR. Una vez realizado, la conexión quedará restablecida.\nQuedamos atentos si necesitas ayuda durante el proceso. 😊"
   document.getElementById("solicitudCorreo").value =
-    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos:\n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud [motivo de la solicitud]\n\nEjemplo: Solicitud cambio de razón social"
+    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos:\n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud [motivo de la solicitud]\n\nEjemplo: Solicitud modificación de datos."
   document.getElementById("solicitudRecuperarEspecialista").value =
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre del especialista eliminado: \nCorreo electrónico del especialista: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud recuperar especialista [nombre del negocio]"
   document.getElementById("solicitudCambioRazonSocial").value =
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
+  document.getElementById("solicitudIdSetPruebas").value =
+  "Buen día.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias."
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
   renderCardPreviews();
@@ -110,6 +121,15 @@ function updateMessages() {
   // Re-aplicar búsqueda global si está activa (los textareas cambiaron)
   const _gs = document.getElementById("globalSearch");
   if (_gs && _gs.value) globalSearchFilter(_gs.value);
+}
+
+// Función para actualizar el mensaje de paso a paso con el enlace
+function updatePasoaPasoMessage() {
+  const enlace = document.getElementById("enlacePasoaPaso").value.trim();
+  const mensaje = enlace
+    ? `En este paso a paso 💡 te mostramos cómo puedes hacerlo:\n${enlace}\nSi tienes alguna duda me comentas por favor 😊`
+    : "En este paso a paso 💡 te mostramos cómo puedes hacerlo, si tienes alguna duda me comentas por favor";
+  document.getElementById("pasoaPaso").value = mensaje;
 }
 
 // Función para actualizar el mensaje de pago con el enlace
@@ -198,6 +218,9 @@ document.getElementById("agentInput").addEventListener("input", function() {
 
 // Listener para el enlace de pago
 document.getElementById("enlacePago").addEventListener("input", updateLinkPagoMessage);
+
+// Listener para el enlace de paso a paso
+document.getElementById("enlacePasoaPaso").addEventListener("input", updatePasoaPasoMessage);
 
 // Listeners para la reunión
 document.getElementById("agenteReunion").addEventListener("change", function() {
@@ -297,6 +320,27 @@ document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
   });
 });
 
+// ============= DENSIDAD DE VISTA =============
+
+let densityMode = 'normal';
+
+function applyDensity(mode) {
+  densityMode = mode;
+  const textFields = document.querySelector('#respuestas .text-fields');
+  if (textFields) textFields.classList.toggle('compact-mode', mode === 'compact');
+
+  const btnNormal = document.getElementById('densityNormal');
+  const btnCompact = document.getElementById('densityCompact');
+  if (btnNormal) {
+    btnNormal.classList.toggle('density-btn--active', mode === 'normal');
+    btnNormal.setAttribute('aria-pressed', String(mode === 'normal'));
+  }
+  if (btnCompact) {
+    btnCompact.classList.toggle('density-btn--active', mode === 'compact');
+    btnCompact.setAttribute('aria-pressed', String(mode === 'compact'));
+  }
+}
+
 // ============= BUSCADOR GLOBAL =============
 
 let helpCenterInstance;
@@ -315,7 +359,8 @@ function updateTabBadge(badgeId, count, isSearching) {
 }
 
 function showNoResults(tabId, show) {
-  const textFields = document.querySelector(`#${tabId} .text-fields`);
+  const textFields = document.querySelector(`#${tabId} .text-fields`) ||
+                     document.querySelector(`#${tabId} .atajos-grid`);
   if (!textFields) return;
   let el = document.getElementById(`no-results-${tabId}`);
   if (!el) {
@@ -326,6 +371,25 @@ function showNoResults(tabId, show) {
     textFields.appendChild(el);
   }
   el.style.display = show ? "block" : "none";
+}
+
+function renderAtajos() {
+  const grid = document.getElementById('atajos')?.querySelector('.atajos-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  atajos.forEach(({ nombre, url }) => {
+    const card = document.createElement('div');
+    card.className = 'atajo-card';
+    card.dataset.nombre = nombre.toLowerCase();
+    card.innerHTML = `
+      <h3>${nombre}</h3>
+      <a href="${url}" target="_blank" rel="noopener noreferrer" class="atajo-open-btn">
+        ${EXTERNAL_LINK_SVG}
+        Abrir
+      </a>
+    `;
+    grid.appendChild(card);
+  });
 }
 
 function globalSearchFilter(query) {
@@ -360,10 +424,21 @@ function globalSearchFilter(query) {
   let pasoCount = 0;
   if (helpCenterInstance) pasoCount = helpCenterInstance.applySearch(q);
 
+  // Atajos
+  const atajosCards = document.querySelectorAll("#atajos .atajo-card");
+  let atajosCount = 0;
+  atajosCards.forEach(card => {
+    const match = !isSearching || (card.dataset.nombre || '').includes(q);
+    card.style.display = match ? "" : "none";
+    if (match) atajosCount++;
+  });
+  showNoResults("atajos", isSearching && atajosCount === 0);
+
   // Badges
-  updateTabBadge("badge-respuestas", respCount, isSearching);
-  updateTabBadge("badge-plantillas", plantCount, isSearching);
-  updateTabBadge("badge-pasoPaso",   pasoCount,  isSearching);
+  updateTabBadge("badge-respuestas", respCount,   isSearching);
+  updateTabBadge("badge-plantillas", plantCount,  isSearching);
+  updateTabBadge("badge-pasoPaso",   pasoCount,   isSearching);
+  updateTabBadge("badge-atajos",     atajosCount, isSearching);
   updateDrawerAfterSearch();
 }
 
@@ -959,14 +1034,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const RESPUESTAS_CARD_IDS = [
     'daysMessage', 'falloSistema', 'modulosCapacitaciones',
     'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
-    'pasoaPaso', 'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage'
+    'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage'
   ];
   const PLANTILLAS_CARD_IDS = [
-    'facturacionElectronica', 'nominaElectronica', 'apiWhatsapp',
-    'solicitudCorreo', 'solicitudRecuperarEspecialista', 'solicitudCambioRazonSocial'
+    'facturacionElectronica', 'nominaElectronica', 'apiWhatsapp', 'whatsappLITE',
+    'solicitudCorreo', 'solicitudRecuperarEspecialista', 'solicitudCambioRazonSocial', 'solicitudIdSetPruebas'
   ];
   initResponseCards(RESPUESTAS_CARD_IDS);
   initResponseCards(PLANTILLAS_CARD_IDS);
+  renderAtajos();
 
   // Inicializar saludo card + chips de variantes
   saludoCard = document.getElementById('daysMessage')?.closest('.text-box') || null;
@@ -988,6 +1064,10 @@ document.addEventListener("DOMContentLoaded", () => {
       variantsEl.appendChild(chip);
     });
   }
+
+  // Listeners del toggle de densidad
+  document.getElementById('densityNormal')?.addEventListener('click', () => applyDensity('normal'));
+  document.getElementById('densityCompact')?.addEventListener('click', () => applyDensity('compact'));
 
   // Listeners del drawer
   document.getElementById('drawer-close').addEventListener('click', closeResponseDrawer);
