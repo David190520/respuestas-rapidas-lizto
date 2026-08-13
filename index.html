@@ -57,6 +57,7 @@
         <button class="tab-button active" data-tab="respuestas">Respuestas<span class="tab-badge" id="badge-respuestas"></span></button>
         <button class="tab-button" data-tab="plantillas">Plantillas<span class="tab-badge" id="badge-plantillas"></span></button>
         <button class="tab-button" data-tab="pasoPaso">Paso a paso<span class="tab-badge" id="badge-pasoPaso"></span></button>
+        <button class="tab-button" data-tab="diagnostico">Diagnóstico<span class="tab-badge" id="badge-diagnostico"></span></button>
         <button class="tab-button" data-tab="atajos">Atajos<span class="tab-badge" id="badge-atajos"></span></button>
       </div>
 
@@ -148,42 +149,6 @@
             </svg>
           </button>
         </div>
-        <div class="text-box special-card">
-          <h3>Puede realizar el pago</h3>
-          <div class="special-card-body">
-            <textarea id="linkPago" class="text-field" readonly></textarea>
-            <div class="special-card-controls">
-              <div class="special-card-link-row">
-                <label for="enlacePago">Link:</label>
-                <input type="text" id="enlacePago" class="input special-card-link-input" placeholder="https://..." />
-              </div>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="text-box special-card">
-          <h3>Paso a paso</h3>
-          <div class="special-card-body">
-            <textarea id="pasoaPaso" class="text-field" readonly></textarea>
-            <div class="special-card-controls">
-              <div class="special-card-link-row">
-                <label for="enlacePasoaPaso">Link:</label>
-                <input type="text" id="enlacePasoaPaso" class="input special-card-link-input" placeholder="https://..." />
-              </div>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
         <div class="text-box">
           <h3>Demoras DIAN</h3>
           <textarea
@@ -236,40 +201,79 @@
             </svg>
           </button>
         </div>
-        <div class="text-box reunion-box special-card">
-          <h3>Enlace para reunión</h3>
-          <div class="reunion-flex">
-            <div class="reunion-selects">
-              <div class="reunion-select-row">
-                <label for="fechaReunionSelect" class="reunion-label">Fecha:</label>
-                <select id="fechaReunionSelect">
-                  <option value="">Selecciona una fecha</option>
-                </select>
-              </div>
-              <div class="reunion-select-row">
-                <label for="agenteReunion" class="reunion-label">Agente:</label>
-                <select id="agenteReunion">
-                  <option value="">Selecciona un agente</option>
-                  <option value="yeison">Yeison</option>
-                  <option value="paola">Paola</option>
-                  <option value="backup">Backup</option>
-                </select>
-              </div>
-              <div class="reunion-select-row">
-                <label for="horaReunionSelect" class="reunion-label">Hora:</label>
-                <select id="horaReunionSelect">
-                  <option value="">Selecciona una hora</option>
-                </select>
+        <!-- Special cards: contenedor propio con grilla interna, siempre al final -->
+        <div class="special-cards-container">
+          <div class="text-box special-card">
+            <h3>Puede realizar el pago</h3>
+            <div class="special-card-body">
+              <textarea id="linkPago" class="text-field" readonly></textarea>
+              <div class="special-card-controls">
+                <div class="special-card-link-row">
+                  <label for="enlacePago">Link:</label>
+                  <input type="text" id="enlacePago" class="input special-card-link-input" placeholder="https://..." />
+                </div>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
               </div>
             </div>
-            <div class="reunion-textarea-col">
-              <textarea id="linkReunionMessage" class="text-field" readonly></textarea>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
+          </div>
+          <div class="text-box special-card">
+            <h3>Paso a paso</h3>
+            <div class="special-card-body">
+              <textarea id="pasoaPaso" class="text-field" readonly></textarea>
+              <div class="special-card-controls">
+                <div class="special-card-link-row">
+                  <label for="enlacePasoaPaso">Link:</label>
+                  <input type="text" id="enlacePasoaPaso" class="input special-card-link-input" placeholder="https://..." />
+                </div>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="text-box reunion-box special-card">
+            <h3>Enlace para reunión</h3>
+            <div class="reunion-flex">
+              <div class="reunion-selects">
+                <div class="reunion-select-row">
+                  <label for="fechaReunionSelect" class="reunion-label">Fecha:</label>
+                  <select id="fechaReunionSelect">
+                    <option value="">Selecciona una fecha</option>
+                  </select>
+                </div>
+                <div class="reunion-select-row">
+                  <label for="agenteReunion" class="reunion-label">Agente:</label>
+                  <select id="agenteReunion">
+                    <option value="">Selecciona un agente</option>
+                    <option value="yeison">Yeison</option>
+                    <option value="paola">Paola</option>
+                    <option value="backup">Backup</option>
+                  </select>
+                </div>
+                <div class="reunion-select-row">
+                  <label for="horaReunionSelect" class="reunion-label">Hora:</label>
+                  <select id="horaReunionSelect">
+                    <option value="">Selecciona una hora</option>
+                  </select>
+                </div>
+              </div>
+              <div class="reunion-textarea-col">
+                <textarea id="linkReunionMessage" class="text-field" readonly></textarea>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -408,6 +412,67 @@
                 </button>
               </div>
               <div id="help-article-content" class="help-body"></div>
+            </article>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div id="diagnostico" class="tab-content">
+      <div class="help-center">
+        <!-- Sidebar: nivel 1 (categorías) / nivel 2 (casos de la categoría) -->
+        <aside class="help-sidebar">
+          <div class="help-search-container">
+            <input
+              type="text"
+              id="diag-search-input"
+              placeholder="Buscar en diagnóstico..."
+              class="help-search-input"
+            />
+            <svg class="help-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+          </div>
+
+          <button id="diag-breadcrumb" class="help-breadcrumb" style="display: none;">
+            <span aria-hidden="true">←</span>
+            <span>Volver a categorías</span>
+          </button>
+
+          <div id="diag-items-list" class="help-items-list">
+            <div class="help-loading">Cargando categorías...</div>
+          </div>
+        </aside>
+
+        <!-- Panel de contenido: nivel 3 -->
+        <main class="help-content">
+          <button id="diag-back-btn" class="help-back-btn" aria-label="Volver a la lista de casos">← Volver</button>
+          <div id="diag-content-empty" class="help-content-empty">
+            <div class="empty-state">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.5">
+                <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              </svg>
+              <p id="diag-empty-text">Selecciona una categoría para ver los casos disponibles</p>
+            </div>
+          </div>
+
+          <div id="diag-content-display" class="help-content-display" style="display: none;">
+            <article class="help-article">
+              <div class="help-header">
+                <div class="help-title-group">
+                  <span id="diag-article-category" class="help-eyebrow"></span>
+                  <h2 id="diag-article-title" class="help-title"></h2>
+                </div>
+                <button id="diag-copy-btn" class="help-copy-btn" title="Copiar contenido">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span class="copy-feedback" id="diag-copy-feedback">Copiar</span>
+                </button>
+              </div>
+              <div id="diag-article-content" class="help-body"></div>
             </article>
           </div>
         </main>

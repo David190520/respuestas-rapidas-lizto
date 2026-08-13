@@ -1,12 +1,16 @@
 {
+  "id": "./",
   "name": "Respuestas Rápidas Lizto",
   "short_name": "Respuestas",
   "description": "Herramienta de respuestas rápidas para agentes de soporte de Lizto Software",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#140f14",
   "theme_color": "#7c5cbf",
   "lang": "es",
+  "dir": "ltr",
+  "categories": ["productivity", "business"],
   "icons": [
     {
       "src": "icon.svg",

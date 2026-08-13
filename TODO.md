@@ -3,195 +3,204 @@
 Tareas de mejora ordenadas por prioridad. Cada ítem está redactado para
 pasárselo directamente a Claude Code con el contexto necesario.
 
+> Al terminar una tarea: moverla a **✅ Completadas** (al final de este archivo)
+> y agregar la entrada correspondiente en `CHANGELOG.md`. Ver "Proceso de
+> documentación permanente" en `CLAUDE.md`.
+
+---
+
+## 🔨 En curso
+
+### TODO-13 — Terminar y commitear el tab de Diagnóstico
+
+**Estado:** implementado en la rama `david-implement-checklist-tab`, sin commitear.
+
+Cambios sin commitear en `index.html`, `index.js`, `style.css` y `sw.js`:
+clase `DiagnosticoCenter`, drawer compartido, modo compacto y chips de
+variantes del saludo.
+
+**Pendiente:**
+
+- Verificar que el Apps Script desplegado responde a `?hoja=diagnostico` con
+  columnas `categoria`, `subtitulo`, `contenido` (si no, el tab muestra
+  "Aún no hay casos de diagnóstico disponibles").
+- Commitear y abrir PR.
+- Renombrar la rama o el PR: se llama `checklist-tab` pero lo que entrega es
+  el tab de **Diagnóstico**.
+
 ---
 
 ## 🔴 Alta prioridad
 
-### TODO-01 — Persistir nombre del agente con localStorage
+### TODO-10 — Chips de filtro por categoría en Respuestas y Plantillas
 
-**Objetivo:** que el agente no tenga que escribir su nombre cada vez que
-recarga la página.
-
-**Comportamiento esperado:**
-
-- Al escribir en el campo `#agentInput`, guardar el valor en
-  `localStorage` con la clave `"lizto_agent_name"`.
-- Al cargar la página, leer `localStorage.getItem("lizto_agent_name")` y
-  si existe, pre-llenar `#agentInput` con ese valor y llamar a
-  `updateMessages()` automáticamente para que los textareas ya aparezcan
-  con el nombre correcto.
-- Lo mismo para `#clientInput` con la clave `"lizto_client_name"`.
-
-**Archivos a modificar:** `index.js`
-
----
-
-### TODO-02 — Confirmación visual en botón copiar
-
-**Objetivo:** dar feedback claro al agente de que el texto fue copiado.
+**Objetivo:** filtrar tarjetas por categoría sin tener que escribir en el buscador.
 
 **Comportamiento esperado:**
 
-- Al hacer clic en cualquier botón copiar (`.copy-btn`), cambiar su
-  ícono/texto a un ✅ o mostrar el texto "¡Copiado!" por 1.5 segundos.
-- Después de 1.5s, volver al estado original (ícono de portapapeles).
-- Mientras está en estado "copiado", deshabilitar el botón para evitar
-  doble clic.
-- Aplicar a TODOS los botones copiar del sitio (Respuestas, Plantillas
-  y Paso a paso).
+- Agregar una propiedad `categoria` a cada respuesta/plantilla. Hoy los textos
+  son strings sueltos asignados por ID dentro de `updateMessages()`; requiere
+  primero pasarlos a un array de objetos
+  (`{ id, titulo, categoria, texto }`) sin cambiar el markup existente.
+- Generar los chips dinámicamente a partir de las categorías únicas (no
+  hardcodear la lista de chips).
+- Un chip activo filtra las tarjetas del tab; "Todas" limpia el filtro.
+- El filtro por chip y el buscador global deben **combinarse**, no pisarse:
+  si hay chip activo y texto de búsqueda, se aplican los dos.
+- Los badges de conteo por tab deben reflejar el resultado combinado.
 
-**Archivos a modificar:** `index.js`, posiblemente `styles.css`
+**Archivos a modificar:** `index.js`, `index.html`, `style.css`
 
 ---
 
-### TODO-03 — Buscador global (las 3 tabs)
+### TODO-12 — Eliminar los IDs duplicados `copiarBtn`
 
-**Objetivo:** un solo input de búsqueda que filtre contenido en las tres
-tabs simultáneamente.
+**Objetivo:** corregir HTML inválido y quitar deuda técnica.
+
+**Problema:** hay ~20 botones con `id="copiarBtn"` en `index.html`. Los IDs
+deben ser únicos; el código funciona de casualidad porque usa
+`querySelectorAll('button#copiarBtn')`.
 
 **Comportamiento esperado:**
 
-- Agregar un input de búsqueda global visible siempre (no dentro de una
-  tab específica), con placeholder "Buscar en respuestas, plantillas,
-  artículos...".
-- Al escribir, filtrar en tiempo real:
-  - Tab **Respuestas**: ocultar tarjetas cuyo título o texto no contenga
-    el término (búsqueda case-insensitive).
-  - Tab **Plantillas**: igual.
-  - Tab **Paso a paso**: ya tiene buscador propio, integrarlo o
-    reemplazarlo con este buscador global.
-- Si hay resultados en múltiples tabs, mostrar un indicador en cada tab
-  con la cantidad de coincidencias (ej: badge "3" sobre la pestaña).
-- Si el buscador está vacío, mostrar todo normalmente.
-- Mantener el buscador existente de Paso a paso o eliminarlo si el
-  global lo reemplaza completamente.
+- Reemplazar `id="copiarBtn"` por `class="copy-btn"` en todos los botones.
+- Actualizar el selector de `index.js` y las reglas `#copiarBtn` de
+  `style.css` (`#copiarBtn`, `#copiarBtn:hover`, `#copiarBtn:disabled`).
+- Verificar que `initResponseCards()` sigue ocultando el botón original
+  (hoy lo busca con `card.querySelector('button[id="copiarBtn"]')`).
+- No debe cambiar nada visualmente ni en el comportamiento de copiado.
 
-**Archivos a modificar:** `index.html`, `index.js`, `styles.css`
-
----
-
-### TODO-04 — Atajos de teclado
-
-**Objetivo:** mejorar la velocidad de uso para agentes de teclado.
-
-**Atajos a implementar:**
-
-- `/` o `Ctrl+F` → enfocar el buscador global (TODO-03 debe estar hecho
-  primero). Prevenir el comportamiento por defecto del navegador para `/`.
-- `Escape` → limpiar el buscador si tiene texto, o cerrarlo si está
-  enfocado.
-- Mostrar un tooltip o hint visual pequeño junto al buscador indicando
-  el atajo disponible (ej: texto muted "/ para buscar").
-
-**Archivos a modificar:** `index.js`
-
----
-
-### TODO-05 — Formatear vista previa de Paso a paso (sin afectar texto copiado)
-
-**Objetivo:** mejorar la legibilidad visual de los artículos de paso a paso
-en el panel de detalle. El texto copiado al portapapeles debe seguir siendo
-texto plano idéntico al de Google Sheets.
-
-**Transformaciones visuales SOLO para la vista previa (no para el texto copiado):**
-
-- Líneas que empiecen con número + punto o paréntesis (`1.`, `2.`, `1)`)
-  → renderizar como `<ol><li>` en la preview.
-- Líneas que empiecen con `⚠️ Importante:` → envolverlas en un
-  `<div class="callout-importante">` con borde izquierdo y fondo sutil.
-- Líneas que empiecen con `- ` o `• ` → renderizar como `<ul><li>`.
-- URLs en el texto → convertirlas en `<a href="..." target="_blank">` clicables.
-
-**Implementación sugerida:**
-
-- Crear una función `formatearContenidoPasoAPaso(textoPlano)` que devuelva
-  HTML enriquecido para la vista previa.
-- El botón copiar de Paso a paso debe seguir copiando `elemento.dataset.textoPlano`
-  (guardar el texto original en un data attribute), NO el innerHTML.
-
-**Archivos a modificar:** `index.js`, `styles.css`
+**Archivos a modificar:** `index.html`, `index.js`, `style.css`
 
 ---
 
 ## 🟡 Prioridad media
 
-### TODO-06 — Reemplazar botón "Activar Brillo" por ícono sol/luna
+### TODO-14 — Renombrar `logo-removebg-preview.png`
 
-**Objetivo:** toggle de dark/light mode estándar e intuitivo.
+**Objetivo:** nombre descriptivo en vez del nombre que dejó la herramienta de
+edición de imágenes.
 
 **Comportamiento esperado:**
 
-- Eliminar el botón de texto "Activar Brillo" de su posición actual.
-- Agregar un botón con ícono SVG de sol (☀️ en SVG inline, no emoji) en
-  modo oscuro, y luna (🌙 en SVG inline) en modo claro.
-- Ubicarlo en la esquina superior derecha del header, de forma fija.
-- El ícono debe cambiar suavemente con una pequeña transición al hacer clic.
-- Mantener la funcionalidad exacta del toggle actual, solo cambiar la UI.
-- Agregar `title="Cambiar tema"` y `aria-label` apropiado para accesibilidad.
+- `git mv logo-removebg-preview.png logo-watermark.png`.
+- Actualizar las 2 referencias en `style.css` (regla `body` y `body.light-mode`).
+- Actualizar `STATIC_ASSETS` en `sw.js` y subir `CACHE_NAME`.
+- Actualizar la mención en `CLAUDE.md` y `README.md`.
 
-**Archivos a modificar:** `index.html`, `index.js`, `styles.css`
+**Archivos a modificar:** `style.css`, `sw.js`, `CLAUDE.md`, `README.md`
 
 ---
 
-### TODO-07 — Hacer la página completamente responsive (móvil y tablet)
+### TODO-15 — Unificar el favicon con el ícono de la PWA
 
-**Objetivo:** que la herramienta funcione bien en pantallas desde 375px
-(móvil) hasta 1440px+ (escritorio).
+**Objetivo:** que la pestaña del navegador y la app instalada muestren el mismo ícono.
 
-**Problemas actuales conocidos:**
+**Problema:** `index.html` embebe un favicon `data:image/x-icon;base64` heredado
+que no tiene relación con `icon.svg`, que es el que usa `manifest.json`.
 
-- Las tarjetas de Respuestas y Plantillas no se adaptan bien en pantallas
-  pequeñas.
-- Los campos de nombre del agente/cliente pueden quedar fuera de pantalla
-  o muy ajustados.
-- El layout de dos columnas del tab Paso a paso (sidebar + detalle) colapsa
-  mal en móvil.
-- El header y tabs pueden desbordarse horizontalmente.
+**Comportamiento esperado:**
 
-**Comportamiento esperado en móvil (< 768px):**
+- Reemplazar el `<link rel="icon">` base64 por `<link rel="icon" type="image/svg+xml" href="icon.svg">`.
+- Verificar que se ve bien en pestaña clara y oscura.
 
-- Tarjetas en columna única (1 por fila).
-- En Paso a paso: la lista de artículos ocupa el 100% del ancho, al hacer
-  clic en uno se muestra el detalle (ocultar lista, mostrar detalle con botón
-  "← Volver").
-- Inputs de nombre en layout vertical (uno debajo del otro).
-- Tabs con texto más corto o solo íconos si no caben.
-- Touch targets mínimo 44x44px para todos los botones.
+**Archivos a modificar:** `index.html`
 
-**Archivos a modificar:** `styles.css`, posiblemente `index.html` e `index.js`
-para la lógica del Paso a paso en móvil.
+---
+
+### TODO-16 — Persistir tema y densidad (requiere aprobación)
+
+**Objetivo:** que el agente no tenga que volver a activar modo claro o vista
+compacta en cada recarga.
+
+**Nota:** `CLAUDE.md` restringe el uso de `localStorage` a `lizto_agent_name` y
+`lizto_client_name`. **Acordar antes de implementar.**
+
+**Comportamiento esperado (si se aprueba):**
+
+- Guardar el tema en `lizto_theme` (`"dark"` | `"light"`) y aplicarlo antes del
+  primer render para evitar el parpadeo de modo oscuro → claro.
+- Guardar la densidad en `lizto_density` (`"normal"` | `"compact"`) y aplicarla
+  al iniciar.
+- El estado inicial sin valor guardado sigue siendo oscuro + normal.
+
+**Archivos a modificar:** `index.js`
 
 ---
 
 ## 🟢 Prioridad baja
 
-### TODO-09 — PWA: instalar como app de escritorio
+### TODO-17 — Fallback offline para navegación en el service worker
 
-**Objetivo:** que los agentes puedan instalar la herramienta como app nativa
-desde Chrome, sin barra de navegador.
+**Objetivo:** que la PWA instalada no muestre la pantalla de error del navegador
+al abrirse sin conexión.
 
-**Archivos a crear:**
+**Comportamiento esperado:**
 
-- `manifest.json` con nombre "Respuestas Rápidas Lizto", colores de la
-  marca, iconos en 192x192 y 512x512 (generar SVG como base y convertir).
-- `sw.js` — service worker básico que cachee `index.html`, `index.js`,
-  `styles.css` para funcionamiento offline parcial. El fetch a Apps Script
-  puede fallar offline, manejarlo gracefully mostrando los datos cacheados
-  del último fetch exitoso.
+- En el handler de `fetch`, si `event.request.mode === "navigate"` y la red
+  falla, responder con `caches.match("./index.html")`.
+- No cambiar la estrategia cache-first del resto de assets ni el manejo
+  network-first del Apps Script.
 
-**Archivos a modificar:**
+**Archivos a modificar:** `sw.js`
 
-- `index.html` → agregar `<link rel="manifest">` y el meta `theme-color`.
-- `index.js` → registrar el service worker.
+---
 
-**Nota:** GitHub Pages sirve sobre HTTPS, por lo que el service worker
-funcionará sin configuración adicional.
+### TODO-18 — Cachear la última respuesta exitosa del Apps Script
+
+**Objetivo:** que Paso a paso y Diagnóstico muestren los últimos artículos
+conocidos cuando no hay conexión, en vez de un array vacío.
+
+**Comportamiento esperado:**
+
+- En `sw.js`, guardar en un caché aparte la última respuesta OK de cada
+  endpoint (`exec` y `exec?hoja=diagnostico`).
+- Si la red falla, devolver esa copia; solo devolver `[]` si nunca hubo una
+  respuesta exitosa.
+- Mostrar en la UI un aviso discreto de "datos sin conexión" cuando aplique.
+
+**Archivos a modificar:** `sw.js`, `index.js`
 
 ---
 
 ## ✅ Completadas
 
-_(mover ítems aquí cuando se implementen)_
+Detalle e historial completo en `CHANGELOG.md`.
+
+- **TODO-01 — Persistir nombre del agente con localStorage** *(2026-06-26)*
+  Claves `lizto_agent_name` y `lizto_client_name`, restauradas antes del primer
+  `updateMessages()`.
+- **TODO-02 — Confirmación visual en botón copiar** *(2026-06-26)*
+  "¡Copiado! ✅" por 1.5 s con el botón deshabilitado, en tarjetas, drawer,
+  Paso a paso y Diagnóstico.
+- **TODO-03 — Buscador global** *(2026-06-26)*
+  `#globalSearch` filtra las 5 tabs con badges de conteo por tab. Los
+  buscadores locales de Paso a paso y Diagnóstico se conservaron y se
+  sincronizan con el global (no se eliminaron).
+- **TODO-04 — Atajos de teclado** *(2026-06-26)*
+  `/` y `Ctrl+F` enfocan el buscador, `Esc` cierra el drawer o limpia la
+  búsqueda, con hint "/ para buscar".
+- **TODO-05 — Formatear vista previa de Paso a paso** *(2026-06-26)*
+  `formatearContenidoPasoAPaso()` genera `<ol>`, `<ul>`, callouts `⚠️` y
+  enlaces. El copiado sigue usando el string crudo del objeto de datos
+  (no se usó `dataset.textoPlano`; el resultado es equivalente).
+- **TODO-06 — Ícono sol/luna** *(2026-06-27)*
+  `#toggleBrillo` con `SUN_SVG`/`MOON_SVG` inline, `title` y `aria-label`.
+- **TODO-07 — Responsive completo** *(2026-06-27)*
+  Breakpoints en 1200 / 1024 / 768 / 480 px y botón "← Volver" en móvil para
+  Paso a paso y Diagnóstico.
+- **TODO-09 — PWA instalable** *(2026-06-26)*
+  `manifest.json`, `icon.svg`, `sw.js` cache-first y registro del service
+  worker.
+- **TODO-19 — Contenedor propio para las 3 special cards** *(2026-08-13)*
+  `.special-cards-container` al final del tab Respuestas: 2 columnas en
+  desktop/tablet ("Puede realizar el pago" + "Paso a paso" lado a lado,
+  "Enlace para reunión" a ancho completo debajo) y 1 columna en mobile.
+  `order: 10` lo mantiene al final aunque las tarjetas normales se rendericen
+  dinámicamente. No pedido en un TODO previo; entró como solicitud directa.
+
+> **TODO-08 no existe.** La numeración original saltaba de TODO-07 a TODO-09;
+> no hay una tarea perdida.
 
 ---
 
@@ -200,4 +209,5 @@ _(mover ítems aquí cuando se implementen)_
 - Implementar un TODO a la vez y verificar que no rompe funcionalidades existentes.
 - Antes de cada implementación, leer `CLAUDE.md` para entender el contexto completo.
 - El texto copiado al portapapeles es sagrado: SIEMPRE debe ser texto plano.
+- Al terminar: entrada en `CHANGELOG.md` + mover la tarea a ✅ Completadas.
 - Hacer commit después de cada TODO completado con mensaje descriptivo.
