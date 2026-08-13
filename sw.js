@@ -1,10 +1,16 @@
-const CACHE_NAME = "respuestas-rapidas-v1";
+// Subir la versión cada vez que cambie STATIC_ASSETS o un archivo estático,
+// de lo contrario los usuarios siguen recibiendo la copia cacheada anterior.
+const CACHE_NAME = "respuestas-rapidas-v3";
+
+// Debe coincidir exactamente con los archivos estáticos del repo.
 const STATIC_ASSETS = [
+  "./",
   "./index.html",
   "./index.js",
   "./style.css",
+  "./manifest.json",
   "./icon.svg",
-  "./manifest.json"
+  "./logo-removebg-preview.png"
 ];
 
 self.addEventListener("install", (event) => {

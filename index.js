@@ -344,6 +344,7 @@ function applyDensity(mode) {
 // ============= BUSCADOR GLOBAL =============
 
 let helpCenterInstance;
+let diagnosticoInstance;
 
 function updateTabBadge(badgeId, count, isSearching) {
   const badge = document.getElementById(badgeId);
@@ -424,6 +425,10 @@ function globalSearchFilter(query) {
   let pasoCount = 0;
   if (helpCenterInstance) pasoCount = helpCenterInstance.applySearch(q);
 
+  // Diagnóstico (delega al DiagnosticoCenter: busca casos en todas las categorías)
+  let diagCount = 0;
+  if (diagnosticoInstance) diagCount = diagnosticoInstance.applySearch(q);
+
   // Atajos
   const atajosCards = document.querySelectorAll("#atajos .atajo-card");
   let atajosCount = 0;
@@ -438,11 +443,46 @@ function globalSearchFilter(query) {
   updateTabBadge("badge-respuestas", respCount,   isSearching);
   updateTabBadge("badge-plantillas", plantCount,  isSearching);
   updateTabBadge("badge-pasoPaso",   pasoCount,   isSearching);
+  updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
   updateDrawerAfterSearch();
 }
 
 // ============= HELP CENTER MODULE - PASO A PASO =============
+
+// Endpoint único del Apps Script. Sin parámetros devuelve "Paso a paso";
+// con ?hoja=diagnostico devuelve la hoja de Diagnóstico.
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwyin6iegICuU2DrvjEKMs-2TgtA5hgoUXyI1B5-YY97CqBrGITXENqpnYTezlSIaMY/exec";
+
+/**
+ * Copia texto plano al portapapeles, con fallback para navegadores sin Clipboard API.
+ * Compartido por Paso a paso y Diagnóstico.
+ */
+function copiarTextoPlano(texto) {
+  if (navigator.clipboard) {
+    return navigator.clipboard.writeText(texto).catch(() => copiarConFallback(texto));
+  }
+  return copiarConFallback(texto);
+}
+
+function copiarConFallback(texto) {
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement("textarea");
+    ta.value = texto;
+    ta.style.cssText = "position:fixed;opacity:0;pointer-events:none;";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand("copy");
+      resolve();
+    } catch (err) {
+      reject(err);
+    } finally {
+      document.body.removeChild(ta);
+    }
+  });
+}
 
 function linkify(text) {
   return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
@@ -520,8 +560,8 @@ class HelpCenter {
     this.data = [];
     this.filteredData = [];
     this.selectedItem = null;
-    this.apiUrl = "https://script.google.com/macros/s/AKfycbwyin6iegICuU2DrvjEKMs-2TgtA5hgoUXyI1B5-YY97CqBrGITXENqpnYTezlSIaMY/exec";
-    
+    this.apiUrl = APPS_SCRIPT_URL;
+
     this.cacheDOMElements();
     this.initEventListeners();
     this.loadData();
@@ -562,7 +602,11 @@ class HelpCenter {
       const response = await fetch(this.apiUrl);
       if (!response.ok) throw new Error("Error fetching data");
       
-      this.data = await response.json();
+      const data = await response.json();
+      // El Apps Script devuelve un objeto {status:"error"} si falla la lectura
+      if (!Array.isArray(data)) throw new Error(data?.message || "Respuesta inesperada de la API");
+
+      this.data = data;
       const pendingQuery = (document.getElementById("globalSearch")?.value || "").toLowerCase().trim();
       this.applySearch(pendingQuery);
     } catch (error) {
@@ -677,16 +721,10 @@ class HelpCenter {
     if (!this.selectedItem) return;
 
     const textToCopy = `${this.selectedItem.titulo}\n\n${this.selectedItem.contenido}`;
-    
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => {
-        this.showCopyFeedback();
-      })
-      .catch(err => {
-        console.error("Error copying to clipboard:", err);
-        // Fallback para navegadores antiguos
-        this.fallbackCopy(textToCopy);
-      });
+
+    copiarTextoPlano(textToCopy)
+      .then(() => this.showCopyFeedback())
+      .catch(err => console.error("Error copying to clipboard:", err));
   }
 
   /**
@@ -712,25 +750,6 @@ class HelpCenter {
   }
 
   /**
-   * Fallback para copiar en navegadores antiguos (sin Clipboard API)
-   */
-  fallbackCopy(text) {
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    
-    try {
-      document.execCommand("copy");
-      this.showCopyFeedback();
-    } catch (err) {
-      console.error("Fallback copy failed:", err);
-    }
-    
-    document.body.removeChild(textarea);
-  }
-
-  /**
    * Muestra un mensaje de error
    */
   showError(message) {
@@ -747,6 +766,319 @@ class HelpCenter {
     this.elements.searchInput.value = query;
     this.renderItemsList();
     return this.filteredData.length;
+  }
+}
+
+// ============= DIAGNÓSTICO MODULE =============
+// Reutiliza el layout y los estilos de "Paso a paso", pero con 2 niveles de
+// navegación en el sidebar: categorías → casos de la categoría → contenido.
+
+class DiagnosticoCenter {
+  constructor() {
+    this.rows = [];                          // array plano del Apps Script
+    this.grupos = {};                        // { categoria: [fila, fila, ...] }
+    this.categorias = [];
+    this.diagnosticoCurrentCategory = null;  // null = nivel 1 (categorías)
+    this.selectedItem = null;                // fila mostrada en el panel derecho
+    this.query = "";
+    this.searchScope = "level";              // "level" = nivel actual | "global" = resultados planos
+    this.apiUrl = `${APPS_SCRIPT_URL}?hoja=diagnostico`;
+
+    this.cacheDOMElements();
+    this.initEventListeners();
+    this.loadData();
+  }
+
+  cacheDOMElements() {
+    this.elements = {
+      searchInput: document.getElementById("diag-search-input"),
+      breadcrumb: document.getElementById("diag-breadcrumb"),
+      itemsList: document.getElementById("diag-items-list"),
+      contentEmpty: document.getElementById("diag-content-empty"),
+      emptyText: document.getElementById("diag-empty-text"),
+      contentDisplay: document.getElementById("diag-content-display"),
+      articleCategory: document.getElementById("diag-article-category"),
+      articleTitle: document.getElementById("diag-article-title"),
+      articleContent: document.getElementById("diag-article-content"),
+      copyBtn: document.getElementById("diag-copy-btn"),
+      copyFeedback: document.getElementById("diag-copy-feedback"),
+      backBtn: document.getElementById("diag-back-btn"),
+      sidebar: document.querySelector("#diagnostico .help-sidebar")
+    };
+  }
+
+  initEventListeners() {
+    this.elements.searchInput.addEventListener("input", (e) => {
+      // El buscador local solo filtra el nivel visible
+      this.query = e.target.value;
+      this.searchScope = "level";
+      this.render();
+    });
+    this.elements.breadcrumb.addEventListener("click", () => this.goToCategorias());
+    this.elements.copyBtn.addEventListener("click", () => this.copyContent());
+    this.elements.backBtn.addEventListener("click", () => this.goBack());
+  }
+
+  async loadData() {
+    try {
+      const response = await fetch(this.apiUrl);
+      if (!response.ok) throw new Error("Error fetching data");
+
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error(data?.message || "Respuesta inesperada de la API");
+
+      this.rows = data
+        .map(row => ({
+          categoria: String(row.categoria || "").trim(),
+          subtitulo: String(row.subtitulo || "").trim(),
+          contenido: String(row.contenido || "").trim()
+        }))
+        .filter(row => row.categoria && row.subtitulo);
+
+      if (this.rows.length === 0) {
+        console.warn("Diagnóstico: la API no devolvió filas con categoria/subtitulo. " +
+                     "Verifica que el Apps Script esté desplegado con el parámetro ?hoja=diagnostico.");
+        this.showError("Aún no hay casos de diagnóstico disponibles");
+        return;
+      }
+
+      // Agrupamiento en el frontend a partir del array plano
+      this.grupos = this.rows.reduce((acc, row) => {
+        (acc[row.categoria] = acc[row.categoria] || []).push(row);
+        return acc;
+      }, {});
+      this.categorias = Object.keys(this.grupos);
+
+      const pendingQuery = (document.getElementById("globalSearch")?.value || "").trim();
+      if (pendingQuery) this.applySearch(pendingQuery.toLowerCase());
+      else this.render();
+    } catch (error) {
+      console.error("Error loading diagnostico data:", error);
+      this.showError("No se pudieron cargar los casos de diagnóstico");
+    }
+  }
+
+  /**
+   * Entrada del buscador global: busca casos en todas las categorías a la vez.
+   * Devuelve cuántos coinciden (para el badge del tab).
+   */
+  applySearch(query) {
+    this.query = query || "";
+    this.searchScope = this.query ? "global" : "level";
+    this.elements.searchInput.value = this.query;
+    this.render();
+    return this.query ? this.getMatches(this.query.toLowerCase().trim()).length : 0;
+  }
+
+  getMatches(q) {
+    return this.rows.filter(row =>
+      row.categoria.toLowerCase().includes(q) ||
+      row.subtitulo.toLowerCase().includes(q) ||
+      row.contenido.toLowerCase().includes(q)
+    );
+  }
+
+  /**
+   * Dibuja el sidebar según el nivel actual (o los resultados del buscador global)
+   */
+  render() {
+    if (!this.categorias.length) return;
+    const q = this.query.toLowerCase().trim();
+
+    if (this.searchScope === "global" && q) {
+      this.elements.breadcrumb.style.display = "none";
+      this.renderItems(this.getMatches(q), "resultado");
+      return;
+    }
+
+    if (this.diagnosticoCurrentCategory) {
+      this.elements.breadcrumb.style.display = "flex";
+      const items = this.grupos[this.diagnosticoCurrentCategory] || [];
+      const filtrados = !q
+        ? items
+        : items.filter(item =>
+            item.subtitulo.toLowerCase().includes(q) ||
+            item.contenido.toLowerCase().includes(q)
+          );
+      this.renderItems(filtrados, "caso");
+    } else {
+      this.elements.breadcrumb.style.display = "none";
+      const cats = !q
+        ? this.categorias
+        : this.categorias.filter(cat => cat.toLowerCase().includes(q));
+      this.renderCategorias(cats);
+    }
+  }
+
+  renderCategorias(categorias) {
+    const container = this.elements.itemsList;
+    container.innerHTML = "";
+
+    if (categorias.length === 0) {
+      container.innerHTML = '<div class="help-empty-list">No se encontraron categorías</div>';
+      return;
+    }
+
+    categorias.forEach(categoria => {
+      const total = (this.grupos[categoria] || []).length;
+      const el = this.buildItem(categoria, `${total} ${total === 1 ? "caso" : "casos"}`);
+      el.addEventListener("click", () => this.selectCategoria(categoria));
+      container.appendChild(el);
+    });
+  }
+
+  /**
+   * Lista de casos: dentro de una categoría ("caso") o del buscador global ("resultado",
+   * que muestra a qué categoría pertenece cada uno)
+   */
+  renderItems(items, modo) {
+    const container = this.elements.itemsList;
+    container.innerHTML = "";
+
+    if (items.length === 0) {
+      container.innerHTML = '<div class="help-empty-list">No se encontraron casos</div>';
+      return;
+    }
+
+    items.forEach(item => {
+      const el = this.buildItem(item.subtitulo, modo === "resultado" ? item.categoria : null);
+      if (this.selectedItem === item) el.classList.add("active");
+      el.addEventListener("click", () => {
+        if (modo === "resultado") {
+          // Un resultado global lleva directo al nivel 2/3 de su categoría
+          this.diagnosticoCurrentCategory = item.categoria;
+          this.searchScope = "level";
+          this.query = "";
+          this.elements.searchInput.value = "";
+        }
+        this.selectItem(item);
+      });
+      container.appendChild(el);
+    });
+  }
+
+  buildItem(titulo, meta) {
+    const el = document.createElement("div");
+
+    // Sin meta se comporta igual que un item de "Paso a paso"
+    if (!meta) {
+      el.className = "help-item";
+      el.textContent = titulo;
+      return el;
+    }
+
+    el.className = "help-item help-item--stacked";
+
+    const tituloEl = document.createElement("span");
+    tituloEl.className = "help-item-title";
+    tituloEl.textContent = titulo;
+    el.appendChild(tituloEl);
+
+    const metaEl = document.createElement("span");
+    metaEl.className = "help-item-meta";
+    metaEl.textContent = meta;
+    el.appendChild(metaEl);
+
+    return el;
+  }
+
+  /** Nivel 1 → nivel 2 */
+  selectCategoria(categoria) {
+    this.diagnosticoCurrentCategory = categoria;
+    this.selectedItem = null;
+    this.query = "";
+    this.searchScope = "level";
+    this.elements.searchInput.value = "";
+    this.showEmptyState("Selecciona un caso para ver el paso a paso");
+    this.render();
+  }
+
+  /** Nivel 2 → nivel 1 */
+  goToCategorias() {
+    this.diagnosticoCurrentCategory = null;
+    this.selectedItem = null;
+    this.query = "";
+    this.searchScope = "level";
+    this.elements.searchInput.value = "";
+    this.showEmptyState("Selecciona una categoría para ver los casos disponibles");
+    this.render();
+  }
+
+  /** Nivel 3 */
+  selectItem(item) {
+    this.selectedItem = item;
+    this.render();
+    this.displayContent();
+
+    if (window.innerWidth < 768) {
+      this.elements.sidebar.style.display = "none";
+      this.elements.backBtn.style.display = "flex";
+    } else {
+      const activeItem = this.elements.itemsList.querySelector(".help-item.active");
+      if (activeItem) activeItem.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+
+  displayContent() {
+    if (!this.selectedItem) return;
+
+    this.elements.contentEmpty.style.display = "none";
+    this.elements.contentDisplay.style.display = "block";
+
+    this.elements.articleCategory.textContent = this.selectedItem.categoria;
+    this.elements.articleTitle.textContent = this.selectedItem.subtitulo;
+    this.elements.articleContent.innerHTML = formatearContenidoPasoAPaso(this.selectedItem.contenido);
+
+    this.resetCopyButton();
+    const panel = document.querySelector("#diagnostico .help-content");
+    if (panel) panel.scrollTop = 0;
+  }
+
+  showEmptyState(texto) {
+    this.elements.contentDisplay.style.display = "none";
+    this.elements.contentEmpty.style.display = "flex";
+    this.elements.emptyText.textContent = texto;
+  }
+
+  /** Botón "← Volver" de mobile: del contenido a la lista */
+  goBack() {
+    this.elements.sidebar.style.display = "";
+    this.elements.backBtn.style.display = "none";
+    this.selectedItem = null;
+    this.showEmptyState(
+      this.diagnosticoCurrentCategory
+        ? "Selecciona un caso para ver el paso a paso"
+        : "Selecciona una categoría para ver los casos disponibles"
+    );
+    this.render();
+  }
+
+  copyContent() {
+    if (!this.selectedItem) return;
+
+    // Siempre texto plano: el formato solo existe en la vista previa
+    const textToCopy = `${this.selectedItem.subtitulo}\n\n${this.selectedItem.contenido}`;
+
+    copiarTextoPlano(textToCopy)
+      .then(() => this.showCopyFeedback())
+      .catch(err => console.error("Error copying to clipboard:", err));
+  }
+
+  showCopyFeedback() {
+    this.elements.copyBtn.classList.add("copied");
+    this.elements.copyBtn.disabled = true;
+    this.elements.copyFeedback.textContent = "¡Copiado! ✅";
+    setTimeout(() => this.resetCopyButton(), 1500);
+  }
+
+  resetCopyButton() {
+    this.elements.copyBtn.classList.remove("copied");
+    this.elements.copyBtn.disabled = false;
+    this.elements.copyFeedback.textContent = "Copiar";
+  }
+
+  showError(message) {
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
   }
 }
 
@@ -993,6 +1325,7 @@ function updateDrawerAfterSearch() {
 // Inicializar Help Center cuando el contenido esté listo
 document.addEventListener("DOMContentLoaded", () => {
   helpCenterInstance = new HelpCenter();
+  diagnosticoInstance = new DiagnosticoCenter();
 
   const globalSearch = document.getElementById("globalSearch");
 
