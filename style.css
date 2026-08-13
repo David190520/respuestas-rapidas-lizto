@@ -1757,11 +1757,37 @@ textarea:focus {
   .density-bar { width: 100%; padding: 0 10px; }
 }
 
-/* ============= SPECIAL CARDS (siempre al final, siempre full-width en grid) ============= */
+/* ============= SPECIAL CARDS: CONTENEDOR DEDICADO ============= */
 
-.text-box.special-card {
+/* Contenedor propio de las 3 special cards. `order: 10` lo mantiene al final
+   del listado aunque las cards normales se rendericen dinámicamente después
+   (grid) y también en modo compacto (flex). El gap replica el de .text-fields. */
+.special-cards-container {
   order: 10;
   grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 50px;
+}
+
+/* "Enlace para reunión" ocupa el ancho completo del contenedor */
+.special-cards-container .reunion-box.special-card {
+  grid-column: 1 / -1;
+}
+
+/* Tablet: se mantienen las 2 columnas, gap alineado al de .text-fields */
+@media screen and (max-width: 1200px) {
+  .special-cards-container {
+    gap: 30px;
+  }
+}
+
+/* Mobile: las 3 cards apiladas en una sola columna */
+@media screen and (max-width: 768px) {
+  .special-cards-container {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
 }
 
 /* ============= SPECIAL CARDS: LAYOUT INTERNO ============= */
@@ -1820,6 +1846,21 @@ textarea:focus {
   padding: 10px 12px;
 }
 
+/* Dentro del contenedor de 2 columnas la card es más angosta: si textarea y
+   controles no caben cómodos en fila, los controles bajan a la línea siguiente
+   en vez de comprimirse (el input de link nunca queda apretado). */
+.special-cards-container .special-card-body {
+  flex-wrap: wrap;
+}
+
+.special-cards-container .special-card-body .text-field {
+  flex: 3 1 300px;
+}
+
+.special-cards-container .special-card-controls {
+  flex: 2 1 260px;
+}
+
 /* reunionBox: selects horizontales arriba, textarea abajo */
 .reunion-box.special-card .reunion-flex {
   flex-direction: column;
@@ -1846,6 +1887,13 @@ textarea:focus {
 @media screen and (max-width: 768px) {
   .special-card-body {
     flex-direction: column;
+  }
+
+  /* Con flex-direction: column el eje principal es vertical y el flex-basis
+     pasaría a fijar el ALTO: se anula para conservar las alturas naturales. */
+  .special-cards-container .special-card-body .text-field,
+  .special-cards-container .special-card-controls {
+    flex: 0 1 auto;
   }
 
   .reunion-box.special-card .reunion-selects {
@@ -1897,7 +1945,11 @@ textarea:focus {
   font-size: 11px;
 }
 
-.text-fields.compact-mode .text-box.special-card {
+/* En compacto las special cards conservan su diseño: una sola columna, apiladas
+   al final del listado (el contenedor es un flex item con order: 10). */
+.text-fields.compact-mode .special-cards-container {
+  grid-template-columns: 1fr;
+  gap: 20px;
   margin-top: 14px;
 }
 

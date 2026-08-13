@@ -149,42 +149,6 @@
             </svg>
           </button>
         </div>
-        <div class="text-box special-card">
-          <h3>Puede realizar el pago</h3>
-          <div class="special-card-body">
-            <textarea id="linkPago" class="text-field" readonly></textarea>
-            <div class="special-card-controls">
-              <div class="special-card-link-row">
-                <label for="enlacePago">Link:</label>
-                <input type="text" id="enlacePago" class="input special-card-link-input" placeholder="https://..." />
-              </div>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="text-box special-card">
-          <h3>Paso a paso</h3>
-          <div class="special-card-body">
-            <textarea id="pasoaPaso" class="text-field" readonly></textarea>
-            <div class="special-card-controls">
-              <div class="special-card-link-row">
-                <label for="enlacePasoaPaso">Link:</label>
-                <input type="text" id="enlacePasoaPaso" class="input special-card-link-input" placeholder="https://..." />
-              </div>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
         <div class="text-box">
           <h3>Demoras DIAN</h3>
           <textarea
@@ -237,40 +201,79 @@
             </svg>
           </button>
         </div>
-        <div class="text-box reunion-box special-card">
-          <h3>Enlace para reunión</h3>
-          <div class="reunion-flex">
-            <div class="reunion-selects">
-              <div class="reunion-select-row">
-                <label for="fechaReunionSelect" class="reunion-label">Fecha:</label>
-                <select id="fechaReunionSelect">
-                  <option value="">Selecciona una fecha</option>
-                </select>
-              </div>
-              <div class="reunion-select-row">
-                <label for="agenteReunion" class="reunion-label">Agente:</label>
-                <select id="agenteReunion">
-                  <option value="">Selecciona un agente</option>
-                  <option value="yeison">Yeison</option>
-                  <option value="paola">Paola</option>
-                  <option value="backup">Backup</option>
-                </select>
-              </div>
-              <div class="reunion-select-row">
-                <label for="horaReunionSelect" class="reunion-label">Hora:</label>
-                <select id="horaReunionSelect">
-                  <option value="">Selecciona una hora</option>
-                </select>
+        <!-- Special cards: contenedor propio con grilla interna, siempre al final -->
+        <div class="special-cards-container">
+          <div class="text-box special-card">
+            <h3>Puede realizar el pago</h3>
+            <div class="special-card-body">
+              <textarea id="linkPago" class="text-field" readonly></textarea>
+              <div class="special-card-controls">
+                <div class="special-card-link-row">
+                  <label for="enlacePago">Link:</label>
+                  <input type="text" id="enlacePago" class="input special-card-link-input" placeholder="https://..." />
+                </div>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
               </div>
             </div>
-            <div class="reunion-textarea-col">
-              <textarea id="linkReunionMessage" class="text-field" readonly></textarea>
-              <button id="copiarBtn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-              </button>
+          </div>
+          <div class="text-box special-card">
+            <h3>Paso a paso</h3>
+            <div class="special-card-body">
+              <textarea id="pasoaPaso" class="text-field" readonly></textarea>
+              <div class="special-card-controls">
+                <div class="special-card-link-row">
+                  <label for="enlacePasoaPaso">Link:</label>
+                  <input type="text" id="enlacePasoaPaso" class="input special-card-link-input" placeholder="https://..." />
+                </div>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="text-box reunion-box special-card">
+            <h3>Enlace para reunión</h3>
+            <div class="reunion-flex">
+              <div class="reunion-selects">
+                <div class="reunion-select-row">
+                  <label for="fechaReunionSelect" class="reunion-label">Fecha:</label>
+                  <select id="fechaReunionSelect">
+                    <option value="">Selecciona una fecha</option>
+                  </select>
+                </div>
+                <div class="reunion-select-row">
+                  <label for="agenteReunion" class="reunion-label">Agente:</label>
+                  <select id="agenteReunion">
+                    <option value="">Selecciona un agente</option>
+                    <option value="yeison">Yeison</option>
+                    <option value="paola">Paola</option>
+                    <option value="backup">Backup</option>
+                  </select>
+                </div>
+                <div class="reunion-select-row">
+                  <label for="horaReunionSelect" class="reunion-label">Hora:</label>
+                  <select id="horaReunionSelect">
+                    <option value="">Selecciona una hora</option>
+                  </select>
+                </div>
+              </div>
+              <div class="reunion-textarea-col">
+                <textarea id="linkReunionMessage" class="text-field" readonly></textarea>
+                <button id="copiarBtn">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>

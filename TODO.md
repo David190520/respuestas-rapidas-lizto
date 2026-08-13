@@ -192,6 +192,12 @@ Detalle e historial completo en `CHANGELOG.md`.
 - **TODO-09 — PWA instalable** *(2026-06-26)*
   `manifest.json`, `icon.svg`, `sw.js` cache-first y registro del service
   worker.
+- **TODO-19 — Contenedor propio para las 3 special cards** *(2026-08-13)*
+  `.special-cards-container` al final del tab Respuestas: 2 columnas en
+  desktop/tablet ("Puede realizar el pago" + "Paso a paso" lado a lado,
+  "Enlace para reunión" a ancho completo debajo) y 1 columna en mobile.
+  `order: 10` lo mantiene al final aunque las tarjetas normales se rendericen
+  dinámicamente. No pedido en un TODO previo; entró como solicitud directa.
 
 > **TODO-08 no existe.** La numeración original saltaba de TODO-07 a TODO-09;
 > no hay una tarea perdida.

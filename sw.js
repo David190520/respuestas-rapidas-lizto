@@ -1,6 +1,6 @@
 // Subir la versión cada vez que cambie STATIC_ASSETS o un archivo estático,
 // de lo contrario los usuarios siguen recibiendo la copia cacheada anterior.
-const CACHE_NAME = "respuestas-rapidas-v3";
+const CACHE_NAME = "respuestas-rapidas-v4";
 
 // Debe coincidir exactamente con los archivos estáticos del repo.
 const STATIC_ASSETS = [

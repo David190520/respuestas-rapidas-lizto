@@ -407,6 +407,14 @@ function globalSearchFilter(query) {
     card.style.display = match ? "" : "none";
     if (match) respCount++;
   });
+  // El contenedor de special cards se oculta si ninguna de sus tarjetas quedó
+  // visible, para que no deje un hueco (gap) vacío en la grilla.
+  const specialContainer = document.querySelector("#respuestas .special-cards-container");
+  if (specialContainer) {
+    const algunaVisible = Array.from(specialContainer.querySelectorAll(".text-box"))
+      .some(card => card.style.display !== "none");
+    specialContainer.style.display = algunaVisible ? "" : "none";
+  }
   showNoResults("respuestas", isSearching && respCount === 0);
 
   // Plantillas

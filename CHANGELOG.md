@@ -49,11 +49,31 @@ Cambios implementados y sin commitear al 2026-08-13.
 
 ### Cambiado
 
+- **Layout de las 3 special cards** (2026-08-13) — dejan de ocupar cada una una
+  fila completa del grid principal y pasan a un contenedor propio
+  `.special-cards-container`, ubicado al final del listado de Respuestas:
+  - Desktop/tablet: grilla interna de 2 columnas, con "Puede realizar el pago" y
+    "Paso a paso" lado a lado y "Enlace para reunión" debajo a ancho completo
+    (`grid-column: 1 / -1`). El `gap` replica el de `.text-fields` en cada
+    breakpoint (50 / 30 / 15 px).
+  - Mobile (≤768 px): las 3 tarjetas apiladas en una sola columna, con métricas
+    idénticas a las previas (sin cambios visuales respecto de producción).
+  - `.special-card-body` usa `flex-wrap` con `flex-basis` para que, en la
+    columna más angosta, los controles bajen debajo del textarea en vez de
+    comprimirse: el input de link pasa de 349 px a 423 px de ancho en desktop.
+    El `flex-basis` se anula en mobile, donde el eje principal es vertical y
+    habría fijado la *altura* de textarea y controles.
+  - El contenedor lleva `order: 10`, de modo que sigue quedando al final aunque
+    las tarjetas normales pasen a renderizarse dinámicamente (migración a
+    Sheets) o en modo compacto, donde conserva el diseño de 1 columna.
+  - El buscador global oculta el contenedor cuando ninguna de sus 3 tarjetas
+    coincide, para que no deje un hueco vacío en la grilla.
+  - Sin cambios en la lógica de copiado ni en los inputs de link/selects.
 - El buscador global ahora también filtra Diagnóstico y actualiza su badge.
 - Al cambiar el nombre del agente o del cliente se re-renderizan las previews
   de las tarjetas y el contenido del drawer si está abierto.
 - Cambiar de tab cierra el drawer abierto.
-- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v2`.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v4`.
 
 ---
 
