@@ -98,6 +98,8 @@ function updateMessages() {
     "Con mucho gusto, ¿la solución brindada fue de ayuda para ti? 😁";
   document.getElementById("despedidaMessage").value =
     "Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉";
+  document.getElementById("cierreSinRespuesta").value =
+    "¡Hola! 🖐️ No queremos ser molestos, solo queríamos confirmar si pudiste resolver tu duda o si aún necesitas ayuda con la plataforma. Si estás ocupado(a), no te preocupes, cuando tengas un espacio nos escribes y reanudamos la atención.";
   document.getElementById("facturacionElectronica").value =
     "Para integrar la facturación electrónica en la cuenta es necesario que nos envíes un correo con la solicitud, en este deben adjuntar 3 archivos: \n1. RUT actualizado para verificar la información en la cuenta. \n2. Set de pruebas. Este lo recibes cuando te habilitas para facturar electrónicamente desde la DIAN \n\nCómo habilitarse\nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/habilitaci%C3%B3n-de-facturaci%C3%B3n-electr%C3%B3nica-5-7-2024 \n\nConfigurar modos de operación con SOLUCIONES ALEGRA SAS \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-1-5-22-4-2025 \n\nSet de pruebas \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-3-53 \n\n 3. Archivo de la resolución para facturación electrónica que también solicitan desde el portal de la DIAN \n\nSolicitar resolución \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-5-5 \n\nAsociar prefijos con SOLUCIONES ALEGRA SAS o Alegra \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-4-5 \n\nSi tienes alguna duda con el proceso, te compartimos un paso a paso de cómo realizar el proceso: \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-clase-grupal-24-02-2026"
   document.getElementById("nominaElectronica").value =
@@ -1375,7 +1377,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const RESPUESTAS_CARD_IDS = [
     'daysMessage', 'falloSistema', 'modulosCapacitaciones',
     'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
-    'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage'
+    'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage', 'cierreSinRespuesta'
   ];
   const PLANTILLAS_CARD_IDS = [
     'facturacionElectronica', 'nominaElectronica', 'apiWhatsapp', 'whatsappLITE',
