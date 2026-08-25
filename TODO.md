@@ -198,6 +198,17 @@ Detalle e historial completo en `CHANGELOG.md`.
   "Enlace para reunión" a ancho completo debajo) y 1 columna en mobile.
   `order: 10` lo mantiene al final aunque las tarjetas normales se rendericen
   dinámicamente. No pedido en un TODO previo; entró como solicitud directa.
+- **TODO-20 — Tarjeta "Saludo-Consulta"** *(2026-08-25)*
+  Nueva `.response-card` en Respuestas (`#saludoConsulta`), justo después de
+  "Saludo". Pregunta al cliente si prefiere el paso a paso por enlace, por chat
+  o por nota de voz. No pedido en un TODO previo; entró como solicitud directa.
+- **TODO-21 — Arreglar la caché que obligaba a hard reload** *(2026-08-25)*
+  El app shell (`index.html`, `index.js`, `style.css` y las navegaciones) pasó
+  de cache-first a network-first en `sw.js`, con `cache: "no-cache"` para
+  saltarse el `max-age` de GitHub Pages y la caché como respaldo offline.
+  El registro del SW usa `updateViaCache: "none"`. Los agentes ya ven el último
+  merge en el primer reload normal. No pedido en un TODO previo; entró como
+  solicitud directa.
 
 > **TODO-08 no existe.** La numeración original saltaba de TODO-07 a TODO-09;
 > no hay una tarea perdida.

@@ -79,6 +79,8 @@ function updateMessages() {
 
   document.getElementById("daysMessage").value =
     `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
+  document.getElementById("saludoConsulta").value =
+    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. Claro, cuéntame por favor si deseas que te brinde la información mediante un enlace donde encuentras el paso a paso de ello, si deseas que por medio de este chat te escriba el paso a paso de cómo hacerlo o si deseas que te comparta una nota de voz explicándote el cómo hacerlo. Estamos atentos a tu respuesta.`;
   document.getElementById("falloSistema").value =
     `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
   document.getElementById("modulosCapacitaciones").value = 
@@ -1375,7 +1377,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar tarjetas compactas
   const RESPUESTAS_CARD_IDS = [
-    'daysMessage', 'falloSistema', 'modulosCapacitaciones',
+    'daysMessage', 'saludoConsulta', 'falloSistema', 'modulosCapacitaciones',
     'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
     'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage', 'cierreSinRespuesta'
   ];
@@ -1454,8 +1456,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Registrar service worker para PWA
+  // Registrar service worker para PWA.
+  // updateViaCache: "none" evita que el propio sw.js se sirva desde la caché
+  // HTTP del navegador, así los despliegues nuevos se detectan de inmediato.
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    navigator.serviceWorker
+      .register("./sw.js", { updateViaCache: "none" })
+      .then((reg) => reg.update())
+      .catch(() => {});
   }
 });

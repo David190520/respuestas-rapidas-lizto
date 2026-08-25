@@ -15,6 +15,46 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-08-25
+
+### Agregado
+
+- **Tarjeta "Saludo-Consulta"** en el tab Respuestas (`#saludoConsulta`),
+  inmediatamente después de "Saludo". Ofrece al cliente las tres formas de
+  recibir el paso a paso: enlace, explicación por chat o nota de voz.
+  Compone el saludo con el prefijo `hola` y el nombre del agente igual que
+  "Saludo" y "Fallo del sistema", así que respeta los fallbacks
+  `"un agente"` / `"Hola,"`. Registrada en `RESPUESTAS_CARD_IDS`.
+
+### Corregido
+
+- **La app ya no se queda pegada en la versión anterior tras un despliegue.**
+  El service worker servía `index.html`, `index.js` y `style.css` con
+  estrategia cache-first, así que un agente que entraba con la app ya cacheada
+  seguía viendo la versión vieja y necesitaba un hard reload (`Ctrl+Shift+R`)
+  para ver el último merge. Cambios en `sw.js`:
+  - El app shell (navegaciones, `.html`, `.js`, `.css`) pasa a **network-first**
+    con la caché como respaldo offline. El resto de assets (`icon.svg`,
+    `logo-removebg-preview.png`, `manifest.json`) sigue cache-first porque
+    prácticamente no cambia.
+  - Las peticiones del app shell se hacen con `cache: "no-cache"` para que la
+    caché HTTP del navegador no devuelva la copia anterior dentro del
+    `max-age=600` que envía GitHub Pages.
+  - El handler de `fetch` ignora los métodos distintos de `GET` y las
+    peticiones cross-origin.
+  - `CACHE_NAME` a `respuestas-rapidas-v5`.
+- `index.js`: el service worker se registra con `updateViaCache: "none"` y se
+  fuerza un `registration.update()`, para que el propio `sw.js` nunca se sirva
+  desde la caché HTTP y los despliegues se detecten de inmediato.
+
+  Validado en Chrome headless simulando un despliegue sobre una app ya
+  cacheada: con el `sw.js` anterior, dos reloads normales seguían mostrando la
+  versión vieja y solo el hard reload traía la nueva; con el corregido, el
+  primer reload normal ya trae la versión nueva —incluso sin subir
+  `CACHE_NAME`— y el modo offline sigue funcionando.
+
+---
+
 ## [Sin publicar] — rama `david-implement-checklist-tab`
 
 Cambios implementados y sin commitear al 2026-08-13.

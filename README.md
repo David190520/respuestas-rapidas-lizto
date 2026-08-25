@@ -79,7 +79,7 @@ respuestasrapidas/
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
 ├── manifest.json                 # Metadatos de la PWA
-├── sw.js                         # Service worker (caché offline)
+├── sw.js                         # Service worker (network-first + caché offline)
 ├── icon.svg                      # Ícono de la PWA
 ├── logo-removebg-preview.png     # Marca de agua de fondo (usada en style.css)
 ├── CLAUDE.md                     # Contexto y convenciones para Claude Code
@@ -151,5 +151,10 @@ Todo cambio debe registrarse en `CHANGELOG.md` y reflejarse en `TODO.md`.
 Se publica solo con hacer merge a `main`: GitHub Pages sirve los archivos
 estáticos directamente desde la rama.
 
-Al cambiar cualquier archivo estático hay que **subir `CACHE_NAME` en `sw.js`**,
-o los usuarios con la PWA instalada seguirán viendo la versión cacheada.
+El service worker sirve el app shell (`index.html`, `index.js`, `style.css` y
+las navegaciones) **network-first**, así que un merge a `main` se ve en el
+siguiente reload normal, sin necesidad de hard reload. La caché queda solo como
+respaldo offline.
+
+Al agregar o renombrar un archivo estático hay que actualizar `STATIC_ASSETS` y
+**subir `CACHE_NAME` en `sw.js`**, para que el precache offline quede completo.
