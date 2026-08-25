@@ -15,7 +15,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 - HTML / CSS / JavaScript vanilla (sin frameworks, sin build tools)
 - Google Apps Script como API REST (solo lectura) sobre Google Sheets
 - GitHub Pages como hosting (archivos estáticos servidos sobre HTTPS)
-- PWA: `manifest.json` + service worker (`sw.js`) con caché cache-first
+- PWA: `manifest.json` + service worker (`sw.js`): network-first para el app
+  shell (HTML/JS/CSS), cache-first para el resto de assets
 
 ## Arquitectura
 
@@ -149,7 +150,11 @@ modo oscuro.
 - Los mensajes de Paso a paso y Diagnóstico se envían directamente a clientes
   en el CRM, por eso deben copiarse sin formato.
 - Si se agrega o renombra un archivo estático, **actualizar `STATIC_ASSETS` en
-  `sw.js` y subir `CACHE_NAME`**, o los usuarios seguirán con la versión vieja.
+  `sw.js` y subir `CACHE_NAME`** para que el precache offline quede completo.
+- **NO volver el app shell a cache-first.** `index.html`, `index.js`, `style.css`
+  y las navegaciones se sirven network-first justamente para que un despliegue
+  se vea en el primer reload normal, sin hard reload. La caché es solo el
+  respaldo offline.
 
 ## Cómo probar localmente
 
