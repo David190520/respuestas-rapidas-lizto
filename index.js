@@ -10,6 +10,7 @@ let saludoVariante = '';
 const SALUDO_VARIANTES = [
   { label: 'Sin variante',           value: '' },
   { label: '¿Cómo puedo ayudarte?',  value: 'Cuéntame por favor, ¿Cómo puedo ayudarte?' },
+  { label: 'Consulta',        value: '¡Claro que sí! ¿Cómo prefieres recibir el paso a paso? Podemos enviarte un enlace con la guía, escribirte las instrucciones por aquí o compartirte una nota de voz. Quedamos atentos a tu elección.' },
   { label: 'Dame un momento',        value: 'Dame un momento por favor.' },
   { label: 'Con mucho gusto',        value: 'Con mucho gusto.' },
 ];
@@ -79,8 +80,6 @@ function updateMessages() {
 
   document.getElementById("daysMessage").value =
     `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
-  document.getElementById("saludoConsulta").value =
-    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. Claro, cuéntame por favor si deseas que te brinde la información mediante un enlace donde encuentras el paso a paso de ello, si deseas que por medio de este chat te escriba el paso a paso de cómo hacerlo o si deseas que te comparta una nota de voz explicándote el cómo hacerlo. Estamos atentos a tu respuesta.`;
   document.getElementById("falloSistema").value =
     `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
   document.getElementById("modulosCapacitaciones").value = 
@@ -102,6 +101,7 @@ function updateMessages() {
     "Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉";
   document.getElementById("cierreSinRespuesta").value =
     "¡Hola! 🖐️ No queremos ser molestos, solo queríamos confirmar si pudiste resolver tu duda o si aún necesitas ayuda con la plataforma. Si estás ocupado(a), no te preocupes, cuando tengas un espacio nos escribes y reanudamos la atención.";
+  document.getElementById("calificacion").value = "¿Qué tan satisfecho estás con tu experiencia general utilizando el sistema y la atención recibida?\n[ 1 ] ⭐ Muy insatisfecho\n[ 2 ] ⭐⭐ Insatisfecho\n[ 3 ] ⭐⭐⭐ Neutral\n[ 4 ] ⭐⭐⭐⭐ Satisfecho\n[ 5 ] ⭐⭐⭐⭐⭐ Muy satisfecho\n¡Agradecemos mucho tu tiempo! 🙌";
   document.getElementById("facturacionElectronica").value =
     "Para integrar la facturación electrónica en la cuenta es necesario que nos envíes un correo con la solicitud, en este deben adjuntar 3 archivos: \n1. RUT actualizado para verificar la información en la cuenta. \n2. Set de pruebas. Este lo recibes cuando te habilitas para facturar electrónicamente desde la DIAN \n\nCómo habilitarse\nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/habilitaci%C3%B3n-de-facturaci%C3%B3n-electr%C3%B3nica-5-7-2024 \n\nConfigurar modos de operación con SOLUCIONES ALEGRA SAS \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-1-5-22-4-2025 \n\nSet de pruebas \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-3-53 \n\n 3. Archivo de la resolución para facturación electrónica que también solicitan desde el portal de la DIAN \n\nSolicitar resolución \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-5-5 \n\nAsociar prefijos con SOLUCIONES ALEGRA SAS o Alegra \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-4-5 \n\nSi tienes alguna duda con el proceso, te compartimos un paso a paso de cómo realizar el proceso: \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-clase-grupal-24-02-2026"
   document.getElementById("nominaElectronica").value =
@@ -1377,7 +1377,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar tarjetas compactas
   const RESPUESTAS_CARD_IDS = [
-    'daysMessage', 'saludoConsulta', 'falloSistema', 'modulosCapacitaciones',
+    'daysMessage', 'calificacion', 'falloSistema', 'modulosCapacitaciones',
     'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
     'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage', 'cierreSinRespuesta'
   ];
