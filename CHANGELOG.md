@@ -15,6 +15,37 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (seguridad, tema del SO y saludo por hora)
+
+### Agregado
+
+- **Saludo según la hora (Fase 2).** Nuevos tokens `saludoHora` / `SaludoHora`
+  y la función `saludoHora()`: "buen día", "buenas tardes" o "buenas noches"
+  según la hora de Colombia (no la del PC del agente). Aplicado a Saludo, Fallo
+  del sistema, Módulos y capacitaciones, Solicitar comprobante y la plantilla ID
+  Set de Pruebas. Se recalcula al cruzar de periodo y al volver a la pestaña,
+  para que un turno largo no quede con el saludo de la mañana.
+- **El tema sigue al sistema operativo (Fase 1b).** La app arranca en claro u
+  oscuro según `prefers-color-scheme` y acompaña el cambio del sistema hasta que
+  el agente usa el toggle. No se persiste. Un script en `<head>` evita el
+  parpadeo oscuro → claro, y se declara `color-scheme` para los controles
+  nativos (selects, scrollbars).
+
+### Cambiado
+
+- La clase `light-mode` pasa de `<body>` a `<html>` y los tokens a `.light-mode`.
+- `addUserText()` reemplaza **todas** las apariciones de `nombreAgente`.
+
+### Corregido
+
+- **Seguridad (Fase 1a):** el contenido de Paso a paso y Diagnóstico (Google
+  Sheets) se insertaba con `innerHTML` sin escapar, por lo que una fila con HTML
+  malicioso habría ejecutado código en la sesión de los agentes. Ahora
+  `escapeHtml()` escapa todo y `linkify()` solo genera enlaces `http(s)`, sin
+  incluir la puntuación final en la URL. El copiado sigue usando el string crudo.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (atajos y plan)
 
 ### Agregado

@@ -4,10 +4,12 @@
 
 /* ============= DESIGN TOKENS =============
    Paleta alineada con lizto.co (teal #12b5ac, tinta #0e1a1c, fuente Plus
-   Jakarta Sans). :root es el modo oscuro (por defecto); body.light-mode lo
+   Jakarta Sans). :root es el modo oscuro (por defecto); .light-mode lo
    sobreescribe. Nunca hardcodear colores fuera de este bloque. */
 
 :root {
+  color-scheme: dark;
+
   /* Fondos */
   --bg-main: #0e1a1c;
   --bg-soft: #122428;
@@ -73,7 +75,8 @@
   --dark-color: #000;
 }
 
-body.light-mode {
+.light-mode {
+  color-scheme: light;
   --bg-main: #eff5f5;
   --bg-soft: #e5eeee;
   --bg-surface: #ffffff;

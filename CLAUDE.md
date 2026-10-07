@@ -66,8 +66,14 @@ valida `Array.isArray(data)` antes de usarlo.
 ### Variables dinámicas en los textos
 
 - El token literal **`nombreAgente`** dentro de un string se reemplaza por el
-  nombre del agente vía `addUserText()` → `message.replace("nombreAgente", agentInput)`.
+  nombre del agente vía `addUserText()` (reemplaza todas las apariciones).
   No se usa sintaxis de llaves (`{{...}}`); es un reemplazo de texto plano.
+- Los tokens **`saludoHora`** y **`SaludoHora`** se reemplazan por el saludo
+  según la hora de Colombia (`America/Bogota`, no la del PC del agente):
+  `buenas noches` (00:00–04:59), `buen día` (05:00–11:59), `buenas tardes`
+  (12:00–18:59) y `buenas noches` (19:00–23:59). `SaludoHora` va en mayúscula
+  inicial (inicio de frase). En textos armados a mano se usa `saludoHora()` /
+  `capitalizar()`. Se recalcula al cruzar de periodo y al volver a la pestaña.
 - El nombre del cliente **no es un token**: `addUserText()` antepone
   `Hola <cliente> 👋\n` al mensaje, y `updateMessages()` arma el prefijo `hola`
   (`Hola <cliente>,` o `Hola,`) para los mensajes que lo componen a mano.
@@ -92,19 +98,24 @@ Solo tres claves, y son las únicas permitidas hoy:
   (aprobada por el responsable del proyecto al pedir la función de fijar).
 
 Se escriben en cada `input` y se restauran al cargar, antes del primer
-`updateMessages()`. **El tema no se persiste**: la app siempre arranca en
-modo oscuro.
+`updateMessages()`. **El tema no se persiste**: la app arranca según el tema del
+sistema operativo (ver "Sistema de temas").
 
 ### Sistema de temas (light/dark) y marca
 
 - La identidad visual sigue la landing https://www.lizto.co: teal `#12b5ac`,
   tinta `#0e1a1c`, tinte `#def5f3`, rosa `#cc3366` solo como énfasis puntual,
   fuente **Plus Jakarta Sans** (Google Fonts) y radios de 10–24 px.
-- Design tokens como custom properties en `:root` (oscuro, por defecto) y
-  sobreescritos en `body.light-mode` (claro). El modo oscuro deriva de la
+- Design tokens como custom properties en `:root` (oscuro) y sobreescritos en
+  `.light-mode` (claro). La clase vive en `<html>`: un script inline en `<head>`
+  la aplica antes del primer render para evitar el parpadeo.
+- **El tema sigue al sistema operativo** (`prefers-color-scheme`), también
+  cuando este cambia, **hasta que el agente usa el toggle**; desde entonces la
+  elección manual manda durante la sesión. No se persiste (sin `localStorage`). El modo oscuro deriva de la
   misma paleta teal, no de un morado.
-- El toggle `#toggleBrillo` alterna la clase `light-mode` en el `<body>` e
-  intercambia los SVG inline `SUN_SVG` / `MOON_SVG`.
+- El toggle `#toggleBrillo` (`applyTheme()`) alterna la clase `light-mode` en
+  `<html>`, intercambia los SVG inline `SUN_SVG` / `MOON_SVG` y actualiza el
+  `<meta name="theme-color">`.
 - **Nunca hardcodear colores** en CSS nuevo: usar los tokens
   (`--bg-main`, `--bg-surface`, `--text-primary`, `--accent`, `--accent-ink`,
   `--accent-solid` + `--on-accent`, `--border-base`, etc.), o el modo claro se
@@ -169,6 +180,9 @@ modo oscuro.
 - **El texto copiado al portapapeles SIEMPRE debe ser texto plano.** El
   formateo de `formatearContenidoPasoAPaso()` es exclusivo de la vista previa;
   al copiar se usa siempre el string crudo del objeto de datos.
+- **El contenido que viene de Google Sheets se escapa siempre** antes de
+  mostrarlo con `innerHTML` (`escapeHtml()`; `linkify()` recibe texto plano y
+  devuelve HTML seguro). Nunca insertar texto de Sheets sin escapar.
 - Los mensajes de Paso a paso y Diagnóstico se envían directamente a clientes
   en el CRM, por eso deben copiarse sin formato.
 - Si se agrega o renombra un archivo estático, **actualizar `STATIC_ASSETS` en
