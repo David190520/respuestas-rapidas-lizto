@@ -227,8 +227,12 @@ sistema operativo (ver "Sistema de temas").
   en el CRM, por eso deben copiarse sin formato.
 - **La caché de datos de Google Sheets** (`respuestas-rapidas-datos` en `sw.js`)
   solo guarda respuestas que son un array: Apps Script responde 200 incluso con
-  `{status:"error"}` y eso no debe pisar la última copia buena. `activate` no
-  borra esa caché.
+  `{status:"error"}` y eso no debe pisar la última copia buena. Si Google responde
+  404/5xx o un error en JSON y hay copia buena, el service worker sirve la copia.
+  `activate` no borra esa caché.
+- **Apps Script:** abrir el Spreadsheet falla a veces (404 de Drive, antes del
+  `try/catch`). Por eso `Codigo.gs` cachea con `CacheService` (15 min + respaldo
+  6 h). No quitar la caché ni leer la hoja directamente en cada `doGet`.
 - Si se agrega o renombra un archivo estático, **actualizar `STATIC_ASSETS` en
   `sw.js` y subir `CACHE_NAME`** para que el precache offline quede completo.
 - **NO volver el app shell a cache-first.** `index.html`, `index.js`, `style.css`

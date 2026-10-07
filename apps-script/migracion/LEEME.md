@@ -49,7 +49,38 @@ Ejemplo: `encabezadoCliente` ↵ `SaludoHora, ¿cómo estás? Hablas con nombreA
 4. Comprueba en el navegador (reemplaza por tu URL):
    `…/exec?hoja=respuestas` debe mostrar un JSON con `[{"id":"daysMessage",…}]`.
 
-Paso a paso y Diagnóstico no cambian: `doGet` y `leerHoja` siguen igual.
+Paso a paso y Diagnóstico no cambian su contrato: `leerHoja` sigue igual y las
+respuestas tienen exactamente la misma forma.
+
+## 2b. Arreglar los 404 intermitentes (caché en el Apps Script)
+
+**Síntoma:** a veces Paso a paso, Diagnóstico (o Respuestas/Plantillas) fallan con
+un 404 y a veces tardan 20–40 s. El cuerpo del error es la página de Drive
+"No se pudo abrir el archivo en este momento".
+
+**Causa:** en esa ejecución Google no logra abrir el Spreadsheet. Pasa *antes* de
+que corra el `try/catch` del script, así que no hay forma de capturarlo ahí. La
+solución es **no abrir la hoja en cada petición**:
+
+El `Codigo.gs` de este repo ya incluye:
+
+- Caché de 15 min por pestaña (`CacheService`): casi ninguna petición abre la hoja
+  (de ~3 s y fallos ocasionales a una respuesta casi inmediata).
+- Copia de respaldo de 6 h: si en algún momento no se puede abrir la hoja, se
+  sirve la última copia buena en lugar de un error.
+- `onEdit()`: al **editar a mano** el Sheet se invalida la caché y el cambio se ve
+  de inmediato. Si cambias datos por **importación** o por script, ejecuta
+  `limpiarCache` una vez desde el editor (o agrega `&refrescar=1` a la URL).
+- `?refrescar=1` salta la caché (para probar).
+
+**Opcional pero recomendado — calentar la caché:**
+en el editor de Apps Script → ⏰ **Activadores** → *Añadir activador* →
+función `calentarCache`, evento *Basado en tiempo*, *Temporizador de minutos*,
+**cada 10 minutos**. Así la caché siempre está lista y los agentes nunca esperan
+a que se abra la hoja.
+
+Después de pegar el código hay que **Implementar → Administrar implementaciones →
+✏️ → Nueva versión** (misma URL). La primera vez Google puede pedir autorizar.
 
 ## 3. Verificar en la app
 

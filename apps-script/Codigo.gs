@@ -7,6 +7,7 @@
  *   /exec?hoja=diagnostico   -> Diagnostico   [categoria, subtitulo, contenido]
  *   /exec?hoja=respuestas    -> Respuestas    [id, categoria, titulo, texto, orden, activo]
  *   /exec?hoja=plantillas    -> Plantillas    [id, categoria, titulo, texto, orden, activo]
+ *   (cualquiera + &refrescar=1 salta la caché de 15 min)
  */
 
 // Alias público -> nombre EXACTO de la pestaña en el Sheet (respeta mayúsculas y acentos)
@@ -18,6 +19,16 @@ const HOJAS = {
 };
 
 const HOJA_POR_DEFECTO = 'paso';
+
+// --- Caché (evita abrir la hoja en cada petición) ---------------------------
+// Abrir el Spreadsheet es lo lento y lo que a veces falla ("No se pudo abrir el
+// archivo en este momento", un 404 que ocurre ANTES de que corra el try/catch).
+// Con la caché casi ninguna petición toca la hoja.
+//   - copia fresca: dura CACHE_FRESCA_SEG; un cambio en el Sheet se ve como mucho
+//     en ese tiempo (y al instante si se edita a mano: ver onEdit).
+//   - copia de respaldo: dura 6 h (el máximo); se usa si abrir la hoja falla.
+const CACHE_FRESCA_SEG = 900;
+const CACHE_RESPALDO_SEG = 21600;
 
 function doGet(e) {
   try {
@@ -31,7 +42,9 @@ function doGet(e) {
                       '". Valores permitidos: ' + Object.keys(HOJAS).join(', '));
     }
 
-    return responderJson(leerHoja(nombreHoja));
+    // ?refrescar=1 salta la caché (útil para probar un cambio recién hecho)
+    const refrescar = String(params.refrescar || '') === '1';
+    return responderTexto(obtenerJsonHoja(alias, nombreHoja, refrescar));
 
   } catch (error) {
     return responderJson({
@@ -39,6 +52,57 @@ function doGet(e) {
       message: 'Fallo en la lectura de la hoja: ' + error.toString()
     });
   }
+}
+
+/** Devuelve el JSON (texto) de una pestaña: caché fresca -> hoja -> copia de respaldo. */
+function obtenerJsonHoja(alias, nombreHoja, refrescar) {
+  const cache = CacheService.getScriptCache();
+  const claveFresca = 'fresca:' + alias;
+  const claveRespaldo = 'respaldo:' + alias;
+
+  if (!refrescar) {
+    const fresca = cache.get(claveFresca);
+    if (fresca) return fresca;
+  }
+
+  let json;
+  try {
+    json = JSON.stringify(leerHoja(nombreHoja));
+  } catch (error) {
+    // Si la hoja no se pudo abrir pero hay una copia anterior, se sirve esa
+    const respaldo = cache.get(claveRespaldo);
+    if (respaldo) return respaldo;
+    throw error;
+  }
+
+  try {
+    cache.put(claveFresca, json, CACHE_FRESCA_SEG);
+    cache.put(claveRespaldo, json, CACHE_RESPALDO_SEG);
+  } catch (error) {
+    // CacheService admite hasta 100 KB por clave: si una hoja crece más, simplemente no se cachea
+  }
+  return json;
+}
+
+/** Edición manual en el Sheet: invalida las copias frescas para ver el cambio al instante. */
+function onEdit() {
+  limpiarCache();
+}
+
+/**
+ * OPCIONAL: ejecútala con un activador por tiempo (cada 10 minutos) para que la
+ * caché esté siempre caliente y los agentes nunca esperen a que se abra la hoja.
+ */
+function calentarCache() {
+  Object.keys(HOJAS).forEach(function (alias) {
+    try { obtenerJsonHoja(alias, HOJAS[alias], true); } catch (error) { /* se reintenta en el próximo ciclo */ }
+  });
+}
+
+/** También se puede ejecutar a mano desde el editor después de importar datos. */
+function limpiarCache() {
+  const claves = Object.keys(HOJAS).map(function (alias) { return 'fresca:' + alias; });
+  CacheService.getScriptCache().removeAll(claves);
 }
 
 /**
@@ -80,7 +144,11 @@ function normalizarClave(header) {
 }
 
 function responderJson(payload) {
+  return responderTexto(JSON.stringify(payload));
+}
+
+function responderTexto(json) {
   return ContentService
-    .createTextOutput(JSON.stringify(payload))
+    .createTextOutput(json)
     .setMimeType(ContentService.MimeType.JSON);
 }
