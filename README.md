@@ -81,6 +81,8 @@ respuestasrapidas/
 ├── manifest.json                 # Metadatos de la PWA
 ├── sw.js                         # Service worker (network-first + caché offline)
 ├── icon.svg                      # Ícono de la PWA y favicon
+├── apps-script/Codigo.gs         # Copia de referencia del Google Apps Script
+├── PLAN.md                       # Plan de implementación por fases
 ├── CLAUDE.md                     # Contexto y convenciones para Claude Code
 ├── TODO.md                       # Tareas pendientes y completadas
 └── CHANGELOG.md                  # Historial de cambios

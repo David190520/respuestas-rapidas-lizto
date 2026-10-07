@@ -16,6 +16,21 @@ verificado contra el Apps Script desplegado.
 
 ---
 
+## 🧭 Plan por fases
+
+El detalle de cada fase (alcance, archivos, aceptación y riesgos) está en
+`PLAN.md`. Pendientes, en el orden propuesto:
+
+- **TODO-24 — Escapar HTML de Sheets y tema según el SO** (Fase 1)
+- **TODO-25 — Saludo según la hora** (Fase 2)
+- **TODO-26 — Respuestas y Plantillas desde Sheets** (Fase 3; absorbe TODO-10,
+  TODO-12 y TODO-18)
+- **TODO-27 — Diagnóstico con checklist y escalamiento** (Fase 5)
+- **TODO-28 — Sugerencias según el uso** (Fase 6; requiere aprobar `lizto_usage`)
+- **TODO-29 — Atajos desde Sheets y modo Flujo** (Fases 4 y 7, opcionales)
+
+---
+
 ## 🔴 Alta prioridad
 
 ### TODO-10 — Chips de filtro por categoría en Respuestas y Plantillas
@@ -84,22 +99,6 @@ compacta en cada recarga.
 
 ## 🟢 Prioridad baja
 
-### TODO-17 — Fallback offline para navegación en el service worker
-
-**Objetivo:** que la PWA instalada no muestre la pantalla de error del navegador
-al abrirse sin conexión.
-
-**Comportamiento esperado:**
-
-- En el handler de `fetch`, si `event.request.mode === "navigate"` y la red
-  falla, responder con `caches.match("./index.html")`.
-- No cambiar la estrategia cache-first del resto de assets ni el manejo
-  network-first del Apps Script.
-
-**Archivos a modificar:** `sw.js`
-
----
-
 ### TODO-18 — Cachear la última respuesta exitosa del Apps Script
 
 **Objetivo:** que Paso a paso y Diagnóstico muestren los últimos artículos
@@ -121,6 +120,13 @@ conocidos cuando no hay conexión, en vez de un array vacío.
 
 Detalle e historial completo en `CHANGELOG.md`.
 
+- **TODO-17 — Fallback offline para navegación en el service worker**
+  Ya implementado en `networkFirst()` de `sw.js` (si falla la red en una
+  navegación, responde con `./index.html` cacheado).
+- **TODO-30 — Nuevos atajos** *(2026-10-08)*
+  Asignaciones semanales, Buscar documento DIAN y Hoja de Excel - Soporte.
+- **TODO-31 — Fix de tarjetas especiales** *(2026-10-08)*
+  Link y botón copiar siempre debajo del textarea, a cualquier zoom.
 - **TODO-23 — Fijar tarjetas (pin) y fechas sin fines de semana** *(2026-10-07)*
   Botón pin por tarjeta con persistencia en `lizto_pinned_cards`; selector de
   fechas de reunión sin sábados ni domingos. Solicitud directa.

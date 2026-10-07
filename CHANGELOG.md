@@ -15,6 +15,18 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (atajos y plan)
+
+### Agregado
+
+- **Atajos:** "Asignaciones semanales" (Zoho Desk), "Buscar documento DIAN" y
+  "Hoja de Excel - Soporte" en el tab Atajos.
+- `PLAN.md`: plan de implementación por fases con decisiones tomadas, contrato
+  con el Apps Script y criterios de aceptación.
+- `apps-script/Codigo.gs`: copia de referencia del Apps Script desplegado.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (fix tarjetas especiales)
 
 ### Corregido

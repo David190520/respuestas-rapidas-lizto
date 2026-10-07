@@ -2,6 +2,9 @@
 
 ## Contexto del proyecto
 
+> **Antes de implementar algo, leer `PLAN.md`**: contiene las decisiones ya
+> tomadas, el contrato con el Apps Script y las fases pendientes en orden.
+
 Herramienta interna de soporte para agentes del CRM de Lizto Software
 (SaaS multi-tenant para salones de belleza). Permite copiar respuestas
 rápidas, plantillas, guías paso a paso y casos de diagnóstico para
@@ -52,7 +55,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
   `{categoria, subtitulo, contenido}`. El agrupamiento por categoría se hace
   en el frontend, no en el Apps Script.
 
-Ambos endpoints son el mismo despliegue de Apps Script; el parámetro `hoja`
+El código del Apps Script está copiado en `apps-script/Codigo.gs` (referencia;
+el desplegado vive en Google). Ambos endpoints son el mismo despliegue; el parámetro `hoja`
 decide qué pestaña del Sheet se lee. Si la lectura falla, el Apps Script
 devuelve un objeto `{status:"error"}` en vez de un array — por eso el código
 valida `Array.isArray(data)` antes de usarlo.
