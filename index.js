@@ -5,6 +5,11 @@ let modalVisibleCards = [];
 let modalCurrentTabId = null;
 const modalCardMap = new Map();
 
+// Tarjetas de Respuestas y Plantillas: filas normalizadas por tab y categoría
+// activa (chips). Se declaran aquí arriba porque se usan desde el arranque.
+const tarjetasData = { respuestas: [], plantillas: [] };
+const categoriaActiva = { respuestas: '', plantillas: '' };
+
 let saludoCard = null;
 let saludoVariante = '';
 const SALUDO_VARIANTES = [
@@ -86,70 +91,310 @@ function capitalizar(texto) {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
-function addUserText(message) {
-  const userInput = document.getElementById("userInput").value.trim();
-  const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
+// Tokens de texto plano que se reemplazan al mostrar/copiar un mensaje, en UNA
+// sola pasada (un nombre de cliente que contenga un token no se re-procesa):
+//   nombreAgente      -> nombre del agente ("un agente" si está vacío)
+//   holaCliente       -> "Hola Juan," | "Hola,"
+//   encabezadoCliente -> "Hola Juan 👋" + salto de línea | nada (se come el salto
+//                        de línea que lo sigue para no dejar una línea vacía)
+//   saludoHora        -> "buen día" | "buenas tardes" | "buenas noches"
+//   SaludoHora        -> igual, con mayúscula inicial
+const TOKENS_REGEX = /encabezadoCliente[ \t]*\r?\n?|holaCliente|SaludoHora|saludoHora|nombreAgente/g;
 
-  // Tokens de texto plano: "SaludoHora" (inicio de frase) y "saludoHora" (mitad
-  // de frase), además de "nombreAgente". Se reemplazan todas las apariciones.
+function resolverTokens(texto) {
+  const cliente = document.getElementById("userInput").value.trim();
+  const agente = document.getElementById("agentInput").value.trim() || "un agente";
   const saludo = saludoHora();
-  const baseMessage = message
-    .split("SaludoHora").join(capitalizar(saludo))
-    .split("saludoHora").join(saludo)
-    .split("nombreAgente").join(agentInput);
 
-  if (!userInput) {
-    return baseMessage;
+  return String(texto).replace(TOKENS_REGEX, (token) => {
+    if (token.startsWith("encabezadoCliente")) return cliente ? `Hola ${cliente} 👋\n` : "";
+    switch (token) {
+      case "holaCliente": return cliente ? `Hola ${cliente},` : "Hola,";
+      case "SaludoHora":  return capitalizar(saludo);
+      case "saludoHora":  return saludo;
+      default:            return agente;   // nombreAgente
+    }
+  });
+}
+
+// Mensajes de las tarjetas especiales (pago, paso a paso): anteponen el
+// encabezado del cliente cuando existe.
+function addUserText(message) {
+  return resolverTokens("encabezadoCliente\n" + message);
+}
+
+// ============= RESPUESTAS Y PLANTILLAS: Google Sheets + respaldo =============
+// Cada tab lee su pestaña del Sheet (?hoja=respuestas | ?hoja=plantillas) con las
+// columnas: id | categoria | titulo | texto | orden | activo.
+// Si el Sheet no responde o la pestaña está vacía se usan los textos de
+// respaldo de defaults.js, así que los agentes nunca se quedan sin respuestas.
+
+const TABS_TARJETAS = {
+  respuestas: { hoja: "respuestas", contenedor: "cards-respuestas", chips: "chips-respuestas",
+                defecto: () => (typeof RESPUESTAS_DEFAULT !== "undefined" ? RESPUESTAS_DEFAULT : []) },
+  plantillas: { hoja: "plantillas", contenedor: "cards-plantillas", chips: "chips-plantillas",
+                defecto: () => (typeof PLANTILLAS_DEFAULT !== "undefined" ? PLANTILLAS_DEFAULT : []) }
+};
+
+const VALORES_INACTIVO = ["no", "false", "0", "n", "inactivo", "oculto"];
+
+/**
+ * Convierte las filas crudas (Sheet o defaults) en tarjetas válidas: descarta
+ * filas sin título/texto o inactivas, sanea el id, ordena por `orden` y
+ * respeta el orden de la hoja en los empates.
+ */
+function normalizarFilas(rows) {
+  const usados = new Set();
+  const salida = [];
+
+  (Array.isArray(rows) ? rows : []).forEach((row, i) => {
+    if (!row || typeof row !== "object") return;
+
+    const titulo = String(row.titulo ?? "").trim();
+    // "\n" escrito a mano en la celda también cuenta como salto de línea
+    const texto = String(row.texto ?? "").replace(/\r\n/g, "\n").replace(/\\n/g, "\n").trim();
+    if (!titulo || !texto) return;
+
+    const activo = String(row.activo ?? "").trim().toLowerCase();
+    if (VALORES_INACTIVO.includes(activo)) return;
+
+    let id = String(row.id ?? "").trim().replace(/[^A-Za-z0-9_-]/g, "_") || `fila-${i + 2}`;
+    while (usados.has(id)) id += "_";
+    usados.add(id);
+
+    const orden = parseFloat(String(row.orden ?? "").replace(",", "."));
+    salida.push({
+      id,
+      categoria: String(row.categoria ?? "").trim(),
+      titulo,
+      texto,
+      orden: Number.isFinite(orden) ? orden : Infinity,
+      pos: i
+    });
+  });
+
+  return salida.sort((a, b) => (a.orden === b.orden ? 0 : a.orden < b.orden ? -1 : 1) || a.pos - b.pos);
+}
+
+/** fetch con reintentos: Apps Script devuelve 404/errores transitorios de vez en cuando. */
+async function fetchConReintento(url, intentos = 2) {
+  let ultimoError = new Error("Error fetching data");
+  for (let i = 0; i < intentos; i++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) return response;
+      ultimoError = new Error(`HTTP ${response.status}`);
+    } catch (error) {
+      ultimoError = error;
+    }
+    if (i < intentos - 1) await new Promise(r => setTimeout(r, 1200));
+  }
+  throw ultimoError;
+}
+
+/** GET a una pestaña del Apps Script. Devuelve el array de filas o null si falló. */
+async function fetchHoja(alias) {
+  try {
+    const response = await fetchConReintento(`${APPS_SCRIPT_URL}?hoja=${alias}`);
+    const data = await response.json();
+    // {status:"error"} u otro objeto: la hoja no existe o el script no está actualizado
+    return Array.isArray(data) ? data : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function cargarTarjetasDesdeSheets() {
+  await Promise.all(Object.entries(TABS_TARJETAS).map(async ([tab, cfg]) => {
+    const filas = await fetchHoja(cfg.hoja);
+
+    if (filas === null) {
+      mostrarAvisoSync(tab, "No se pudo leer Google Sheets: se muestran los textos de respaldo.");
+      return;
+    }
+    mostrarAvisoSync(tab, "");
+
+    const nuevas = normalizarFilas(filas);
+    if (!nuevas.length) return;   // pestaña vacía o sin filas válidas: se conserva el respaldo
+    if (JSON.stringify(nuevas) === JSON.stringify(tarjetasData[tab])) return;
+
+    tarjetasData[tab] = nuevas;
+    document.documentElement.dataset[`fuente${capitalizar(tab)}`] = "sheets";
+    renderTarjetas(tab);
+  }));
+}
+
+function mostrarAvisoSync(tab, mensaje) {
+  const id = `sync-notice-${tab}`;
+  let aviso = document.getElementById(id);
+  if (!mensaje) { if (aviso) aviso.hidden = true; return; }
+  if (!aviso) {
+    aviso = document.createElement("p");
+    aviso.id = id;
+    aviso.className = "sync-notice";
+    aviso.setAttribute("role", "status");
+    document.getElementById(TABS_TARJETAS[tab].chips).insertAdjacentElement("beforebegin", aviso);
+  }
+  aviso.textContent = mensaje;
+  aviso.hidden = false;
+}
+
+function construirTarjeta(item, index) {
+  const card = document.createElement("div");
+  card.className = "text-box response-card";
+  card.dataset.id = item.id;
+  card.dataset.categoria = item.categoria;
+  card.dataset.order = index;           // orden original (base de las no fijadas)
+  card.style.setProperty("--i", index); // retraso de la animación de entrada
+  card._item = item;
+
+  const header = document.createElement("div");
+  header.className = "card-header";
+
+  const h3 = document.createElement("h3");
+  h3.textContent = item.titulo;
+  header.appendChild(h3);
+
+  const pinBtn = document.createElement("button");
+  pinBtn.type = "button";
+  pinBtn.className = "card-pin-btn";
+  pinBtn.title = "Fijar al inicio";
+  pinBtn.setAttribute("aria-label", "Fijar al inicio");
+  pinBtn.setAttribute("aria-pressed", "false");
+  pinBtn.innerHTML = PIN_SVG;
+  pinBtn.addEventListener("click", (e) => { e.stopPropagation(); togglePin(card); });
+  header.appendChild(pinBtn);
+
+  const viewBtn = document.createElement("button");
+  viewBtn.type = "button";
+  viewBtn.className = "card-view-btn";
+  viewBtn.title = "Ver mensaje completo";
+  viewBtn.setAttribute("aria-label", "Ver mensaje completo");
+  viewBtn.innerHTML = EYE_SVG;
+  viewBtn.addEventListener("click", (e) => { e.stopPropagation(); openResponseModal(card); });
+  header.appendChild(viewBtn);
+
+  const preview = document.createElement("p");
+  preview.className = "card-preview";
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "card-copy-btn";
+  copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar`;
+  copyBtn.addEventListener("click", (e) => { e.stopPropagation(); copyCardText(card, copyBtn); });
+
+  // Fuente de verdad del texto (oculta): búsqueda, vista previa, modal y copiado
+  const textarea = document.createElement("textarea");
+  textarea.className = "text-field card-data";
+  textarea.id = `card-${item.id}`;
+  textarea.readOnly = true;
+  textarea.tabIndex = -1;
+  textarea.setAttribute("aria-hidden", "true");
+  textarea.style.display = "none";
+  modalCardMap.set(card, textarea);
+
+  card.append(header, preview, copyBtn, textarea);
+
+  // Clic en la tarjeta (fuera de botones) → copiar
+  card.setAttribute("tabindex", "0");
+  card.setAttribute("role", "button");
+  card.addEventListener("click", (e) => {
+    if (e.target.closest("button")) return;
+    copyCardText(card);
+  });
+  card.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "BUTTON") return;
+    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copyCardText(card); }
+  });
+
+  return card;
+}
+
+/** (Re)dibuja las tarjetas de un tab a partir de tarjetasData[tab]. */
+function renderTarjetas(tab) {
+  const cfg = TABS_TARJETAS[tab];
+  const contenedor = document.getElementById(cfg.contenedor);
+  if (!contenedor) return;
+
+  if (modalCurrentTabId === tab) closeResponseModal();
+
+  contenedor.querySelectorAll(":scope > .response-card").forEach(card => {
+    modalCardMap.delete(card);
+    card.remove();
+  });
+
+  // Las tarjetas van antes de cualquier otro hijo (special cards, aviso "sin resultados")
+  const ancla = Array.from(contenedor.children).find(el => !el.classList.contains("response-card")) || null;
+  tarjetasData[tab].forEach((item, index) => contenedor.insertBefore(construirTarjeta(item, index), ancla));
+
+  if (tab === "respuestas") {
+    saludoCard = Array.from(contenedor.querySelectorAll(":scope > .response-card"))
+      .find(card => card.dataset.id === "daysMessage") || null;
   }
 
-  return `Hola ${userInput} 👋\n${baseMessage}`;
+  reorderCards(contenedor);
+  renderChips(tab);
+  refrescarTextos();
+  renderCardPreviews();
+  reaplicarFiltros();
+}
+
+/** Escribe en cada tarjeta su texto con los tokens ya resueltos. */
+function refrescarTextos() {
+  modalCardMap.forEach((textarea, card) => {
+    if (card._item) textarea.value = resolverTokens(card._item.texto);
+  });
+}
+
+function reaplicarFiltros() {
+  const gs = document.getElementById("globalSearch");
+  const hayFiltro = (gs && gs.value) || categoriaActiva.respuestas || categoriaActiva.plantillas;
+  if (hayFiltro) globalSearchFilter(gs ? gs.value : "");
+}
+
+// ----- Chips de categoría -----
+
+function renderChips(tab) {
+  const contenedor = document.getElementById(TABS_TARJETAS[tab].chips);
+  if (!contenedor) return;
+
+  // Categorías en el orden de los datos (no del DOM: las tarjetas fijadas se
+  // mueven), y al final las de las special cards ("Herramientas")
+  const categorias = [];
+  const agregar = cat => { if (cat && !categorias.includes(cat)) categorias.push(cat); };
+  tarjetasData[tab].forEach(item => agregar(item.categoria));
+  document.querySelectorAll(`#${tab} .special-card[data-categoria]`).forEach(el => agregar(el.dataset.categoria));
+
+  if (categorias.length < 2) {
+    contenedor.hidden = true;
+    contenedor.replaceChildren();
+    categoriaActiva[tab] = "";
+    return;
+  }
+  if (!categorias.includes(categoriaActiva[tab])) categoriaActiva[tab] = "";
+
+  contenedor.hidden = false;
+  contenedor.replaceChildren(...["", ...categorias].map(cat => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "category-chip";
+    chip.textContent = cat || "Todas";
+    chip.dataset.categoria = "";   // evita que los chips cuenten como categorías
+    chip.dataset.valor = cat;
+    chip.setAttribute("aria-pressed", String(categoriaActiva[tab] === cat));
+    chip.addEventListener("click", () => {
+      categoriaActiva[tab] = cat;
+      contenedor.querySelectorAll(".category-chip").forEach(c =>
+        c.setAttribute("aria-pressed", String(c.dataset.valor === cat)));
+      globalSearchFilter(document.getElementById("globalSearch")?.value || "");
+    });
+    return chip;
+  }));
 }
 
 function updateMessages() {
-  const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
-  const userInput = document.getElementById("userInput").value.trim();
-  const hola = userInput ? `Hola ${userInput},` : 'Hola,';
-
-  document.getElementById("daysMessage").value =
-    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
-  document.getElementById("falloSistema").value =
-    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
-  document.getElementById("modulosCapacitaciones").value = 
-    addUserText("SaludoHora, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
-  document.getElementById("validarPagoMessage").value = 
-    addUserText("¡Mil gracias por el pago! Puedes seguir haciendo uso del sistema con normalidad 😁");
-  document.getElementById("pagoGraciasMessage").value = 
-    addUserText("Me puedes indicar por favor el número de NIT del negocio para validar con el área contable 😊");
-  document.getElementById("solicitarLinkMessage").value = 
-    addUserText("SaludoHora, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
+  refrescarTextos();
   updatePasoaPasoMessage();
-  document.getElementById("demorasDIAN").value =
-    addUserText("¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀");
-  document.getElementById("casoEscalado").value =
-    "Te confirmo que ya hemos escalado tu caso a nuestro equipo especializado para que puedan ayudarnos lo más pronto posible. En cuanto tengamos una respuesta concreta, nos comunicaremos contigo para informarte sobre ello. Agradecemos tu paciencia y comprensión mientras trabajamos en la solución de tu caso 😊";
-    document.getElementById("algoMas").value =
-    "Con mucho gusto, ¿la solución brindada fue de ayuda para ti? 😁";
-  document.getElementById("despedidaMessage").value =
-    "Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉\n\nTe dejamos una encuesta de satisfacción para que puedas calificar nuestra atención: short.lizto.co/pkFN2dEfvu";
-  document.getElementById("cierreSinRespuesta").value =
-    "¡Hola! 🖐️ No queremos ser molestos, solo queríamos confirmar si pudiste resolver tu duda o si aún necesitas ayuda con la plataforma. Si estás ocupado(a), no te preocupes, cuando tengas un espacio nos escribes y reanudamos la atención.";
-  document.getElementById("calificacion").value = "¿Qué tan satisfecho estás con tu experiencia general utilizando el sistema y la atención recibida?\n[ 1 ] ⭐ Muy insatisfecho\n[ 2 ] ⭐⭐ Insatisfecho\n[ 3 ] ⭐⭐⭐ Neutral\n[ 4 ] ⭐⭐⭐⭐ Satisfecho\n[ 5 ] ⭐⭐⭐⭐⭐ Muy satisfecho\n¡Agradecemos mucho tu tiempo! 🙌";
-  document.getElementById("facturacionElectronica").value =
-    "Para integrar la facturación electrónica en la cuenta es necesario que nos envíes un correo con la solicitud, en este deben adjuntar 3 archivos: \n1. RUT actualizado para verificar la información en la cuenta. \n2. Set de pruebas. Este lo recibes cuando te habilitas para facturar electrónicamente desde la DIAN \n\nCómo habilitarse\nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/habilitaci%C3%B3n-de-facturaci%C3%B3n-electr%C3%B3nica-5-7-2024 \n\nConfigurar modos de operación con SOLUCIONES ALEGRA SAS \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-1-5-22-4-2025 \n\nSet de pruebas \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-3-53 \n\n 3. Archivo de la resolución para facturación electrónica que también solicitan desde el portal de la DIAN \n\nSolicitar resolución \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-5-5 \n\nAsociar prefijos con SOLUCIONES ALEGRA SAS o Alegra \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-paso-4-5 \n\nSi tienes alguna duda con el proceso, te compartimos un paso a paso de cómo realizar el proceso: \nhttps://liztosoftware.zohodesk.com/portal/es/kb/articles/proceso-de-habilitaci%C3%B3n-facturaci%C3%B3n-electr%C3%B3nica-clase-grupal-24-02-2026"
-  document.getElementById("nominaElectronica").value =
-    "La nómina electrónica es uno de los documentos digitales que puedes gestionar a través de Lizto. Este proceso está regulado por la DIAN y permite emitir o respaldar electrónicamente los pagos de salario a tus empleados. Para utilizar la nómina electrónica en Lizto, es necesario contratar un plan de facturación electrónica que incluya el módulo de Nómina Electrónica, actualmente este tiene un valor de $30,900 COP mensuales."
-  document.getElementById("apiWhatsapp").value =
-    "Si deseas integrar el API de WhatsApp con Lizto, es importante que tengas en cuenta que este proceso se realiza directamente con Meta (Facebook), y requiere cumplir ciertos requisitos para garantizar la autenticidad y seguridad del negocio.\nAquí te comparto los puntos más importantes:\n\n1. Fanpage activa: Debes contar con una página de Facebook para tu negocio, que tenga actividad e interacciones reales (por ejemplo: publicaciones, comentarios, likes, reseñas).\n\n 2. Dominio web propio: Se recomienda tener un sitio web con un dominio que represente el nombre de tu negocio (por ejemplo: www.tusalon.com), ya que esto facilita la verificación del negocio ante Meta.\n\n 3. Documentos legales: Meta pedirá validar los datos legales del negocio, por lo que debes contar con documentos como el RUT, Cámara de Comercio o equivalente, donde el nombre coincida con el registrado en tu cuenta empresarial de Facebook.\n\n 4. Número exclusivo para el API: El número de WhatsApp que vas a usar en la integración no debe estar vinculado a ninguna cuenta de WhatsApp (ni personal ni Business). Este número se asociará únicamente al canal de mensajería empresarial y no podrá usarse de forma tradicional una vez quede vinculado.\n\n 5. Capacidad de recibir llamadas o SMS: El número debe poder recibir llamadas o mensajes de texto para completar la verificación con código.\n\nSi cumples con estos puntos, podemos ayudarte a iniciar el proceso junto con nuestro equipo de soporte. Una vez aprobado, podrás enviar notificaciones a tus clientes por WhatsApp de forma automática desde Lizto."
-  document.getElementById("whatsappLITE").value =
-    "Antes de comenzar, te comparto los requisitos indispensables.\n\nPara poder completar la conexión necesitas, sí o sí, tener listo lo siguiente:\n\n-Una cuenta de Facebook y acceso a ella (usuario y contraseña a la mano).\n-Una fanpage (página) de Facebook, o los permisos necesarios para poder crearla en el momento de registrar el número. Si aún no la tienes, en el mismo proceso de conexión te permite crearla de forma fácil y rápida.\n-El número de teléfono que vas a conectar ya debe estar registrado en WhatsApp Business (la app oficial); es decir, debe funcionar hoy como una cuenta de WhatsApp Business antes de iniciar este proceso.\n-La persona que hace la integración debe iniciar sesión en Facebook desde el computador con una sesión distinta a la del celular que tiene WhatsApp Business, ya que ese celular debe quedar libre para leer y escanear el código QR que aparece en pantalla."
-  document.getElementById("solicitudCorreo").value =
-    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos:\n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud [motivo de la solicitud]\n\nEjemplo: Solicitud modificación de datos."
-  document.getElementById("solicitudRecuperarEspecialista").value =
-    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNombre comercial del negocio: \nNIT: \nNombre del contacto: \nNombre del especialista eliminado: \nCorreo electrónico del especialista: \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud)\n\nEn el asunto del correo por favor indica: Solicitud recuperar especialista [nombre del negocio]"
-  document.getElementById("solicitudCambioRazonSocial").value =
-    "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
-  document.getElementById("solicitudIdSetPruebas").value =
-  `${capitalizar(saludoHora())}.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias.`
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
   renderCardPreviews();
@@ -365,7 +610,7 @@ function triggerCopyFeedback(btn) {
   }, 1500);
 }
 
-document.querySelectorAll('button#copiarBtn').forEach(function(btn) {
+document.querySelectorAll('button.copy-btn').forEach(function(btn) {
   btn.addEventListener('click', function() {
     if (btn.disabled) return;
     const textarea = btn.closest('.text-box').querySelector('textarea');
@@ -460,13 +705,19 @@ function globalSearchFilter(query) {
   const q = query.toLowerCase().trim();
   const isSearching = q.length > 0;
 
+  // Un chip de categoría activo y el texto de búsqueda se COMBINAN (AND)
+  const filtraResp = isSearching || !!categoriaActiva.respuestas;
+  const filtraPlant = isSearching || !!categoriaActiva.plantillas;
+  const categoriaOk = (tab, card) =>
+    !categoriaActiva[tab] || card.dataset.categoria === categoriaActiva[tab];
+
   // Respuestas
   const respCards = document.querySelectorAll("#respuestas .text-box");
   let respCount = 0;
   respCards.forEach(card => {
     const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
     const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
-    const match = !isSearching || title.includes(q) || text.includes(q);
+    const match = categoriaOk("respuestas", card) && (!isSearching || title.includes(q) || text.includes(q));
     card.style.display = match ? "" : "none";
     if (match) respCount++;
   });
@@ -478,7 +729,7 @@ function globalSearchFilter(query) {
       .some(card => card.style.display !== "none");
     specialContainer.style.display = algunaVisible ? "" : "none";
   }
-  showNoResults("respuestas", isSearching && respCount === 0);
+  showNoResults("respuestas", filtraResp && respCount === 0);
 
   // Plantillas
   const plantCards = document.querySelectorAll("#plantillas .text-box");
@@ -486,11 +737,11 @@ function globalSearchFilter(query) {
   plantCards.forEach(card => {
     const title = (card.querySelector("h3")?.textContent || "").toLowerCase();
     const text  = (card.querySelector("textarea")?.value || "").toLowerCase();
-    const match = !isSearching || title.includes(q) || text.includes(q);
+    const match = categoriaOk("plantillas", card) && (!isSearching || title.includes(q) || text.includes(q));
     card.style.display = match ? "" : "none";
     if (match) plantCount++;
   });
-  showNoResults("plantillas", isSearching && plantCount === 0);
+  showNoResults("plantillas", filtraPlant && plantCount === 0);
 
   // Paso a paso (delega al HelpCenter)
   let pasoCount = 0;
@@ -511,8 +762,8 @@ function globalSearchFilter(query) {
   showNoResults("atajos", isSearching && atajosCount === 0);
 
   // Badges
-  updateTabBadge("badge-respuestas", respCount,   isSearching);
-  updateTabBadge("badge-plantillas", plantCount,  isSearching);
+  updateTabBadge("badge-respuestas", respCount,   filtraResp);
+  updateTabBadge("badge-plantillas", plantCount,  filtraPlant);
   updateTabBadge("badge-pasoPaso",   pasoCount,   isSearching);
   updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
@@ -694,7 +945,7 @@ class HelpCenter {
    */
   async loadData() {
     try {
-      const response = await fetch(this.apiUrl);
+      const response = await fetchConReintento(this.apiUrl);
       if (!response.ok) throw new Error("Error fetching data");
       
       const data = await response.json();
@@ -916,7 +1167,7 @@ class DiagnosticoCenter {
 
   async loadData() {
     try {
-      const response = await fetch(this.apiUrl);
+      const response = await fetchConReintento(this.apiUrl);
       if (!response.ok) throw new Error("Error fetching data");
 
       const data = await response.json();
@@ -1307,7 +1558,7 @@ function reorderCards(container) {
 }
 
 function cardTextareaId(card) {
-  return modalCardMap.get(card)?.id || '';
+  return card.dataset.id || '';
 }
 
 function togglePin(card) {
@@ -1320,95 +1571,6 @@ function togglePin(card) {
   reorderCards(card.parentElement);
   // El orden visible cambió: refrescar la lista de navegación del modal
   updateModalAfterSearch();
-}
-
-function initResponseCards(cardIds) {
-  cardIds.forEach((id, index) => {
-    const textarea = document.getElementById(id);
-    if (!textarea) return;
-    const card = textarea.closest('.text-box');
-    if (!card || card.classList.contains('response-card')) return;
-
-    card.classList.add('response-card');
-    card.style.setProperty('--i', index);
-    // Posición original en el DOM: base del orden de las tarjetas no fijadas
-    card.dataset.order = Array.from(card.parentElement.children).indexOf(card);
-    textarea.classList.add('card-data');
-    textarea.style.display = 'none';
-    modalCardMap.set(card, textarea);
-
-    // Ocultar botón copiar original
-    const oldCopyBtn = card.querySelector('button[id="copiarBtn"]');
-    if (oldCopyBtn) oldCopyBtn.style.display = 'none';
-
-    // Envolver h3 + botón ojo en .card-header
-    const h3 = card.querySelector('h3');
-    if (h3 && !card.querySelector('.card-header')) {
-      const header = document.createElement('div');
-      header.className = 'card-header';
-      h3.parentNode.insertBefore(header, h3);
-      header.appendChild(h3);
-
-      const viewBtn = document.createElement('button');
-      viewBtn.className = 'card-view-btn';
-      viewBtn.title = 'Ver mensaje completo';
-      viewBtn.setAttribute('aria-label', 'Ver mensaje completo');
-      viewBtn.innerHTML = EYE_SVG;
-      header.appendChild(viewBtn);
-
-      viewBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openResponseModal(card);
-      });
-
-      const pinBtn = document.createElement('button');
-      pinBtn.className = 'card-pin-btn';
-      pinBtn.title = 'Fijar al inicio';
-      pinBtn.setAttribute('aria-label', 'Fijar al inicio');
-      pinBtn.setAttribute('aria-pressed', 'false');
-      pinBtn.innerHTML = PIN_SVG;
-      header.insertBefore(pinBtn, viewBtn);
-
-      pinBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        togglePin(card);
-      });
-    }
-
-    // Agregar preview después del header
-    if (!card.querySelector('.card-preview')) {
-      const preview = document.createElement('p');
-      preview.className = 'card-preview';
-      const anchor = card.querySelector('.card-header') || card.querySelector('h3');
-      anchor.insertAdjacentElement('afterend', preview);
-    }
-
-    // Agregar botón Copiar al fondo
-    if (!card.querySelector('.card-copy-btn')) {
-      const copyBtn = document.createElement('button');
-      copyBtn.className = 'card-copy-btn';
-      copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar`;
-      card.appendChild(copyBtn);
-      copyBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        copyCardText(card, copyBtn);
-      });
-    }
-
-    // Clic en la tarjeta (fuera de botones) → copiar
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('role', 'button');
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('button')) return;
-      copyCardText(card);
-    });
-    card.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'BUTTON') return;
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); copyCardText(card); }
-    });
-  });
-
-  renderCardPreviews();
 }
 
 let modalLastFocus = null;
@@ -1564,26 +1726,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Inicializar tarjetas compactas
-  const RESPUESTAS_CARD_IDS = [
-    'daysMessage', 'calificacion', 'falloSistema', 'modulosCapacitaciones',
-    'validarPagoMessage', 'pagoGraciasMessage', 'solicitarLinkMessage',
-    'demorasDIAN', 'casoEscalado', 'algoMas', 'despedidaMessage', 'cierreSinRespuesta'
-  ];
-  const PLANTILLAS_CARD_IDS = [
-    'facturacionElectronica', 'nominaElectronica', 'apiWhatsapp', 'whatsappLITE',
-    'solicitudCorreo', 'solicitudRecuperarEspecialista', 'solicitudCambioRazonSocial', 'solicitudIdSetPruebas'
-  ];
-  initResponseCards(RESPUESTAS_CARD_IDS);
-  initResponseCards(PLANTILLAS_CARD_IDS);
-  reorderCards(document.querySelector('#respuestas .text-fields'));
-  reorderCards(document.querySelector('#plantillas .text-fields'));
+  // Tarjetas: primero el respaldo (pinta al instante) y luego Google Sheets
+  Object.entries(TABS_TARJETAS).forEach(([tab, cfg]) => {
+    tarjetasData[tab] = normalizarFilas(cfg.defecto());
+    renderTarjetas(tab);
+  });
   renderAtajos();
+  cargarTarjetasDesdeSheets();
 
   // Inicializar saludo card + chips de variantes
-  saludoCard = document.getElementById('daysMessage')?.closest('.text-box') || null;
   const variantsEl = document.getElementById('modal-variants');
-  if (variantsEl && saludoCard) {
+  if (variantsEl) {
     SALUDO_VARIANTES.forEach(({ label, value }) => {
       const chip = document.createElement('button');
       chip.className = 'saludo-chip' + (value === saludoVariante ? ' saludo-chip--active' : '');

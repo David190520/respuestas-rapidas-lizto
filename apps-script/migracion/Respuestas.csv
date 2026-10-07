@@ -1,0 +1,40 @@
+id,categoria,titulo,texto,orden,activo
+"daysMessage","Saludos","Saludo","holaCliente muy saludoHora, ¿cómo estás? Hablas con nombreAgente, del equipo soporte Lizto ☑︎.","1","SI"
+"falloSistema","Incidencias","Fallo del sistema","holaCliente muy saludoHora, ¿cómo estás? Hablas con nombreAgente, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.","2","SI"
+"modulosCapacitaciones","Capacitaciones","Módulos y capacitaciones","encabezadoCliente
+SaludoHora, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.
+
+También contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:
+
+Capacitaciones por módulos:
+Martes – 9:00 a.m.
+
+Espacios de resolución de dudas generales:
+Martes – 5:00 p.m.
+Jueves – 9:00 a.m. y 5:00 p.m.
+
+Link 9 am: https://us06web.zoom.us/j/83345602567
+Link 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1
+
+Si después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.","3","SI"
+"validarPagoMessage","Pagos","Confirmación de pago","encabezadoCliente
+¡Mil gracias por el pago! Puedes seguir haciendo uso del sistema con normalidad 😁","4","SI"
+"pagoGraciasMessage","Pagos","Solicitar link de pago","encabezadoCliente
+Me puedes indicar por favor el número de NIT del negocio para validar con el área contable 😊","5","SI"
+"solicitarLinkMessage","Pagos","Solicitar comprobante","encabezadoCliente
+SaludoHora, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo","6","SI"
+"demorasDIAN","Incidencias","Demoras DIAN","encabezadoCliente
+¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀","7","SI"
+"casoEscalado","Escalamiento","Caso escalado","Te confirmo que ya hemos escalado tu caso a nuestro equipo especializado para que puedan ayudarnos lo más pronto posible. En cuanto tengamos una respuesta concreta, nos comunicaremos contigo para informarte sobre ello. Agradecemos tu paciencia y comprensión mientras trabajamos en la solución de tu caso 😊","8","SI"
+"algoMas","Cierre","Pregunta final","Con mucho gusto, ¿la solución brindada fue de ayuda para ti? 😁","9","SI"
+"despedidaMessage","Cierre","Despedida","Ha sido un placer ayudarte. Si necesitas más ayuda no dudes en contactarnos. ¡Te deseo un excelente día! 😉
+
+Te dejamos una encuesta de satisfacción para que puedas calificar nuestra atención: short.lizto.co/pkFN2dEfvu","10","SI"
+"cierreSinRespuesta","Cierre","Cierre sin respuesta","¡Hola! 🖐️ No queremos ser molestos, solo queríamos confirmar si pudiste resolver tu duda o si aún necesitas ayuda con la plataforma. Si estás ocupado(a), no te preocupes, cuando tengas un espacio nos escribes y reanudamos la atención.","11","SI"
+"calificacion","Cierre","Calificación","¿Qué tan satisfecho estás con tu experiencia general utilizando el sistema y la atención recibida?
+[ 1 ] ⭐ Muy insatisfecho
+[ 2 ] ⭐⭐ Insatisfecho
+[ 3 ] ⭐⭐⭐ Neutral
+[ 4 ] ⭐⭐⭐⭐ Satisfecho
+[ 5 ] ⭐⭐⭐⭐⭐ Muy satisfecho
+¡Agradecemos mucho tu tiempo! 🙌","12","SI"

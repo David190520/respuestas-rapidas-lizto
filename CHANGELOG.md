@@ -15,6 +15,52 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-09 (Respuestas y Plantillas desde Sheets)
+
+### Agregado
+
+- **Respuestas y Plantillas se leen de Google Sheets (Fase 3).** Cada tab usa su
+  pestaña (`?hoja=respuestas` / `?hoja=plantillas`) con las columnas
+  `id | categoria | titulo | texto | orden | activo`. Las tarjetas se generan con
+  `construirTarjeta()` en vez de estar fijas en el HTML.
+- **Respaldo:** `defaults.js` (`RESPUESTAS_DEFAULT`, `PLANTILLAS_DEFAULT`) se pinta
+  al instante y solo lo reemplazan filas válidas del Sheet. Si el fetch falla
+  (con un reintento por los 404 transitorios de Google) aparece un aviso
+  discreto; una pestaña vacía conserva el respaldo.
+- **Tokens nuevos** `holaCliente` y `encabezadoCliente`, resueltos junto con
+  `nombreAgente`/`saludoHora` por `resolverTokens()` en una sola pasada. Se
+  verificó que los textos con tokens generan **exactamente** el mismo mensaje que
+  el código anterior (240 comparaciones: 20 textos × 4 combinaciones de
+  cliente/agente × 3 horas).
+- **Chips de filtro por categoría (TODO-10)** en Respuestas y Plantillas,
+  generados de los datos (+ "Herramientas" para las special cards). Se combinan
+  con el buscador global y los badges cuentan el resultado combinado.
+- **Caché offline de datos (TODO-18):** `sw.js` guarda la última respuesta buena
+  de cada pestaña del Sheet en `respuestas-rapidas-datos` y la usa sin conexión.
+  Solo guarda arrays (Apps Script responde 200 con `{status:"error"}`).
+- `apps-script/migracion/`: `Respuestas.csv`, `Plantillas.csv` y `LEEME.md` con
+  los pasos para cargar los textos actuales y actualizar el Apps Script.
+- Reglas del Sheet: `activo` = `NO`/`FALSE` oculta; `orden` numérico; `id` vacío o
+  repetido se corrige solo; `\n` escrito a mano cuenta como salto de línea.
+
+### Cambiado
+
+- `apps-script/Codigo.gs`: se agregan `respuestas` y `plantillas` al mapa `HOJAS`
+  (`doGet` y `leerHoja` no cambian; Paso a paso y Diagnóstico no se tocan).
+- Los títulos y textos del Sheet se insertan con `textContent`/`value`, nunca con
+  `innerHTML`.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v7` (nuevo `defaults.js`);
+  `activate` conserva la caché de datos.
+- Paso a paso y Diagnóstico reintentan una vez si Apps Script falla
+  (`fetchConReintento()`); su contrato con el script no cambia.
+
+### Corregido
+
+- **TODO-12:** se eliminan los `id="copiarBtn"` duplicados (los 3 de las special
+  cards pasan a `class="copy-btn"`; el resto desaparece al generar las tarjetas).
+
+---
+
 ## [Sin publicar] — 2026-10-08 (seguridad, tema del SO y saludo por hora)
 
 ### Agregado

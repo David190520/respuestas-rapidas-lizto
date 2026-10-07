@@ -76,12 +76,15 @@ No hay `npm install`, ni compilación, ni variables de entorno.
 ```
 respuestasrapidas/
 ├── index.html                    # Markup: barra superior, tabs, tarjetas, modal
+├── defaults.js                   # Textos de respaldo de Respuestas y Plantillas
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
 ├── manifest.json                 # Metadatos de la PWA
 ├── sw.js                         # Service worker (network-first + caché offline)
 ├── icon.svg                      # Ícono de la PWA y favicon
-├── apps-script/Codigo.gs         # Copia de referencia del Google Apps Script
+├── apps-script/
+│   ├── Codigo.gs                 # Copia de referencia del Google Apps Script
+│   └── migracion/                # CSV + LEEME.md para cargar textos al Sheet
 ├── PLAN.md                       # Plan de implementación por fases
 ├── CLAUDE.md                     # Contexto y convenciones para Claude Code
 ├── TODO.md                       # Tareas pendientes y completadas
@@ -94,7 +97,8 @@ Todo `index.js` vive en un solo archivo, organizado por secciones comentadas:
 |---|---|
 | Estado global | Variables del modal, variantes de saludo, lista de atajos |
 | Datos de agentes | Horarios y enlaces de Zoom por agente |
-| Mensajes | `addUserText()`, `updateMessages()` y sus helpers |
+| Mensajes y tokens | `resolverTokens()`, `addUserText()`, `updateMessages()` |
+| Respuestas y Plantillas | `normalizarFilas()`, `cargarTarjetasDesdeSheets()`, `renderTarjetas()`, chips |
 | Listeners | Inicialización, inputs, tabs, toggle de tema, copiado |
 | Buscador global | `globalSearchFilter()` y badges por tab |
 | `HelpCenter` | Tab Paso a paso |
@@ -122,6 +126,8 @@ Google Sheets  ──►  Apps Script (doGet)  ──►  JSON  ──►  fetch
    |---|---|---|
    | Paso a paso | `.../exec` | `[{ titulo, contenido }, ...]` |
    | Diagnóstico | `.../exec?hoja=diagnostico` | `[{ categoria, subtitulo, contenido }, ...]` |
+   | Respuestas | `.../exec?hoja=respuestas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
+   | Plantillas | `.../exec?hoja=plantillas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
 
 4. El frontend agrupa los casos de Diagnóstico por `categoria`; el Apps Script
    devuelve un array plano.
@@ -130,6 +136,11 @@ Google Sheets  ──►  Apps Script (doGet)  ──►  JSON  ──►  fetch
    renderizar y muestra un mensaje de error en el sidebar.
 
 La URL del despliegue está en la constante `APPS_SCRIPT_URL` de `index.js`.
+
+**Respuestas y Plantillas** se editan en las pestañas `Respuestas` y `Plantillas`
+del Sheet (no hace falta tocar código). Si el Sheet no responde, la app usa los
+textos de respaldo de `defaults.js` y avisa. Guía de columnas, tokens y de cómo
+activarlo: [`apps-script/migracion/LEEME.md`](apps-script/migracion/LEEME.md).
 
 **Para agregar contenido no hace falta tocar el código:** basta con agregar una
 fila en el Google Sheet correspondiente. Los cambios aparecen en el próximo
