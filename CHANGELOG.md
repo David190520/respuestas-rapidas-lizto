@@ -15,6 +15,18 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (fix tarjetas especiales)
+
+### Corregido
+
+- **"Puede realizar el pago" y "Paso a paso":** el campo Link y el botón de
+  copiar quedaban al lado del textarea cuando la tarjeta era lo bastante ancha
+  (zoom del navegador por debajo de ~175 %). Ahora `.special-card-body` es
+  siempre una columna: textarea arriba, Link y botón copiar debajo, a cualquier
+  ancho o zoom.
+
+---
+
 ## [Sin publicar] — 2026-10-07 (tarjetas fijadas)
 
 ### Agregado
