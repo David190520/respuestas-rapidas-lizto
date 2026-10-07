@@ -15,6 +15,117 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (seguridad, tema del SO y saludo por hora)
+
+### Agregado
+
+- **Saludo según la hora (Fase 2).** Nuevos tokens `saludoHora` / `SaludoHora`
+  y la función `saludoHora()`: "buen día", "buenas tardes" o "buenas noches"
+  según la hora de Colombia (no la del PC del agente). Aplicado a Saludo, Fallo
+  del sistema, Módulos y capacitaciones, Solicitar comprobante y la plantilla ID
+  Set de Pruebas. Se recalcula al cruzar de periodo y al volver a la pestaña,
+  para que un turno largo no quede con el saludo de la mañana.
+- **El tema sigue al sistema operativo (Fase 1b).** La app arranca en claro u
+  oscuro según `prefers-color-scheme` y acompaña el cambio del sistema hasta que
+  el agente usa el toggle. No se persiste. Un script en `<head>` evita el
+  parpadeo oscuro → claro, y se declara `color-scheme` para los controles
+  nativos (selects, scrollbars).
+
+### Cambiado
+
+- La clase `light-mode` pasa de `<body>` a `<html>` y los tokens a `.light-mode`.
+- `addUserText()` reemplaza **todas** las apariciones de `nombreAgente`.
+
+### Corregido
+
+- **Seguridad (Fase 1a):** el contenido de Paso a paso y Diagnóstico (Google
+  Sheets) se insertaba con `innerHTML` sin escapar, por lo que una fila con HTML
+  malicioso habría ejecutado código en la sesión de los agentes. Ahora
+  `escapeHtml()` escapa todo y `linkify()` solo genera enlaces `http(s)`, sin
+  incluir la puntuación final en la URL. El copiado sigue usando el string crudo.
+
+---
+
+## [Sin publicar] — 2026-10-08 (atajos y plan)
+
+### Agregado
+
+- **Atajos:** "Asignaciones semanales" (Zoho Desk), "Buscar documento DIAN" y
+  "Hoja de Excel - Soporte" en el tab Atajos.
+- `PLAN.md`: plan de implementación por fases con decisiones tomadas, contrato
+  con el Apps Script y criterios de aceptación.
+- `apps-script/Codigo.gs`: copia de referencia del Apps Script desplegado.
+
+---
+
+## [Sin publicar] — 2026-10-08 (fix tarjetas especiales)
+
+### Corregido
+
+- **"Puede realizar el pago" y "Paso a paso":** el campo Link y el botón de
+  copiar quedaban al lado del textarea cuando la tarjeta era lo bastante ancha
+  (zoom del navegador por debajo de ~175 %). Ahora `.special-card-body` es
+  siempre una columna: textarea arriba, Link y botón copiar debajo, a cualquier
+  ancho o zoom.
+
+---
+
+## [Sin publicar] — 2026-10-07 (tarjetas fijadas)
+
+### Agregado
+
+- **Fijar tarjetas.** Cada tarjeta de Respuestas y Plantillas tiene un botón pin;
+  las fijadas suben al inicio de su tab, con borde y fondo destacados, y se
+  recuerdan entre sesiones en `localStorage` (`lizto_pinned_cards`). El resto
+  mantiene su orden original y el modal navega en el orden visible.
+
+### Corregido
+
+- **Enlace para reunión:** el selector de fechas ya no muestra sábados ni
+  domingos (no se dan capacitaciones esos días).
+- El valor de cada fecha se calculaba con `toISOString()` (UTC); después de las
+  7 p.m. en Colombia podía quedar un día adelantado. Ahora usa la fecha local.
+
+---
+
+## [Sin publicar] — 2026-10-07
+
+### Cambiado
+
+- **Rediseño visual alineado con lizto.co.** Nueva paleta (teal `#12b5ac`, tinta
+  `#0e1a1c`, tinte `#def5f3`, rosa `#cc3366` como énfasis) y fuente Plus Jakarta
+  Sans en lugar de Poppins/Montserrat/Inter. El modo oscuro deja de ser morado:
+  deriva de la misma paleta teal. Todo el CSS se reescribió sobre tokens
+  (`--accent-ink`, `--accent-solid`, `--on-accent`, `--bubble-bg`, sombras,
+  radios, `--ease`/`--dur`) y se eliminó casi toda la capa de overrides de
+  `body.light-mode`.
+- **Barra superior fija** con logo (SVG inline), campos Cliente/Agente y toggle
+  de tema, en lugar del título centrado. Buscador en píldora y tabs tipo
+  segmented control.
+- **Tarjetas** más redondeadas, con sombra y elevación al hover, preview de 3
+  líneas y animación de entrada escalonada. Grilla fluida `auto-fill`, sin
+  `!important` en móvil.
+- **El drawer lateral pasó a ser un modal centrado** (hoja inferior en móvil),
+  con fondo difuminado, animación de escala, burbuja de mensaje, navegación
+  ←/→ con teclado, foco atrapado, bloqueo de scroll y retorno del foco. IDs y
+  funciones renombrados `drawer*` → `modal*`.
+- Paso a paso y Diagnóstico: sidebar con items en píldora, etiqueta de
+  categoría tipo chip, contraste de enlaces y callouts por tokens.
+- `manifest.json`: `theme_color` y `background_color` de la nueva paleta.
+  `icon.svg` rehecho con el isotipo de Lizto.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v6`.
+
+### Corregido
+
+- Favicon: ahora usa `icon.svg` en lugar de un `.ico` base64 heredado (TODO-15).
+
+### Eliminado
+
+- `logo-removebg-preview.png` y la marca de agua de fondo (el logo vive ahora en
+  la barra superior). Esto vuelve obsoleto el TODO-14.
+
+---
+
 ## [Sin publicar] — 2026-08-25
 
 ### Agregado

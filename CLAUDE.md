@@ -2,6 +2,9 @@
 
 ## Contexto del proyecto
 
+> **Antes de implementar algo, leer `PLAN.md`**: contiene las decisiones ya
+> tomadas, el contrato con el Apps Script y las fases pendientes en orden.
+
 Herramienta interna de soporte para agentes del CRM de Lizto Software
 (SaaS multi-tenant para salones de belleza). Permite copiar respuestas
 rápidas, plantillas, guías paso a paso y casos de diagnóstico para
@@ -20,13 +23,13 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 
 ## Arquitectura
 
-- `index.html` — estructura y markup de las 5 tabs, el drawer y los inputs
+- `index.html` — estructura y markup de la barra superior, las 5 tabs, el modal y los inputs
 - `index.js` — toda la lógica: textos, eventos, clases `HelpCenter` y
-  `DiagnosticoCenter`, drawer, buscador global, atajos de teclado
+  `DiagnosticoCenter`, modal, buscador global, atajos de teclado
 - `style.css` — estilos globales (ojo: es `style.css`, singular, no `styles.css`)
 - `manifest.json` / `sw.js` / `icon.svg` — PWA
-- `logo-removebg-preview.png` — marca de agua de fondo del `body`, referenciada
-  solo desde `style.css`
+- El logo de la barra superior es un SVG inline en `index.html` (no hay
+  imágenes de marca como archivos estáticos).
 
 ## Tabs actuales (5)
 
@@ -52,7 +55,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
   `{categoria, subtitulo, contenido}`. El agrupamiento por categoría se hace
   en el frontend, no en el Apps Script.
 
-Ambos endpoints son el mismo despliegue de Apps Script; el parámetro `hoja`
+El código del Apps Script está copiado en `apps-script/Codigo.gs` (referencia;
+el desplegado vive en Google). Ambos endpoints son el mismo despliegue; el parámetro `hoja`
 decide qué pestaña del Sheet se lee. Si la lectura falla, el Apps Script
 devuelve un objeto `{status:"error"}` en vez de un array — por eso el código
 valida `Array.isArray(data)` antes de usarlo.
@@ -62,8 +66,14 @@ valida `Array.isArray(data)` antes de usarlo.
 ### Variables dinámicas en los textos
 
 - El token literal **`nombreAgente`** dentro de un string se reemplaza por el
-  nombre del agente vía `addUserText()` → `message.replace("nombreAgente", agentInput)`.
+  nombre del agente vía `addUserText()` (reemplaza todas las apariciones).
   No se usa sintaxis de llaves (`{{...}}`); es un reemplazo de texto plano.
+- Los tokens **`saludoHora`** y **`SaludoHora`** se reemplazan por el saludo
+  según la hora de Colombia (`America/Bogota`, no la del PC del agente):
+  `buenas noches` (00:00–04:59), `buen día` (05:00–11:59), `buenas tardes`
+  (12:00–18:59) y `buenas noches` (19:00–23:59). `SaludoHora` va en mayúscula
+  inicial (inicio de frase). En textos armados a mano se usa `saludoHora()` /
+  `capitalizar()`. Se recalcula al cruzar de periodo y al volver a la pestaña.
 - El nombre del cliente **no es un token**: `addUserText()` antepone
   `Hola <cliente> 👋\n` al mensaje, y `updateMessages()` arma el prefijo `hola`
   (`Hola <cliente>,` o `Hola,`) para los mensajes que lo componen a mano.
@@ -80,26 +90,41 @@ valida `Array.isArray(data)` antes de usarlo.
 
 ### Persistencia (localStorage)
 
-Solo dos claves, y son las únicas permitidas hoy:
+Solo tres claves, y son las únicas permitidas hoy:
 
 - `lizto_agent_name`
 - `lizto_client_name`
+- `lizto_pinned_cards` — JSON con los ids de textarea de las tarjetas fijadas
+  (aprobada por el responsable del proyecto al pedir la función de fijar).
 
 Se escriben en cada `input` y se restauran al cargar, antes del primer
-`updateMessages()`. **El tema no se persiste**: la app siempre arranca en
-modo oscuro.
+`updateMessages()`. **El tema no se persiste**: la app arranca según el tema del
+sistema operativo (ver "Sistema de temas").
 
-### Sistema de temas (light/dark)
+### Sistema de temas (light/dark) y marca
 
-- Design tokens como custom properties en `:root` (oscuro, por defecto) y
-  sobreescritos en `body.light-mode` (claro).
-- El toggle `#toggleBrillo` alterna la clase `light-mode` en el `<body>` e
-  intercambia los SVG inline `SUN_SVG` / `MOON_SVG`.
+- La identidad visual sigue la landing https://www.lizto.co: teal `#12b5ac`,
+  tinta `#0e1a1c`, tinte `#def5f3`, rosa `#cc3366` solo como énfasis puntual,
+  fuente **Plus Jakarta Sans** (Google Fonts) y radios de 10–24 px.
+- Design tokens como custom properties en `:root` (oscuro) y sobreescritos en
+  `.light-mode` (claro). La clase vive en `<html>`: un script inline en `<head>`
+  la aplica antes del primer render para evitar el parpadeo.
+- **El tema sigue al sistema operativo** (`prefers-color-scheme`), también
+  cuando este cambia, **hasta que el agente usa el toggle**; desde entonces la
+  elección manual manda durante la sesión. No se persiste (sin `localStorage`). El modo oscuro deriva de la
+  misma paleta teal, no de un morado.
+- El toggle `#toggleBrillo` (`applyTheme()`) alterna la clase `light-mode` en
+  `<html>`, intercambia los SVG inline `SUN_SVG` / `MOON_SVG` y actualiza el
+  `<meta name="theme-color">`.
 - **Nunca hardcodear colores** en CSS nuevo: usar los tokens
-  (`--bg-main`, `--text-primary`, `--accent`, `--border-base`, etc.), o el
-  modo claro se rompe.
+  (`--bg-main`, `--bg-surface`, `--text-primary`, `--accent`, `--accent-ink`,
+  `--accent-solid` + `--on-accent`, `--border-base`, etc.), o el modo claro se
+  rompe. `--accent-ink` es el acento para **texto**; `--accent-solid` con
+  `--on-accent` es el de **botones rellenos** (cumplen contraste en ambos temas).
 - Los tokens `--bg-color`, `--principal-color`, `--secondary-color` y
   `--dark-color` existen solo por retrocompatibilidad; no usarlos en código nuevo.
+- Animaciones: solo `transform`/`opacity`, con `var(--ease)` y `var(--dur)`;
+  el bloque `prefers-reduced-motion` las desactiva.
 
 ### Modo compacto (densidad)
 
@@ -107,13 +132,21 @@ modo oscuro.
   clase `compact-mode` sobre `#respuestas .text-fields`.
 - Es solo visual y **no se persiste**; vuelve a `normal` al recargar.
 
-### Tarjetas y drawer
+### Tarjetas y modal
 
 - `initResponseCards(ids)` convierte cada `.text-box` en `.response-card`:
   oculta el textarea (que pasa a ser `.card-data`, la fuente de verdad del
-  texto), agrega preview de 2 líneas, botón ojo y botón copiar.
-- El drawer (`#response-drawer`) es **compartido** por Respuestas y Plantillas,
-  con navegación anterior/siguiente sobre las tarjetas visibles del tab actual.
+  texto), agrega preview, botón ojo y botón copiar. Les asigna `--i` (índice)
+  para la animación de entrada escalonada.
+- El modal (`#response-modal`) es **compartido** por Respuestas y Plantillas,
+  centrado en desktop y como hoja inferior en móvil. Navega con ←/→ (o los
+  botones) entre las tarjetas visibles del tab actual, atrapa el foco con
+  `Tab`, bloquea el scroll del body (`body.modal-open`) y devuelve el foco a la
+  tarjeta al cerrar.
+- Cada tarjeta tiene un botón pin (`.card-pin-btn`): las fijadas suben al
+  inicio de su tab (`reorderCards()` mueve los nodos del DOM, así el modal
+  navega en el orden visible). El resto conserva su orden original, guardado
+  en `data-order` al inicializar. Los ids se guardan en `lizto_pinned_cards`.
 - La tarjeta de Saludo tiene chips de variante (`SALUDO_VARIANTES`) que
   concatenan una frase extra al final del texto base.
 - Las tarjetas con controles propios (enlace de pago, paso a paso, reunión)
@@ -124,8 +157,8 @@ modo oscuro.
 - `#globalSearch` filtra las 5 tabs a la vez y pinta un badge con el conteo
   por tab. Los buscadores locales de Paso a paso y Diagnóstico siguen
   existiendo y se sincronizan con el global.
-- Atajos: `/` y `Ctrl+F` enfocan el buscador; `Esc` cierra el drawer o limpia
-  el buscador.
+- Atajos: `/` y `Ctrl+F` enfocan el buscador; `Esc` cierra el modal o limpia
+  el buscador; con el modal abierto, `←`/`→` cambian de mensaje.
 
 ### Nombres y estilo
 
@@ -140,13 +173,16 @@ modo oscuro.
   archivos que están en el repo son exactamente los que sirve GitHub Pages.
 - **NO agregar dependencias externas** más allá de las fuentes de Google ya
   enlazadas; nada de CDNs de librerías.
-- **NO ampliar el uso de localStorage** más allá de `lizto_agent_name` y
-  `lizto_client_name` sin acordarlo antes.
+- **NO ampliar el uso de localStorage** más allá de `lizto_agent_name`,
+  `lizto_client_name` y `lizto_pinned_cards` sin acordarlo antes.
 - **NO romper la integración con Google Apps Script** existente (la URL del
   despliegue y la forma de los objetos que devuelve).
 - **El texto copiado al portapapeles SIEMPRE debe ser texto plano.** El
   formateo de `formatearContenidoPasoAPaso()` es exclusivo de la vista previa;
   al copiar se usa siempre el string crudo del objeto de datos.
+- **El contenido que viene de Google Sheets se escapa siempre** antes de
+  mostrarlo con `innerHTML` (`escapeHtml()`; `linkify()` recibe texto plano y
+  devuelve HTML seguro). Nunca insertar texto de Sheets sin escapar.
 - Los mensajes de Paso a paso y Diagnóstico se envían directamente a clientes
   en el CRM, por eso deben copiarse sin formato.
 - Si se agrega o renombra un archivo estático, **actualizar `STATIC_ASSETS` en

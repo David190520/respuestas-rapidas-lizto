@@ -1,9 +1,9 @@
 // ============= ESTADO GLOBAL — debe declararse antes de cualquier llamada =============
 
-let drawerCurrentIndex = -1;
-let drawerVisibleCards = [];
-let drawerCurrentTabId = null;
-const drawerCardMap = new Map();
+let modalCurrentIndex = -1;
+let modalVisibleCards = [];
+let modalCurrentTabId = null;
+const modalCardMap = new Map();
 
 let saludoCard = null;
 let saludoVariante = '';
@@ -24,6 +24,9 @@ const EXTERNAL_LINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" he
 
 const atajos = [
   { nombre: "Divisor de archivos", url: "https://tecnologysmith.github.io/Dividir_archivo/" },
+  { nombre: "Asignaciones semanales", url: "https://desk.zoho.com/agent/liztosoftware/soporte-lizto/knowledge-base/page?articlestatus=published#Solutions/dv/578738000018678001/es" },
+  { nombre: "Buscar documento DIAN", url: "https://catalogo-vpfe.dian.gov.co/User/SearchDocument" },
+  { nombre: "Hoja de Excel - Soporte", url: "https://docs.google.com/spreadsheets/d/1VTVHy6EUYLB9_v_zdfg3zM4y-m4OY7REYw-IT5hANGk/edit?pli=1&gid=0#gid=0" },
 ];
 
 // ============= DATOS DE AGENTES Y HORARIOS =============
@@ -60,11 +63,40 @@ const agentesData = {
   }
 };
 
+// Hora actual en Colombia, sin depender de la zona horaria del PC del agente.
+function horaColombia(fecha = new Date()) {
+  const partes = new Intl.DateTimeFormat("es-CO", {
+    hour: "numeric", hour12: false, timeZone: "America/Bogota"
+  }).formatToParts(fecha);
+  const hora = Number(partes.find(p => p.type === "hour")?.value);
+  return Number.isFinite(hora) ? hora % 24 : fecha.getHours();
+}
+
+// "buenas noches" (00:00–04:59), "buen día" (05:00–11:59), "buenas tardes"
+// (12:00–18:59) y "buenas noches" (19:00–23:59)
+function saludoHora(fecha = new Date()) {
+  const hora = horaColombia(fecha);
+  if (hora < 5) return "buenas noches";
+  if (hora < 12) return "buen día";
+  if (hora < 19) return "buenas tardes";
+  return "buenas noches";
+}
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 function addUserText(message) {
   const userInput = document.getElementById("userInput").value.trim();
   const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
 
-  const baseMessage = message.replace("nombreAgente", agentInput);
+  // Tokens de texto plano: "SaludoHora" (inicio de frase) y "saludoHora" (mitad
+  // de frase), además de "nombreAgente". Se reemplazan todas las apariciones.
+  const saludo = saludoHora();
+  const baseMessage = message
+    .split("SaludoHora").join(capitalizar(saludo))
+    .split("saludoHora").join(saludo)
+    .split("nombreAgente").join(agentInput);
 
   if (!userInput) {
     return baseMessage;
@@ -79,17 +111,17 @@ function updateMessages() {
   const hola = userInput ? `Hola ${userInput},` : 'Hola,';
 
   document.getElementById("daysMessage").value =
-    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
+    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
   document.getElementById("falloSistema").value =
-    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
+    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
   document.getElementById("modulosCapacitaciones").value = 
-    addUserText("Buen día, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
+    addUserText("SaludoHora, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
   document.getElementById("validarPagoMessage").value = 
     addUserText("¡Mil gracias por el pago! Puedes seguir haciendo uso del sistema con normalidad 😁");
   document.getElementById("pagoGraciasMessage").value = 
     addUserText("Me puedes indicar por favor el número de NIT del negocio para validar con el área contable 😊");
   document.getElementById("solicitarLinkMessage").value = 
-    addUserText("Buen día, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
+    addUserText("SaludoHora, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
   updatePasoaPasoMessage();
   document.getElementById("demorasDIAN").value =
     addUserText("¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀");
@@ -117,7 +149,7 @@ function updateMessages() {
   document.getElementById("solicitudCambioRazonSocial").value =
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
   document.getElementById("solicitudIdSetPruebas").value =
-  "Buen día.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias."
+  `${capitalizar(saludoHora())}.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias.`
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
   renderCardPreviews();
@@ -143,19 +175,26 @@ function updateLinkPagoMessage() {
   document.getElementById("linkPago").value = addUserText(mensaje);
 }
 
-// Inicializar selector de fechas (próximos 30 días) - Solo una vez
+// Inicializar selector de fechas (próximos 30 días, sin sábados ni domingos:
+// no se dan capacitaciones esos días) - Solo una vez
 function initializeFechaSelect() {
   const select = document.getElementById("fechaReunionSelect");
   // Limpiar opciones previas si existen
   if (select.children.length > 1) return;
-  
+
   const today = new Date();
   for (let i = 0; i < 30; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
+    const dia = date.getDay();
+    if (dia === 0 || dia === 6) continue;
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const fechaFormato = date.toLocaleDateString('es-CO', options);
-    const fechaValue = date.toISOString().split('T')[0];
+    // Fecha local (toISOString usa UTC y después de las 7 p.m. en Colombia
+    // devolvería el día siguiente)
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const fechaValue = `${date.getFullYear()}-${mm}-${dd}`;
     const option = document.createElement('option');
     option.value = fechaValue;
     option.textContent = fechaFormato.charAt(0).toUpperCase() + fechaFormato.slice(1);
@@ -200,6 +239,20 @@ function updateReunionMessage() {
 
 // Inicializar fechas
 initializeFechaSelect();
+
+// El saludo depende de la hora: si el agente deja la pestaña abierta durante
+// varias horas, se recalcula al cruzar de periodo y al volver a la pestaña.
+let ultimoSaludo = saludoHora();
+function refrescarSaludoSiCambio() {
+  const actual = saludoHora();
+  if (actual === ultimoSaludo) return;
+  ultimoSaludo = actual;
+  updateMessages();
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refrescarSaludoSiCambio();
+});
+setInterval(refrescarSaludoSiCambio, 60 * 1000);
 
 // Restaurar nombres desde localStorage
 const savedAgent = localStorage.getItem("lizto_agent_name");
@@ -251,38 +304,44 @@ document.getElementById("agenteReunion").addEventListener("change", function() {
 document.getElementById("fechaReunionSelect").addEventListener("change", updateReunionMessage);
 document.getElementById("horaReunionSelect").addEventListener("change", updateReunionMessage);
 
-// Toggle de brillo
+// Tema: arranca según el sistema operativo y lo sigue mientras el agente no use
+// el toggle. La elección manual manda durante la sesión y NO se persiste.
 const toggleButton = document.getElementById("toggleBrillo");
 const iconoBrillo = document.getElementById("iconoBrillo");
-let brilloActivo = false;
+const temaSO = window.matchMedia("(prefers-color-scheme: light)");
+let brilloActivo = temaSO.matches;
+let temaManual = false;
 
 const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 
-// Estado inicial: modo oscuro
-toggleButton.classList.add("off");
-iconoBrillo.innerHTML = SUN_SVG;
-toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
+function applyTheme(claro) {
+  brilloActivo = claro;
+  // La clase vive en <html> (la pone también un script en <head> para evitar el
+  // parpadeo); los tokens están en `.light-mode`.
+  document.documentElement.classList.toggle("light-mode", claro);
+  toggleButton.classList.toggle("off", !claro);
+  iconoBrillo.innerHTML = claro ? MOON_SVG : SUN_SVG;
+  toggleButton.setAttribute("aria-label", claro ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", claro ? "#eff5f5" : "#0e1a1c");
+}
+
+applyTheme(brilloActivo);
 
 toggleButton.addEventListener("click", () => {
-  brilloActivo = !brilloActivo;
-  document.body.classList.toggle("light-mode", brilloActivo);
+  temaManual = true;
+  applyTheme(!brilloActivo);
+});
 
-  if (brilloActivo) {
-    toggleButton.classList.remove("off");
-    iconoBrillo.innerHTML = MOON_SVG;
-    toggleButton.setAttribute("aria-label", "Cambiar a modo oscuro");
-  } else {
-    toggleButton.classList.add("off");
-    iconoBrillo.innerHTML = SUN_SVG;
-    toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
-  }
+temaSO.addEventListener("change", (e) => {
+  if (!temaManual) applyTheme(e.matches);
 });
 
 // Manejo de pestañas
 document.querySelectorAll('.tab-button').forEach(button => {
   button.addEventListener('click', () => {
-    closeResponseDrawer();
+    closeResponseModal();
     // Remover active de todos los botones y contenidos
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -457,7 +516,7 @@ function globalSearchFilter(query) {
   updateTabBadge("badge-pasoPaso",   pasoCount,   isSearching);
   updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
-  updateDrawerAfterSearch();
+  updateModalAfterSearch();
 }
 
 // ============= HELP CENTER MODULE - PASO A PASO =============
@@ -496,8 +555,32 @@ function copiarConFallback(texto) {
   });
 }
 
+// El contenido de Paso a paso y Diagnóstico viene de Google Sheets y se muestra
+// con innerHTML: SIEMPRE se escapa antes de construir el HTML. El copiado no
+// pasa por aquí (usa el string crudo).
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Recibe texto plano, devuelve HTML seguro con las URLs http(s) como enlaces.
 function linkify(text) {
-  return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  const source = String(text);
+  let html = "";
+  let last = 0;
+  for (const match of source.matchAll(/https?:\/\/[^\s<>"']+/g)) {
+    // La puntuación final (".", ",", ")" ...) no forma parte del enlace
+    const url = match[0].replace(/[.,;:!?)\]]+$/, "");
+    if (!url) continue;
+    html += escapeHtml(source.slice(last, match.index));
+    html += `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+    last = match.index + url.length;
+  }
+  return html + escapeHtml(source.slice(last));
 }
 
 function formatearContenidoPasoAPaso(textoPlano) {
@@ -559,7 +642,7 @@ function formatearContenidoPasoAPaso(textoPlano) {
       case 'ul':
         return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
       case 'p':
-        return `<p>${linkify(block.lines.join('<br>'))}</p>`;
+        return `<p>${block.lines.map(linkify).join('<br>')}</p>`;
       default:
         return '';
     }
@@ -765,7 +848,7 @@ class HelpCenter {
    * Muestra un mensaje de error
    */
   showError(message) {
-    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${escapeHtml(message)}</div>`;
   }
 
   applySearch(query) {
@@ -1090,19 +1173,19 @@ class DiagnosticoCenter {
   }
 
   showError(message) {
-    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${escapeHtml(message)}</div>`;
   }
 }
 
-// ============= RESPONSE DRAWER (Respuestas y Plantillas) =============
+// ============= RESPONSE MODAL (Respuestas y Plantillas) =============
 
-function getDrawerCards(tabId) {
+function getModalCards(tabId) {
   return Array.from(document.querySelectorAll(`#${tabId} .response-card`))
     .filter(c => c.style.display !== 'none');
 }
 
 function copyCardText(card, feedbackBtn) {
-  const textarea = drawerCardMap.get(card);
+  const textarea = modalCardMap.get(card);
   const base = textarea?.value || '';
   const text = (saludoCard && card === saludoCard) ? buildSaludoText(base) : base;
 
@@ -1140,8 +1223,8 @@ function copyCardText(card, feedbackBtn) {
   }
 }
 
-function setDrawerContent(content) {
-  const el = document.getElementById('drawer-content');
+function setModalContent(content) {
+  const el = document.getElementById('modal-content');
   if (!el) return;
   if (content) {
     el.textContent = content;
@@ -1154,7 +1237,7 @@ function setDrawerContent(content) {
 
 function renderCardPreviews() {
   document.querySelectorAll('.response-card').forEach(card => {
-    const textarea = drawerCardMap.get(card) || card.querySelector('.card-data');
+    const textarea = modalCardMap.get(card) || card.querySelector('.card-data');
     const preview = card.querySelector('.card-preview');
     if (!textarea || !preview) return;
     const value = (saludoCard && card === saludoCard) ? buildSaludoText(textarea.value) : textarea.value;
@@ -1162,28 +1245,97 @@ function renderCardPreviews() {
     preview.textContent = lines.slice(0, 2).join(' ');
   });
 
-  // Actualizar contenido del drawer si está abierto (cambio de nombre de agente)
-  if (drawerCurrentIndex >= 0 && drawerVisibleCards[drawerCurrentIndex]) {
-    const card = drawerVisibleCards[drawerCurrentIndex];
-    const textarea = drawerCardMap.get(card);
+  // Actualizar contenido del modal si está abierto (cambio de nombre de agente)
+  if (modalCurrentIndex >= 0 && modalVisibleCards[modalCurrentIndex]) {
+    const card = modalVisibleCards[modalCurrentIndex];
+    const textarea = modalCardMap.get(card);
     if (textarea) {
       const isSaludo = saludoCard && card === saludoCard;
-      setDrawerContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
+      setModalContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
     }
   }
 }
 
+// ============= TARJETAS FIJADAS (pin) =============
+// Los agentes fijan las tarjetas que más usan y estas suben al inicio de su tab.
+// Persistencia: `lizto_pinned_cards` (ids de textarea). Ver CLAUDE.md.
+
+const PINNED_KEY = 'lizto_pinned_cards';
+const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path></svg>`;
+
+function loadPinned() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PINNED_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter(id => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePinned(ids) {
+  try { localStorage.setItem(PINNED_KEY, JSON.stringify(ids)); } catch {}
+}
+
+// Ordena las tarjetas de un contenedor: fijadas primero (en el orden en que se
+// fijaron) y el resto en su orden original (--i). Mueve los nodos del DOM para
+// que el modal navegue en el mismo orden que se ve.
+function reorderCards(container) {
+  if (!container) return;
+  const pinned = loadPinned();
+  const cards = Array.from(container.querySelectorAll(':scope > .response-card'));
+  if (!cards.length) return;
+
+  const rank = card => {
+    const id = cardTextareaId(card);
+    const p = pinned.indexOf(id);
+    return p === -1 ? 1000 + Number(card.dataset.order || 0) : p;
+  };
+  cards.sort((a, b) => rank(a) - rank(b));
+
+  const anchor = Array.from(container.children).find(el => !el.classList.contains('response-card')) || null;
+  cards.forEach(card => {
+    card.classList.toggle('pinned', pinned.includes(cardTextareaId(card)));
+    const btn = card.querySelector('.card-pin-btn');
+    if (btn) {
+      const isPinned = card.classList.contains('pinned');
+      btn.setAttribute('aria-pressed', String(isPinned));
+      btn.title = isPinned ? 'Quitar de fijadas' : 'Fijar al inicio';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    container.insertBefore(card, anchor);
+  });
+}
+
+function cardTextareaId(card) {
+  return modalCardMap.get(card)?.id || '';
+}
+
+function togglePin(card) {
+  const id = cardTextareaId(card);
+  if (!id) return;
+  const pinned = loadPinned();
+  const i = pinned.indexOf(id);
+  if (i === -1) pinned.push(id); else pinned.splice(i, 1);
+  savePinned(pinned);
+  reorderCards(card.parentElement);
+  // El orden visible cambió: refrescar la lista de navegación del modal
+  updateModalAfterSearch();
+}
+
 function initResponseCards(cardIds) {
-  cardIds.forEach(id => {
+  cardIds.forEach((id, index) => {
     const textarea = document.getElementById(id);
     if (!textarea) return;
     const card = textarea.closest('.text-box');
     if (!card || card.classList.contains('response-card')) return;
 
     card.classList.add('response-card');
+    card.style.setProperty('--i', index);
+    // Posición original en el DOM: base del orden de las tarjetas no fijadas
+    card.dataset.order = Array.from(card.parentElement.children).indexOf(card);
     textarea.classList.add('card-data');
     textarea.style.display = 'none';
-    drawerCardMap.set(card, textarea);
+    modalCardMap.set(card, textarea);
 
     // Ocultar botón copiar original
     const oldCopyBtn = card.querySelector('button[id="copiarBtn"]');
@@ -1206,7 +1358,20 @@ function initResponseCards(cardIds) {
 
       viewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        openResponseDrawer(card);
+        openResponseModal(card);
+      });
+
+      const pinBtn = document.createElement('button');
+      pinBtn.className = 'card-pin-btn';
+      pinBtn.title = 'Fijar al inicio';
+      pinBtn.setAttribute('aria-label', 'Fijar al inicio');
+      pinBtn.setAttribute('aria-pressed', 'false');
+      pinBtn.innerHTML = PIN_SVG;
+      header.insertBefore(pinBtn, viewBtn);
+
+      pinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePin(card);
       });
     }
 
@@ -1246,55 +1411,62 @@ function initResponseCards(cardIds) {
   renderCardPreviews();
 }
 
-function openResponseDrawer(card) {
+let modalLastFocus = null;
+
+function openResponseModal(card) {
   const tabContent = card.closest('.tab-content');
   if (!tabContent) return;
-  drawerCurrentTabId = tabContent.id;
-  drawerVisibleCards = getDrawerCards(drawerCurrentTabId);
-  drawerCurrentIndex = drawerVisibleCards.indexOf(card);
+  modalCurrentTabId = tabContent.id;
+  modalVisibleCards = getModalCards(modalCurrentTabId);
+  modalCurrentIndex = modalVisibleCards.indexOf(card);
+  modalLastFocus = document.activeElement;
 
   document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
   card.classList.add('active');
-  populateDrawer();
+  populateModal();
 
-  const drawer = document.getElementById('response-drawer');
-  drawer.classList.add('open');
-  document.getElementById('drawer-overlay').classList.add('visible');
-  drawer.setAttribute('aria-hidden', 'false');
+  const modal = document.getElementById('response-modal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  document.getElementById('modal-copy-btn')?.focus({ preventScroll: true });
 }
 
-function closeResponseDrawer() {
-  const drawer = document.getElementById('response-drawer');
-  if (!drawer) return;
-  drawer.classList.remove('open');
-  drawer.setAttribute('aria-hidden', 'true');
-  const overlay = document.getElementById('drawer-overlay');
-  if (overlay) overlay.classList.remove('visible');
+function closeResponseModal() {
+  const modal = document.getElementById('response-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
   document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
-  drawerCurrentIndex = -1;
-  drawerCurrentTabId = null;
-  drawerVisibleCards = [];
+  modalCurrentIndex = -1;
+  modalCurrentTabId = null;
+  modalVisibleCards = [];
+  if (modalLastFocus && document.contains(modalLastFocus)) {
+    modalLastFocus.focus({ preventScroll: true });
+  }
+  modalLastFocus = null;
 }
 
-function populateDrawer() {
-  if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
-  const card = drawerVisibleCards[drawerCurrentIndex];
+function populateModal() {
+  if (modalCurrentIndex < 0 || !modalVisibleCards.length) return;
+  const card = modalVisibleCards[modalCurrentIndex];
   const isSaludo = saludoCard && card === saludoCard;
   const title = card.querySelector('h3')?.textContent.trim() || '';
-  const textarea = drawerCardMap.get(card);
+  const textarea = modalCardMap.get(card);
   const base = textarea?.value || '';
   const content = isSaludo ? buildSaludoText(base) : base;
 
-  document.getElementById('drawer-title').textContent = title;
-  setDrawerContent(content);
-  updateDrawerNavState();
+  document.getElementById('modal-title').textContent = title;
+  setModalContent(content);
+  updateModalNavState();
 
-  const variantsEl = document.getElementById('drawer-variants');
+  const variantsEl = document.getElementById('modal-variants');
   if (variantsEl) variantsEl.style.display = isSaludo ? 'flex' : 'none';
 
-  const copyBtn = document.getElementById('drawer-copy-btn');
+  const copyBtn = document.getElementById('modal-copy-btn');
   if (copyBtn) {
-    copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+    copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar mensaje`;
     copyBtn.disabled = false;
   }
 
@@ -1303,34 +1475,34 @@ function populateDrawer() {
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function navigateDrawer(dir) {
-  const newIdx = drawerCurrentIndex + dir;
-  if (newIdx < 0 || newIdx >= drawerVisibleCards.length) return;
-  drawerCurrentIndex = newIdx;
-  populateDrawer();
+function navigateModal(dir) {
+  const newIdx = modalCurrentIndex + dir;
+  if (newIdx < 0 || newIdx >= modalVisibleCards.length) return;
+  modalCurrentIndex = newIdx;
+  populateModal();
 }
 
-function updateDrawerNavState() {
-  const total = drawerVisibleCards.length;
-  const counter = document.getElementById('drawer-counter');
-  const prev = document.getElementById('drawer-prev');
-  const next = document.getElementById('drawer-next');
-  if (counter) counter.textContent = total > 0 ? `${drawerCurrentIndex + 1} / ${total}` : '';
-  if (prev) prev.disabled = drawerCurrentIndex <= 0;
-  if (next) next.disabled = drawerCurrentIndex >= total - 1;
+function updateModalNavState() {
+  const total = modalVisibleCards.length;
+  const counter = document.getElementById('modal-counter');
+  const prev = document.getElementById('modal-prev');
+  const next = document.getElementById('modal-next');
+  if (counter) counter.textContent = total > 0 ? `${modalCurrentIndex + 1} / ${total}` : '';
+  if (prev) prev.disabled = modalCurrentIndex <= 0;
+  if (next) next.disabled = modalCurrentIndex >= total - 1;
 }
 
-function updateDrawerAfterSearch() {
-  if (!drawerCurrentTabId) return;
-  const newVisible = getDrawerCards(drawerCurrentTabId);
-  drawerVisibleCards = newVisible;
+function updateModalAfterSearch() {
+  if (!modalCurrentTabId) return;
+  const newVisible = getModalCards(modalCurrentTabId);
+  modalVisibleCards = newVisible;
   if (newVisible.length === 0) {
-    closeResponseDrawer();
-  } else if (drawerCurrentIndex >= newVisible.length) {
-    drawerCurrentIndex = newVisible.length - 1;
-    populateDrawer();
+    closeResponseModal();
+  } else if (modalCurrentIndex >= newVisible.length) {
+    modalCurrentIndex = newVisible.length - 1;
+    populateModal();
   } else {
-    updateDrawerNavState();
+    updateModalNavState();
   }
 }
 
@@ -1358,16 +1530,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // "/" → enfocar buscador (solo si no hay otro campo activo)
-    if (e.key === "/" && !inField) {
+    if (e.key === "/" && !inField && modalCurrentIndex < 0) {
       e.preventDefault();
       globalSearch.focus();
       globalSearch.select();
       return;
     }
 
-    // Escape → cerrar drawer, o limpiar buscador si está enfocado
+    // Modal abierto: ← → navegan entre mensajes y Tab no se escapa del diálogo
+    if (modalCurrentIndex >= 0) {
+      if (e.key === "ArrowLeft" && !inField) { e.preventDefault(); navigateModal(-1); return; }
+      if (e.key === "ArrowRight" && !inField) { e.preventDefault(); navigateModal(1); return; }
+      if (e.key === "Tab") {
+        const focusables = Array.from(document.querySelectorAll(
+          "#response-modal button:not(:disabled)"
+        )).filter(el => el.offsetParent !== null);
+        if (focusables.length) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    }
+
+    // Escape → cerrar modal, o limpiar buscador si está enfocado
     if (e.key === "Escape") {
-      if (drawerCurrentIndex >= 0) { closeResponseDrawer(); return; }
+      if (modalCurrentIndex >= 0) { closeResponseModal(); return; }
       if (document.activeElement === globalSearch) {
         if (globalSearch.value) { globalSearch.value = ""; globalSearchFilter(""); }
         else { globalSearch.blur(); }
@@ -1387,11 +1576,13 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   initResponseCards(RESPUESTAS_CARD_IDS);
   initResponseCards(PLANTILLAS_CARD_IDS);
+  reorderCards(document.querySelector('#respuestas .text-fields'));
+  reorderCards(document.querySelector('#plantillas .text-fields'));
   renderAtajos();
 
   // Inicializar saludo card + chips de variantes
   saludoCard = document.getElementById('daysMessage')?.closest('.text-box') || null;
-  const variantsEl = document.getElementById('drawer-variants');
+  const variantsEl = document.getElementById('modal-variants');
   if (variantsEl && saludoCard) {
     SALUDO_VARIANTES.forEach(({ label, value }) => {
       const chip = document.createElement('button');
@@ -1402,8 +1593,8 @@ document.addEventListener("DOMContentLoaded", () => {
         variantsEl.querySelectorAll('.saludo-chip').forEach(c => {
           c.classList.toggle('saludo-chip--active', c.textContent === label);
         });
-        const ta = drawerCardMap.get(saludoCard);
-        setDrawerContent(buildSaludoText(ta?.value || ''));
+        const ta = modalCardMap.get(saludoCard);
+        setModalContent(buildSaludoText(ta?.value || ''));
         renderCardPreviews();
       });
       variantsEl.appendChild(chip);
@@ -1414,15 +1605,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('densityNormal')?.addEventListener('click', () => applyDensity('normal'));
   document.getElementById('densityCompact')?.addEventListener('click', () => applyDensity('compact'));
 
-  // Listeners del drawer
-  document.getElementById('drawer-close').addEventListener('click', closeResponseDrawer);
-  document.getElementById('drawer-overlay').addEventListener('click', closeResponseDrawer);
-  document.getElementById('drawer-prev').addEventListener('click', () => navigateDrawer(-1));
-  document.getElementById('drawer-next').addEventListener('click', () => navigateDrawer(1));
-  document.getElementById('drawer-copy-btn').addEventListener('click', function() {
-    if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
-    const card = drawerVisibleCards[drawerCurrentIndex];
-    const textarea = drawerCardMap.get(card);
+  // Listeners del modal
+  document.getElementById('modal-close').addEventListener('click', closeResponseModal);
+  document.getElementById('modal-overlay').addEventListener('click', closeResponseModal);
+  document.getElementById('modal-prev').addEventListener('click', () => navigateModal(-1));
+  document.getElementById('modal-next').addEventListener('click', () => navigateModal(1));
+  document.getElementById('modal-copy-btn').addEventListener('click', function() {
+    if (modalCurrentIndex < 0 || !modalVisibleCards.length) return;
+    const card = modalVisibleCards[modalCurrentIndex];
+    const textarea = modalCardMap.get(card);
     if (!textarea || !textarea.value) return;
     const isSaludo = saludoCard && card === saludoCard;
     const text = isSaludo ? buildSaludoText(textarea.value) : textarea.value;
@@ -1431,7 +1622,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.innerHTML = '¡Copiado! ✅';
       btn.disabled = true;
       setTimeout(() => {
-        btn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+        btn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar mensaje`;
         btn.disabled = false;
       }, 1500);
     };
