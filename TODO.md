@@ -21,96 +21,13 @@ verificado contra el Apps Script desplegado.
 El detalle de cada fase (alcance, archivos, aceptación y riesgos) está en
 `PLAN.md`. Pendientes, en el orden propuesto:
 
-- **TODO-26 — Respuestas y Plantillas desde Sheets** (Fase 3; absorbe TODO-10,
-  TODO-12 y TODO-18)
 - **TODO-27 — Diagnóstico con checklist y escalamiento** (Fase 5)
 - **TODO-28 — Sugerencias según el uso** (Fase 6; requiere aprobar `lizto_usage`)
 - **TODO-29 — Atajos desde Sheets y modo Flujo** (Fases 4 y 7, opcionales)
 
 ---
 
-## 🔴 Alta prioridad
-
-### TODO-10 — Chips de filtro por categoría en Respuestas y Plantillas
-
-**Objetivo:** filtrar tarjetas por categoría sin tener que escribir en el buscador.
-
-**Comportamiento esperado:**
-
-- Agregar una propiedad `categoria` a cada respuesta/plantilla. Hoy los textos
-  son strings sueltos asignados por ID dentro de `updateMessages()`; requiere
-  primero pasarlos a un array de objetos
-  (`{ id, titulo, categoria, texto }`) sin cambiar el markup existente.
-- Generar los chips dinámicamente a partir de las categorías únicas (no
-  hardcodear la lista de chips).
-- Un chip activo filtra las tarjetas del tab; "Todas" limpia el filtro.
-- El filtro por chip y el buscador global deben **combinarse**, no pisarse:
-  si hay chip activo y texto de búsqueda, se aplican los dos.
-- Los badges de conteo por tab deben reflejar el resultado combinado.
-
-**Archivos a modificar:** `index.js`, `index.html`, `style.css`
-
----
-
-### TODO-12 — Eliminar los IDs duplicados `copiarBtn`
-
-**Objetivo:** corregir HTML inválido y quitar deuda técnica.
-
-**Problema:** hay ~20 botones con `id="copiarBtn"` en `index.html`. Los IDs
-deben ser únicos; el código funciona de casualidad porque usa
-`querySelectorAll('button#copiarBtn')`.
-
-**Comportamiento esperado:**
-
-- Reemplazar `id="copiarBtn"` por `class="copy-btn"` en todos los botones.
-- Actualizar el selector de `index.js` y las reglas `#copiarBtn` de
-  `style.css` (`#copiarBtn`, `#copiarBtn:hover`, `#copiarBtn:disabled`).
-- Verificar que `initResponseCards()` sigue ocultando el botón original
-  (hoy lo busca con `card.querySelector('button[id="copiarBtn"]')`).
-- No debe cambiar nada visualmente ni en el comportamiento de copiado.
-
-**Archivos a modificar:** `index.html`, `index.js`, `style.css`
-
----
-
-## 🟡 Prioridad media
-
-### TODO-16 — Persistir tema y densidad (requiere aprobación)
-
-**Objetivo:** que el agente no tenga que volver a activar modo claro o vista
-compacta en cada recarga.
-
-**Nota:** `CLAUDE.md` restringe el uso de `localStorage` a `lizto_agent_name` y
-`lizto_client_name`. **Acordar antes de implementar.**
-
-**Comportamiento esperado (si se aprueba):**
-
-- Guardar el tema en `lizto_theme` (`"dark"` | `"light"`) y aplicarlo antes del
-  primer render para evitar el parpadeo de modo oscuro → claro.
-- Guardar la densidad en `lizto_density` (`"normal"` | `"compact"`) y aplicarla
-  al iniciar.
-- El estado inicial sin valor guardado sigue siendo oscuro + normal.
-
-**Archivos a modificar:** `index.js`
-
----
-
-## 🟢 Prioridad baja
-
-### TODO-18 — Cachear la última respuesta exitosa del Apps Script
-
-**Objetivo:** que Paso a paso y Diagnóstico muestren los últimos artículos
-conocidos cuando no hay conexión, en vez de un array vacío.
-
-**Comportamiento esperado:**
-
-- En `sw.js`, guardar en un caché aparte la última respuesta OK de cada
-  endpoint (`exec` y `exec?hoja=diagnostico`).
-- Si la red falla, devolver esa copia; solo devolver `[]` si nunca hubo una
-  respuesta exitosa.
-- Mostrar en la UI un aviso discreto de "datos sin conexión" cuando aplique.
-
-**Archivos a modificar:** `sw.js`, `index.js`
+*(Sin tareas sueltas: el trabajo pendiente está en "Plan por fases".)*
 
 ---
 
@@ -118,6 +35,19 @@ conocidos cuando no hay conexión, en vez de un array vacío.
 
 Detalle e historial completo en `CHANGELOG.md`.
 
+- **TODO-16 — Persistir tema y densidad** *(descartado 2026-10-09)*
+  Se resolvió distinto: el tema sigue al sistema operativo (TODO-24) y la
+  densidad no se persiste, por decisión de David.
+- **TODO-26 — Respuestas y Plantillas desde Sheets** *(2026-10-09)*
+  Pestañas `Respuestas` y `Plantillas`, respaldo en `defaults.js`, tokens
+  `holaCliente`/`encabezadoCliente`, chips de categoría y caché offline.
+  Absorbe TODO-10, TODO-12 y TODO-18. **Pendiente de David:** cargar los CSV y
+  desplegar el Apps Script (ver `apps-script/migracion/LEEME.md`).
+- **TODO-10 — Chips de filtro por categoría** *(2026-10-09)* Hecho dentro del TODO-26.
+- **TODO-12 — Eliminar los IDs duplicados `copiarBtn`** *(2026-10-09)* Hecho dentro del TODO-26.
+- **TODO-18 — Cachear la última respuesta del Apps Script** *(2026-10-09)*
+  Cacheado en `sw.js`. Queda sin hacer solo el aviso "datos sin conexión" para
+  Paso a paso y Diagnóstico (Respuestas/Plantillas ya muestran su aviso).
 - **TODO-25 — Saludo según la hora** *(2026-10-08)*
   Tokens `saludoHora`/`SaludoHora`, hora de Colombia, refresco al cruzar de
   periodo.

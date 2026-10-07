@@ -5,12 +5,16 @@
  *   /exec                    -> Paso a paso  (default, compatible con el frontend actual)
  *   /exec?hoja=paso          -> Paso a paso   [titulo, contenido]
  *   /exec?hoja=diagnostico   -> Diagnostico   [categoria, subtitulo, contenido]
+ *   /exec?hoja=respuestas    -> Respuestas    [id, categoria, titulo, texto, orden, activo]
+ *   /exec?hoja=plantillas    -> Plantillas    [id, categoria, titulo, texto, orden, activo]
  */
 
 // Alias público -> nombre EXACTO de la pestaña en el Sheet (respeta mayúsculas y acentos)
 const HOJAS = {
   paso: 'Paso a paso',
-  diagnostico: 'Diagnostico'
+  diagnostico: 'Diagnostico',
+  respuestas: 'Respuestas',
+  plantillas: 'Plantillas'
 };
 
 const HOJA_POR_DEFECTO = 'paso';
