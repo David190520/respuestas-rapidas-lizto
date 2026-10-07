@@ -24,6 +24,9 @@ const EXTERNAL_LINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" he
 
 const atajos = [
   { nombre: "Divisor de archivos", url: "https://tecnologysmith.github.io/Dividir_archivo/" },
+  { nombre: "Asignaciones semanales", url: "https://desk.zoho.com/agent/liztosoftware/soporte-lizto/knowledge-base/page?articlestatus=published#Solutions/dv/578738000018678001/es" },
+  { nombre: "Buscar documento DIAN", url: "https://catalogo-vpfe.dian.gov.co/User/SearchDocument" },
+  { nombre: "Hoja de Excel - Soporte", url: "https://docs.google.com/spreadsheets/d/1VTVHy6EUYLB9_v_zdfg3zM4y-m4OY7REYw-IT5hANGk/edit?pli=1&gid=0#gid=0" },
 ];
 
 // ============= DATOS DE AGENTES Y HORARIOS =============
