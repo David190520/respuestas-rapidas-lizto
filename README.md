@@ -37,9 +37,9 @@ interna; no maneja datos de clientes ni requiere autenticación.
 - **Buscador global** que filtra las 5 tabs a la vez, con un badge de
   coincidencias por pestaña.
 - **Atajos de teclado:** `/` o `Ctrl+F` para buscar, `Esc` para limpiar o
-  cerrar el panel.
+  cerrar el modal; `←`/`→` cambian de mensaje dentro del modal.
 - **Copiado siempre en texto plano**, listo para pegar en el CRM.
-- **Modo claro / oscuro** y **vista compacta** para ver más tarjetas a la vez.
+- **Identidad visual alineada con lizto.co** (teal, Plus Jakarta Sans), **modo claro / oscuro** y **vista compacta** para ver más tarjetas a la vez.
 - **Instalable como app (PWA)** con funcionamiento offline parcial.
 
 ## Stack
@@ -75,13 +75,12 @@ No hay `npm install`, ni compilación, ni variables de entorno.
 
 ```
 respuestasrapidas/
-├── index.html                    # Markup: tabs, tarjetas, drawer, inputs
+├── index.html                    # Markup: barra superior, tabs, tarjetas, modal
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
 ├── manifest.json                 # Metadatos de la PWA
 ├── sw.js                         # Service worker (network-first + caché offline)
-├── icon.svg                      # Ícono de la PWA
-├── logo-removebg-preview.png     # Marca de agua de fondo (usada en style.css)
+├── icon.svg                      # Ícono de la PWA y favicon
 ├── CLAUDE.md                     # Contexto y convenciones para Claude Code
 ├── TODO.md                       # Tareas pendientes y completadas
 └── CHANGELOG.md                  # Historial de cambios
@@ -91,14 +90,14 @@ Todo `index.js` vive en un solo archivo, organizado por secciones comentadas:
 
 | Sección | Contenido |
 |---|---|
-| Estado global | Variables del drawer, variantes de saludo, lista de atajos |
+| Estado global | Variables del modal, variantes de saludo, lista de atajos |
 | Datos de agentes | Horarios y enlaces de Zoom por agente |
 | Mensajes | `addUserText()`, `updateMessages()` y sus helpers |
 | Listeners | Inicialización, inputs, tabs, toggle de tema, copiado |
 | Buscador global | `globalSearchFilter()` y badges por tab |
 | `HelpCenter` | Tab Paso a paso |
 | `DiagnosticoCenter` | Tab Diagnóstico |
-| Response drawer | Panel lateral de Respuestas y Plantillas |
+| Response modal | Ventana modal de Respuestas y Plantillas |
 
 ## Conexión con Google Sheets
 

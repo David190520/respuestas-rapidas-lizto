@@ -1,9 +1,9 @@
 // ============= ESTADO GLOBAL — debe declararse antes de cualquier llamada =============
 
-let drawerCurrentIndex = -1;
-let drawerVisibleCards = [];
-let drawerCurrentTabId = null;
-const drawerCardMap = new Map();
+let modalCurrentIndex = -1;
+let modalVisibleCards = [];
+let modalCurrentTabId = null;
+const modalCardMap = new Map();
 
 let saludoCard = null;
 let saludoVariante = '';
@@ -282,7 +282,7 @@ toggleButton.addEventListener("click", () => {
 // Manejo de pestañas
 document.querySelectorAll('.tab-button').forEach(button => {
   button.addEventListener('click', () => {
-    closeResponseDrawer();
+    closeResponseModal();
     // Remover active de todos los botones y contenidos
     document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -457,7 +457,7 @@ function globalSearchFilter(query) {
   updateTabBadge("badge-pasoPaso",   pasoCount,   isSearching);
   updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
-  updateDrawerAfterSearch();
+  updateModalAfterSearch();
 }
 
 // ============= HELP CENTER MODULE - PASO A PASO =============
@@ -1094,15 +1094,15 @@ class DiagnosticoCenter {
   }
 }
 
-// ============= RESPONSE DRAWER (Respuestas y Plantillas) =============
+// ============= RESPONSE MODAL (Respuestas y Plantillas) =============
 
-function getDrawerCards(tabId) {
+function getModalCards(tabId) {
   return Array.from(document.querySelectorAll(`#${tabId} .response-card`))
     .filter(c => c.style.display !== 'none');
 }
 
 function copyCardText(card, feedbackBtn) {
-  const textarea = drawerCardMap.get(card);
+  const textarea = modalCardMap.get(card);
   const base = textarea?.value || '';
   const text = (saludoCard && card === saludoCard) ? buildSaludoText(base) : base;
 
@@ -1140,8 +1140,8 @@ function copyCardText(card, feedbackBtn) {
   }
 }
 
-function setDrawerContent(content) {
-  const el = document.getElementById('drawer-content');
+function setModalContent(content) {
+  const el = document.getElementById('modal-content');
   if (!el) return;
   if (content) {
     el.textContent = content;
@@ -1154,7 +1154,7 @@ function setDrawerContent(content) {
 
 function renderCardPreviews() {
   document.querySelectorAll('.response-card').forEach(card => {
-    const textarea = drawerCardMap.get(card) || card.querySelector('.card-data');
+    const textarea = modalCardMap.get(card) || card.querySelector('.card-data');
     const preview = card.querySelector('.card-preview');
     if (!textarea || !preview) return;
     const value = (saludoCard && card === saludoCard) ? buildSaludoText(textarea.value) : textarea.value;
@@ -1162,28 +1162,29 @@ function renderCardPreviews() {
     preview.textContent = lines.slice(0, 2).join(' ');
   });
 
-  // Actualizar contenido del drawer si está abierto (cambio de nombre de agente)
-  if (drawerCurrentIndex >= 0 && drawerVisibleCards[drawerCurrentIndex]) {
-    const card = drawerVisibleCards[drawerCurrentIndex];
-    const textarea = drawerCardMap.get(card);
+  // Actualizar contenido del modal si está abierto (cambio de nombre de agente)
+  if (modalCurrentIndex >= 0 && modalVisibleCards[modalCurrentIndex]) {
+    const card = modalVisibleCards[modalCurrentIndex];
+    const textarea = modalCardMap.get(card);
     if (textarea) {
       const isSaludo = saludoCard && card === saludoCard;
-      setDrawerContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
+      setModalContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
     }
   }
 }
 
 function initResponseCards(cardIds) {
-  cardIds.forEach(id => {
+  cardIds.forEach((id, index) => {
     const textarea = document.getElementById(id);
     if (!textarea) return;
     const card = textarea.closest('.text-box');
     if (!card || card.classList.contains('response-card')) return;
 
     card.classList.add('response-card');
+    card.style.setProperty('--i', index);
     textarea.classList.add('card-data');
     textarea.style.display = 'none';
-    drawerCardMap.set(card, textarea);
+    modalCardMap.set(card, textarea);
 
     // Ocultar botón copiar original
     const oldCopyBtn = card.querySelector('button[id="copiarBtn"]');
@@ -1206,7 +1207,7 @@ function initResponseCards(cardIds) {
 
       viewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        openResponseDrawer(card);
+        openResponseModal(card);
       });
     }
 
@@ -1246,55 +1247,62 @@ function initResponseCards(cardIds) {
   renderCardPreviews();
 }
 
-function openResponseDrawer(card) {
+let modalLastFocus = null;
+
+function openResponseModal(card) {
   const tabContent = card.closest('.tab-content');
   if (!tabContent) return;
-  drawerCurrentTabId = tabContent.id;
-  drawerVisibleCards = getDrawerCards(drawerCurrentTabId);
-  drawerCurrentIndex = drawerVisibleCards.indexOf(card);
+  modalCurrentTabId = tabContent.id;
+  modalVisibleCards = getModalCards(modalCurrentTabId);
+  modalCurrentIndex = modalVisibleCards.indexOf(card);
+  modalLastFocus = document.activeElement;
 
   document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
   card.classList.add('active');
-  populateDrawer();
+  populateModal();
 
-  const drawer = document.getElementById('response-drawer');
-  drawer.classList.add('open');
-  document.getElementById('drawer-overlay').classList.add('visible');
-  drawer.setAttribute('aria-hidden', 'false');
+  const modal = document.getElementById('response-modal');
+  modal.classList.add('open');
+  modal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  document.getElementById('modal-copy-btn')?.focus({ preventScroll: true });
 }
 
-function closeResponseDrawer() {
-  const drawer = document.getElementById('response-drawer');
-  if (!drawer) return;
-  drawer.classList.remove('open');
-  drawer.setAttribute('aria-hidden', 'true');
-  const overlay = document.getElementById('drawer-overlay');
-  if (overlay) overlay.classList.remove('visible');
+function closeResponseModal() {
+  const modal = document.getElementById('response-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  modal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
   document.querySelectorAll('.response-card.active').forEach(c => c.classList.remove('active'));
-  drawerCurrentIndex = -1;
-  drawerCurrentTabId = null;
-  drawerVisibleCards = [];
+  modalCurrentIndex = -1;
+  modalCurrentTabId = null;
+  modalVisibleCards = [];
+  if (modalLastFocus && document.contains(modalLastFocus)) {
+    modalLastFocus.focus({ preventScroll: true });
+  }
+  modalLastFocus = null;
 }
 
-function populateDrawer() {
-  if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
-  const card = drawerVisibleCards[drawerCurrentIndex];
+function populateModal() {
+  if (modalCurrentIndex < 0 || !modalVisibleCards.length) return;
+  const card = modalVisibleCards[modalCurrentIndex];
   const isSaludo = saludoCard && card === saludoCard;
   const title = card.querySelector('h3')?.textContent.trim() || '';
-  const textarea = drawerCardMap.get(card);
+  const textarea = modalCardMap.get(card);
   const base = textarea?.value || '';
   const content = isSaludo ? buildSaludoText(base) : base;
 
-  document.getElementById('drawer-title').textContent = title;
-  setDrawerContent(content);
-  updateDrawerNavState();
+  document.getElementById('modal-title').textContent = title;
+  setModalContent(content);
+  updateModalNavState();
 
-  const variantsEl = document.getElementById('drawer-variants');
+  const variantsEl = document.getElementById('modal-variants');
   if (variantsEl) variantsEl.style.display = isSaludo ? 'flex' : 'none';
 
-  const copyBtn = document.getElementById('drawer-copy-btn');
+  const copyBtn = document.getElementById('modal-copy-btn');
   if (copyBtn) {
-    copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+    copyBtn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar mensaje`;
     copyBtn.disabled = false;
   }
 
@@ -1303,34 +1311,34 @@ function populateDrawer() {
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function navigateDrawer(dir) {
-  const newIdx = drawerCurrentIndex + dir;
-  if (newIdx < 0 || newIdx >= drawerVisibleCards.length) return;
-  drawerCurrentIndex = newIdx;
-  populateDrawer();
+function navigateModal(dir) {
+  const newIdx = modalCurrentIndex + dir;
+  if (newIdx < 0 || newIdx >= modalVisibleCards.length) return;
+  modalCurrentIndex = newIdx;
+  populateModal();
 }
 
-function updateDrawerNavState() {
-  const total = drawerVisibleCards.length;
-  const counter = document.getElementById('drawer-counter');
-  const prev = document.getElementById('drawer-prev');
-  const next = document.getElementById('drawer-next');
-  if (counter) counter.textContent = total > 0 ? `${drawerCurrentIndex + 1} / ${total}` : '';
-  if (prev) prev.disabled = drawerCurrentIndex <= 0;
-  if (next) next.disabled = drawerCurrentIndex >= total - 1;
+function updateModalNavState() {
+  const total = modalVisibleCards.length;
+  const counter = document.getElementById('modal-counter');
+  const prev = document.getElementById('modal-prev');
+  const next = document.getElementById('modal-next');
+  if (counter) counter.textContent = total > 0 ? `${modalCurrentIndex + 1} / ${total}` : '';
+  if (prev) prev.disabled = modalCurrentIndex <= 0;
+  if (next) next.disabled = modalCurrentIndex >= total - 1;
 }
 
-function updateDrawerAfterSearch() {
-  if (!drawerCurrentTabId) return;
-  const newVisible = getDrawerCards(drawerCurrentTabId);
-  drawerVisibleCards = newVisible;
+function updateModalAfterSearch() {
+  if (!modalCurrentTabId) return;
+  const newVisible = getModalCards(modalCurrentTabId);
+  modalVisibleCards = newVisible;
   if (newVisible.length === 0) {
-    closeResponseDrawer();
-  } else if (drawerCurrentIndex >= newVisible.length) {
-    drawerCurrentIndex = newVisible.length - 1;
-    populateDrawer();
+    closeResponseModal();
+  } else if (modalCurrentIndex >= newVisible.length) {
+    modalCurrentIndex = newVisible.length - 1;
+    populateModal();
   } else {
-    updateDrawerNavState();
+    updateModalNavState();
   }
 }
 
@@ -1358,16 +1366,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // "/" → enfocar buscador (solo si no hay otro campo activo)
-    if (e.key === "/" && !inField) {
+    if (e.key === "/" && !inField && modalCurrentIndex < 0) {
       e.preventDefault();
       globalSearch.focus();
       globalSearch.select();
       return;
     }
 
-    // Escape → cerrar drawer, o limpiar buscador si está enfocado
+    // Modal abierto: ← → navegan entre mensajes y Tab no se escapa del diálogo
+    if (modalCurrentIndex >= 0) {
+      if (e.key === "ArrowLeft" && !inField) { e.preventDefault(); navigateModal(-1); return; }
+      if (e.key === "ArrowRight" && !inField) { e.preventDefault(); navigateModal(1); return; }
+      if (e.key === "Tab") {
+        const focusables = Array.from(document.querySelectorAll(
+          "#response-modal button:not(:disabled)"
+        )).filter(el => el.offsetParent !== null);
+        if (focusables.length) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      }
+    }
+
+    // Escape → cerrar modal, o limpiar buscador si está enfocado
     if (e.key === "Escape") {
-      if (drawerCurrentIndex >= 0) { closeResponseDrawer(); return; }
+      if (modalCurrentIndex >= 0) { closeResponseModal(); return; }
       if (document.activeElement === globalSearch) {
         if (globalSearch.value) { globalSearch.value = ""; globalSearchFilter(""); }
         else { globalSearch.blur(); }
@@ -1391,7 +1416,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Inicializar saludo card + chips de variantes
   saludoCard = document.getElementById('daysMessage')?.closest('.text-box') || null;
-  const variantsEl = document.getElementById('drawer-variants');
+  const variantsEl = document.getElementById('modal-variants');
   if (variantsEl && saludoCard) {
     SALUDO_VARIANTES.forEach(({ label, value }) => {
       const chip = document.createElement('button');
@@ -1402,8 +1427,8 @@ document.addEventListener("DOMContentLoaded", () => {
         variantsEl.querySelectorAll('.saludo-chip').forEach(c => {
           c.classList.toggle('saludo-chip--active', c.textContent === label);
         });
-        const ta = drawerCardMap.get(saludoCard);
-        setDrawerContent(buildSaludoText(ta?.value || ''));
+        const ta = modalCardMap.get(saludoCard);
+        setModalContent(buildSaludoText(ta?.value || ''));
         renderCardPreviews();
       });
       variantsEl.appendChild(chip);
@@ -1414,15 +1439,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('densityNormal')?.addEventListener('click', () => applyDensity('normal'));
   document.getElementById('densityCompact')?.addEventListener('click', () => applyDensity('compact'));
 
-  // Listeners del drawer
-  document.getElementById('drawer-close').addEventListener('click', closeResponseDrawer);
-  document.getElementById('drawer-overlay').addEventListener('click', closeResponseDrawer);
-  document.getElementById('drawer-prev').addEventListener('click', () => navigateDrawer(-1));
-  document.getElementById('drawer-next').addEventListener('click', () => navigateDrawer(1));
-  document.getElementById('drawer-copy-btn').addEventListener('click', function() {
-    if (drawerCurrentIndex < 0 || !drawerVisibleCards.length) return;
-    const card = drawerVisibleCards[drawerCurrentIndex];
-    const textarea = drawerCardMap.get(card);
+  // Listeners del modal
+  document.getElementById('modal-close').addEventListener('click', closeResponseModal);
+  document.getElementById('modal-overlay').addEventListener('click', closeResponseModal);
+  document.getElementById('modal-prev').addEventListener('click', () => navigateModal(-1));
+  document.getElementById('modal-next').addEventListener('click', () => navigateModal(1));
+  document.getElementById('modal-copy-btn').addEventListener('click', function() {
+    if (modalCurrentIndex < 0 || !modalVisibleCards.length) return;
+    const card = modalVisibleCards[modalCurrentIndex];
+    const textarea = modalCardMap.get(card);
     if (!textarea || !textarea.value) return;
     const isSaludo = saludoCard && card === saludoCard;
     const text = isSaludo ? buildSaludoText(textarea.value) : textarea.value;
@@ -1431,7 +1456,7 @@ document.addEventListener("DOMContentLoaded", () => {
       btn.innerHTML = '¡Copiado! ✅';
       btn.disabled = true;
       setTimeout(() => {
-        btn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar texto`;
+        btn.innerHTML = `${CLIPBOARD_ICON_SVG} Copiar mensaje`;
         btn.disabled = false;
       }, 1500);
     };

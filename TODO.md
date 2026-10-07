@@ -11,22 +11,8 @@ pasárselo directamente a Claude Code con el contexto necesario.
 
 ## 🔨 En curso
 
-### TODO-13 — Terminar y commitear el tab de Diagnóstico
-
-**Estado:** implementado en la rama `david-implement-checklist-tab`, sin commitear.
-
-Cambios sin commitear en `index.html`, `index.js`, `style.css` y `sw.js`:
-clase `DiagnosticoCenter`, drawer compartido, modo compacto y chips de
-variantes del saludo.
-
-**Pendiente:**
-
-- Verificar que el Apps Script desplegado responde a `?hoja=diagnostico` con
-  columnas `categoria`, `subtitulo`, `contenido` (si no, el tab muestra
-  "Aún no hay casos de diagnóstico disponibles").
-- Commitear y abrir PR.
-- Renombrar la rama o el PR: se llama `checklist-tab` pero lo que entrega es
-  el tab de **Diagnóstico**.
+*(Nada en curso.)* El TODO-13 (tab de Diagnóstico) ya está mergeado en `main` y
+verificado contra el Apps Script desplegado.
 
 ---
 
@@ -75,38 +61,6 @@ deben ser únicos; el código funciona de casualidad porque usa
 ---
 
 ## 🟡 Prioridad media
-
-### TODO-14 — Renombrar `logo-removebg-preview.png`
-
-**Objetivo:** nombre descriptivo en vez del nombre que dejó la herramienta de
-edición de imágenes.
-
-**Comportamiento esperado:**
-
-- `git mv logo-removebg-preview.png logo-watermark.png`.
-- Actualizar las 2 referencias en `style.css` (regla `body` y `body.light-mode`).
-- Actualizar `STATIC_ASSETS` en `sw.js` y subir `CACHE_NAME`.
-- Actualizar la mención en `CLAUDE.md` y `README.md`.
-
-**Archivos a modificar:** `style.css`, `sw.js`, `CLAUDE.md`, `README.md`
-
----
-
-### TODO-15 — Unificar el favicon con el ícono de la PWA
-
-**Objetivo:** que la pestaña del navegador y la app instalada muestren el mismo ícono.
-
-**Problema:** `index.html` embebe un favicon `data:image/x-icon;base64` heredado
-que no tiene relación con `icon.svg`, que es el que usa `manifest.json`.
-
-**Comportamiento esperado:**
-
-- Reemplazar el `<link rel="icon">` base64 por `<link rel="icon" type="image/svg+xml" href="icon.svg">`.
-- Verificar que se ve bien en pestaña clara y oscura.
-
-**Archivos a modificar:** `index.html`
-
----
 
 ### TODO-16 — Persistir tema y densidad (requiere aprobación)
 
@@ -166,6 +120,16 @@ conocidos cuando no hay conexión, en vez de un array vacío.
 ## ✅ Completadas
 
 Detalle e historial completo en `CHANGELOG.md`.
+
+- **TODO-22 — Rediseño visual alineado con lizto.co** *(2026-10-07)*
+  Nueva paleta y tipografía, modo oscuro derivado del teal, barra superior,
+  tarjetas y transiciones nuevas, y modal centrado en lugar del drawer.
+  Solicitud directa.
+- **TODO-15 — Unificar el favicon con el ícono de la PWA** *(2026-10-07)*
+  `<link rel="icon">` apunta a `icon.svg`.
+- **TODO-14 — Renombrar `logo-removebg-preview.png`** *(2026-10-07)*
+  Obsoleto: se eliminó el archivo junto con la marca de agua (el logo es ahora
+  un SVG inline en la barra superior).
 
 - **TODO-01 — Persistir nombre del agente con localStorage** *(2026-06-26)*
   Claves `lizto_agent_name` y `lizto_client_name`, restauradas antes del primer

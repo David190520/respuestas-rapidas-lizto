@@ -15,6 +15,44 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-07
+
+### Cambiado
+
+- **Rediseño visual alineado con lizto.co.** Nueva paleta (teal `#12b5ac`, tinta
+  `#0e1a1c`, tinte `#def5f3`, rosa `#cc3366` como énfasis) y fuente Plus Jakarta
+  Sans en lugar de Poppins/Montserrat/Inter. El modo oscuro deja de ser morado:
+  deriva de la misma paleta teal. Todo el CSS se reescribió sobre tokens
+  (`--accent-ink`, `--accent-solid`, `--on-accent`, `--bubble-bg`, sombras,
+  radios, `--ease`/`--dur`) y se eliminó casi toda la capa de overrides de
+  `body.light-mode`.
+- **Barra superior fija** con logo (SVG inline), campos Cliente/Agente y toggle
+  de tema, en lugar del título centrado. Buscador en píldora y tabs tipo
+  segmented control.
+- **Tarjetas** más redondeadas, con sombra y elevación al hover, preview de 3
+  líneas y animación de entrada escalonada. Grilla fluida `auto-fill`, sin
+  `!important` en móvil.
+- **El drawer lateral pasó a ser un modal centrado** (hoja inferior en móvil),
+  con fondo difuminado, animación de escala, burbuja de mensaje, navegación
+  ←/→ con teclado, foco atrapado, bloqueo de scroll y retorno del foco. IDs y
+  funciones renombrados `drawer*` → `modal*`.
+- Paso a paso y Diagnóstico: sidebar con items en píldora, etiqueta de
+  categoría tipo chip, contraste de enlaces y callouts por tokens.
+- `manifest.json`: `theme_color` y `background_color` de la nueva paleta.
+  `icon.svg` rehecho con el isotipo de Lizto.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v6`.
+
+### Corregido
+
+- Favicon: ahora usa `icon.svg` en lugar de un `.ico` base64 heredado (TODO-15).
+
+### Eliminado
+
+- `logo-removebg-preview.png` y la marca de agua de fondo (el logo vive ahora en
+  la barra superior). Esto vuelve obsoleto el TODO-14.
+
+---
+
 ## [Sin publicar] — 2026-08-25
 
 ### Agregado

@@ -3,41 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#7c5cbf" />
+    <meta name="theme-color" content="#12b5ac" />
     <link rel="manifest" href="manifest.json" />
-    <link
-      href="data:image/x-icon;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAABWsfwA////AGBgYAA7k9sACgoKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJERBREQUREIkREEUQRREQiRERBRBRERCIiJEFEFEIiIiIiIRESIiIiIiIiMyIiIiIiIiAAAiIiIiIiAAAAIiIiIiIAAAAiIiIiIEQARAIiIiIgREREAiIiIiIAAAAiIiIiIkAABCIiIiIiREREIiIiIiIkREIiIiIiIiIiIiIiIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-      rel="icon"
-      type="image/x-icon"
-    />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
     <title>Respuestas Rápidas</title>
   </head>
   <body>
-    <div class="container">
-      <div class="title-container">
-        <h1 class="title">Mensajes rápidos de soporte Lizto Software</h1>
+    <header class="app-bar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect x="3" y="3" width="42" height="42" rx="13" stroke="currentColor" stroke-width="4"></rect>
+          <path d="M14 25l7 7 13-15" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-name">Lizto</span>
+          <h1 class="brand-sub">Respuestas rápidas de soporte</h1>
+        </div>
+      </div>
+      <div class="header">
+        <div class="input-container">
+          <label for="userInput">Cliente</label>
+          <input class="input" type="text" id="userInput" placeholder="Nombre del cliente" autocomplete="off" />
+        </div>
+        <div class="input-container">
+          <label for="agentInput">Agente</label>
+          <input class="input" type="text" id="agentInput" placeholder="Tu nombre" autocomplete="off" />
+        </div>
       </div>
       <button id="toggleBrillo" title="Cambiar tema" aria-label="Activar brillo">
         <span id="iconoBrillo" class="icon"></span>
       </button>
-      <div class="header">
-        <div class="input-container">
-          <label for="userInput">Nombre del cliente</label>
-          <input class="input" type="text" id="userInput" />
-        </div>
-        <div class="input-container">
-          <label for="agentInput">Nombre del agente</label>
-          <input class="input" type="text" id="agentInput" />
-        </div>
-      </div>
+    </header>
 
+    <div class="container">
       <div class="global-search-container">
         <svg class="global-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"></circle>
@@ -512,32 +517,30 @@
     </div>
 
   </div>
-  <!-- Drawer compartido para Respuestas y Plantillas -->
-  <div id="response-drawer" class="response-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true">
-    <div class="drawer-inner">
-      <div class="drawer-header">
-        <h2 id="drawer-title" class="drawer-title"></h2>
-        <div class="drawer-controls">
-          <button id="drawer-prev" class="drawer-nav-btn" title="Anterior" aria-label="Mensaje anterior">&#8592;</button>
-          <span id="drawer-counter" class="drawer-counter"></span>
-          <button id="drawer-next" class="drawer-nav-btn" title="Siguiente" aria-label="Mensaje siguiente">&#8594;</button>
-          <button id="drawer-close" class="drawer-close-btn" title="Cerrar" aria-label="Cerrar panel">&#10005;</button>
-        </div>
+  <!-- Modal compartido para Respuestas y Plantillas -->
+  <div id="response-modal" class="response-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div id="modal-overlay" class="modal-overlay"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title"></h2>
+        <span id="modal-counter" class="modal-counter"></span>
+        <button id="modal-close" class="modal-close-btn" title="Cerrar (Esc)" aria-label="Cerrar">&#10005;</button>
       </div>
-      <div id="drawer-variants" class="drawer-variants"></div>
-      <div id="drawer-content" class="drawer-content"></div>
-      <div class="drawer-footer">
-        <button id="drawer-copy-btn" class="drawer-copy-btn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <div id="modal-variants" class="modal-variants"></div>
+      <div id="modal-content" class="modal-content"></div>
+      <div class="modal-footer">
+        <button id="modal-prev" class="modal-nav-btn" title="Anterior (←)" aria-label="Mensaje anterior">&#8592;</button>
+        <button id="modal-copy-btn" class="modal-copy-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
           </svg>
-          Copiar texto
+          Copiar mensaje
         </button>
+        <button id="modal-next" class="modal-nav-btn" title="Siguiente (→)" aria-label="Mensaje siguiente">&#8594;</button>
       </div>
     </div>
   </div>
-  <div id="drawer-overlay" class="drawer-overlay"></div>
 
   <script src="index.js"></script>
   </body>
