@@ -143,19 +143,26 @@ function updateLinkPagoMessage() {
   document.getElementById("linkPago").value = addUserText(mensaje);
 }
 
-// Inicializar selector de fechas (próximos 30 días) - Solo una vez
+// Inicializar selector de fechas (próximos 30 días, sin sábados ni domingos:
+// no se dan capacitaciones esos días) - Solo una vez
 function initializeFechaSelect() {
   const select = document.getElementById("fechaReunionSelect");
   // Limpiar opciones previas si existen
   if (select.children.length > 1) return;
-  
+
   const today = new Date();
   for (let i = 0; i < 30; i++) {
     const date = new Date(today);
     date.setDate(date.getDate() + i);
+    const dia = date.getDay();
+    if (dia === 0 || dia === 6) continue;
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
     const fechaFormato = date.toLocaleDateString('es-CO', options);
-    const fechaValue = date.toISOString().split('T')[0];
+    // Fecha local (toISOString usa UTC y después de las 7 p.m. en Colombia
+    // devolvería el día siguiente)
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const fechaValue = `${date.getFullYear()}-${mm}-${dd}`;
     const option = document.createElement('option');
     option.value = fechaValue;
     option.textContent = fechaFormato.charAt(0).toUpperCase() + fechaFormato.slice(1);
@@ -1173,6 +1180,72 @@ function renderCardPreviews() {
   }
 }
 
+// ============= TARJETAS FIJADAS (pin) =============
+// Los agentes fijan las tarjetas que más usan y estas suben al inicio de su tab.
+// Persistencia: `lizto_pinned_cards` (ids de textarea). Ver CLAUDE.md.
+
+const PINNED_KEY = 'lizto_pinned_cards';
+const PIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path></svg>`;
+
+function loadPinned() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(PINNED_KEY) || '[]');
+    return Array.isArray(raw) ? raw.filter(id => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePinned(ids) {
+  try { localStorage.setItem(PINNED_KEY, JSON.stringify(ids)); } catch {}
+}
+
+// Ordena las tarjetas de un contenedor: fijadas primero (en el orden en que se
+// fijaron) y el resto en su orden original (--i). Mueve los nodos del DOM para
+// que el modal navegue en el mismo orden que se ve.
+function reorderCards(container) {
+  if (!container) return;
+  const pinned = loadPinned();
+  const cards = Array.from(container.querySelectorAll(':scope > .response-card'));
+  if (!cards.length) return;
+
+  const rank = card => {
+    const id = cardTextareaId(card);
+    const p = pinned.indexOf(id);
+    return p === -1 ? 1000 + Number(card.dataset.order || 0) : p;
+  };
+  cards.sort((a, b) => rank(a) - rank(b));
+
+  const anchor = Array.from(container.children).find(el => !el.classList.contains('response-card')) || null;
+  cards.forEach(card => {
+    card.classList.toggle('pinned', pinned.includes(cardTextareaId(card)));
+    const btn = card.querySelector('.card-pin-btn');
+    if (btn) {
+      const isPinned = card.classList.contains('pinned');
+      btn.setAttribute('aria-pressed', String(isPinned));
+      btn.title = isPinned ? 'Quitar de fijadas' : 'Fijar al inicio';
+      btn.setAttribute('aria-label', btn.title);
+    }
+    container.insertBefore(card, anchor);
+  });
+}
+
+function cardTextareaId(card) {
+  return modalCardMap.get(card)?.id || '';
+}
+
+function togglePin(card) {
+  const id = cardTextareaId(card);
+  if (!id) return;
+  const pinned = loadPinned();
+  const i = pinned.indexOf(id);
+  if (i === -1) pinned.push(id); else pinned.splice(i, 1);
+  savePinned(pinned);
+  reorderCards(card.parentElement);
+  // El orden visible cambió: refrescar la lista de navegación del modal
+  updateModalAfterSearch();
+}
+
 function initResponseCards(cardIds) {
   cardIds.forEach((id, index) => {
     const textarea = document.getElementById(id);
@@ -1182,6 +1255,8 @@ function initResponseCards(cardIds) {
 
     card.classList.add('response-card');
     card.style.setProperty('--i', index);
+    // Posición original en el DOM: base del orden de las tarjetas no fijadas
+    card.dataset.order = Array.from(card.parentElement.children).indexOf(card);
     textarea.classList.add('card-data');
     textarea.style.display = 'none';
     modalCardMap.set(card, textarea);
@@ -1208,6 +1283,19 @@ function initResponseCards(cardIds) {
       viewBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         openResponseModal(card);
+      });
+
+      const pinBtn = document.createElement('button');
+      pinBtn.className = 'card-pin-btn';
+      pinBtn.title = 'Fijar al inicio';
+      pinBtn.setAttribute('aria-label', 'Fijar al inicio');
+      pinBtn.setAttribute('aria-pressed', 'false');
+      pinBtn.innerHTML = PIN_SVG;
+      header.insertBefore(pinBtn, viewBtn);
+
+      pinBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePin(card);
       });
     }
 
@@ -1412,6 +1500,8 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
   initResponseCards(RESPUESTAS_CARD_IDS);
   initResponseCards(PLANTILLAS_CARD_IDS);
+  reorderCards(document.querySelector('#respuestas .text-fields'));
+  reorderCards(document.querySelector('#plantillas .text-fields'));
   renderAtajos();
 
   // Inicializar saludo card + chips de variantes
