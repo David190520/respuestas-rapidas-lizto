@@ -63,11 +63,40 @@ const agentesData = {
   }
 };
 
+// Hora actual en Colombia, sin depender de la zona horaria del PC del agente.
+function horaColombia(fecha = new Date()) {
+  const partes = new Intl.DateTimeFormat("es-CO", {
+    hour: "numeric", hour12: false, timeZone: "America/Bogota"
+  }).formatToParts(fecha);
+  const hora = Number(partes.find(p => p.type === "hour")?.value);
+  return Number.isFinite(hora) ? hora % 24 : fecha.getHours();
+}
+
+// "buenas noches" (00:00–04:59), "buen día" (05:00–11:59), "buenas tardes"
+// (12:00–18:59) y "buenas noches" (19:00–23:59)
+function saludoHora(fecha = new Date()) {
+  const hora = horaColombia(fecha);
+  if (hora < 5) return "buenas noches";
+  if (hora < 12) return "buen día";
+  if (hora < 19) return "buenas tardes";
+  return "buenas noches";
+}
+
+function capitalizar(texto) {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
 function addUserText(message) {
   const userInput = document.getElementById("userInput").value.trim();
   const agentInput = document.getElementById("agentInput").value.trim() || "un agente";
 
-  const baseMessage = message.replace("nombreAgente", agentInput);
+  // Tokens de texto plano: "SaludoHora" (inicio de frase) y "saludoHora" (mitad
+  // de frase), además de "nombreAgente". Se reemplazan todas las apariciones.
+  const saludo = saludoHora();
+  const baseMessage = message
+    .split("SaludoHora").join(capitalizar(saludo))
+    .split("saludoHora").join(saludo)
+    .split("nombreAgente").join(agentInput);
 
   if (!userInput) {
     return baseMessage;
@@ -82,17 +111,17 @@ function updateMessages() {
   const hola = userInput ? `Hola ${userInput},` : 'Hola,';
 
   document.getElementById("daysMessage").value =
-    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
+    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎.`;
   document.getElementById("falloSistema").value =
-    `${hola} muy buen día, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
+    `${hola} muy ${saludoHora()}, ¿cómo estás? Hablas con ${agentInput}, del equipo soporte Lizto ☑︎. ¿Tienes disponibilidad en este momento para que nos conectemos y revisarlo contigo? Así podemos ayudarte de forma más rápida. En caso de que no sea posible, puedes compartirnos por favor imágenes o un video del inconveniente para poder validarlo en detalle. Quedamos atentos.`;
   document.getElementById("modulosCapacitaciones").value = 
-    addUserText("Buen día, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
+    addUserText("SaludoHora, ¿Cómo estás? Hablas con nombreAgente del equipo de soporte de Lizto ☑. Cuéntanos por favor qué módulo o proceso deseas revisar y te apoyamos por este medio paso a paso para resolver tus dudas.\n\nTambién contamos con espacios grupales donde explicamos módulos específicos y resolvemos preguntas en vivo:\n\nCapacitaciones por módulos:\nMartes – 9:00 a.m.\n\nEspacios de resolución de dudas generales:\nMartes – 5:00 p.m.\nJueves – 9:00 a.m. y 5:00 p.m.\n\nLink 9 am: https://us06web.zoom.us/j/83345602567\nLink 5 pm: https://us06web.zoom.us/j/83272928783?pwd=5oyn4FfSuZ7F5gPDakoUUqVqhTmKbT.1\n\nSi después de ayudarte con tu caso por este medio sientes que es necesario un acompañamiento más personalizado, con gusto podemos agendar una reunión.");
   document.getElementById("validarPagoMessage").value = 
     addUserText("¡Mil gracias por el pago! Puedes seguir haciendo uso del sistema con normalidad 😁");
   document.getElementById("pagoGraciasMessage").value = 
     addUserText("Me puedes indicar por favor el número de NIT del negocio para validar con el área contable 😊");
   document.getElementById("solicitarLinkMessage").value = 
-    addUserText("Buen día, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
+    addUserText("SaludoHora, ¿cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Lo sentimos, el sistema suspendió el servicio por falta de pago. Por favor, envíanos el comprobante de pago y el NIT para reactivarlo");
   updatePasoaPasoMessage();
   document.getElementById("demorasDIAN").value =
     addUserText("¿Cómo estás? hablas con nombreAgente del equipo de soporte de Lizto ☑︎. Actualmente la DIAN se encuentra presentando demoras en la generación de las facturas electrónicas, no te preocupes, puedes verificar más tarde si las facturas ya se encuentran generadas 😀");
@@ -120,7 +149,7 @@ function updateMessages() {
   document.getElementById("solicitudCambioRazonSocial").value =
     "Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"
   document.getElementById("solicitudIdSetPruebas").value =
-  "Buen día.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias."
+  `${capitalizar(saludoHora())}.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias.`
   // Actualizar también el mensaje de pago al cambiar el nombre del agente
   updateLinkPagoMessage();
   renderCardPreviews();
@@ -211,6 +240,20 @@ function updateReunionMessage() {
 // Inicializar fechas
 initializeFechaSelect();
 
+// El saludo depende de la hora: si el agente deja la pestaña abierta durante
+// varias horas, se recalcula al cruzar de periodo y al volver a la pestaña.
+let ultimoSaludo = saludoHora();
+function refrescarSaludoSiCambio() {
+  const actual = saludoHora();
+  if (actual === ultimoSaludo) return;
+  ultimoSaludo = actual;
+  updateMessages();
+}
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refrescarSaludoSiCambio();
+});
+setInterval(refrescarSaludoSiCambio, 60 * 1000);
+
 // Restaurar nombres desde localStorage
 const savedAgent = localStorage.getItem("lizto_agent_name");
 const savedClient = localStorage.getItem("lizto_client_name");
@@ -261,32 +304,38 @@ document.getElementById("agenteReunion").addEventListener("change", function() {
 document.getElementById("fechaReunionSelect").addEventListener("change", updateReunionMessage);
 document.getElementById("horaReunionSelect").addEventListener("change", updateReunionMessage);
 
-// Toggle de brillo
+// Tema: arranca según el sistema operativo y lo sigue mientras el agente no use
+// el toggle. La elección manual manda durante la sesión y NO se persiste.
 const toggleButton = document.getElementById("toggleBrillo");
 const iconoBrillo = document.getElementById("iconoBrillo");
-let brilloActivo = false;
+const temaSO = window.matchMedia("(prefers-color-scheme: light)");
+let brilloActivo = temaSO.matches;
+let temaManual = false;
 
 const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`;
 const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
 
-// Estado inicial: modo oscuro
-toggleButton.classList.add("off");
-iconoBrillo.innerHTML = SUN_SVG;
-toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
+function applyTheme(claro) {
+  brilloActivo = claro;
+  // La clase vive en <html> (la pone también un script en <head> para evitar el
+  // parpadeo); los tokens están en `.light-mode`.
+  document.documentElement.classList.toggle("light-mode", claro);
+  toggleButton.classList.toggle("off", !claro);
+  iconoBrillo.innerHTML = claro ? MOON_SVG : SUN_SVG;
+  toggleButton.setAttribute("aria-label", claro ? "Cambiar a modo oscuro" : "Cambiar a modo claro");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", claro ? "#eff5f5" : "#0e1a1c");
+}
+
+applyTheme(brilloActivo);
 
 toggleButton.addEventListener("click", () => {
-  brilloActivo = !brilloActivo;
-  document.body.classList.toggle("light-mode", brilloActivo);
+  temaManual = true;
+  applyTheme(!brilloActivo);
+});
 
-  if (brilloActivo) {
-    toggleButton.classList.remove("off");
-    iconoBrillo.innerHTML = MOON_SVG;
-    toggleButton.setAttribute("aria-label", "Cambiar a modo oscuro");
-  } else {
-    toggleButton.classList.add("off");
-    iconoBrillo.innerHTML = SUN_SVG;
-    toggleButton.setAttribute("aria-label", "Cambiar a modo claro");
-  }
+temaSO.addEventListener("change", (e) => {
+  if (!temaManual) applyTheme(e.matches);
 });
 
 // Manejo de pestañas
@@ -506,8 +555,32 @@ function copiarConFallback(texto) {
   });
 }
 
+// El contenido de Paso a paso y Diagnóstico viene de Google Sheets y se muestra
+// con innerHTML: SIEMPRE se escapa antes de construir el HTML. El copiado no
+// pasa por aquí (usa el string crudo).
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Recibe texto plano, devuelve HTML seguro con las URLs http(s) como enlaces.
 function linkify(text) {
-  return text.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  const source = String(text);
+  let html = "";
+  let last = 0;
+  for (const match of source.matchAll(/https?:\/\/[^\s<>"']+/g)) {
+    // La puntuación final (".", ",", ")" ...) no forma parte del enlace
+    const url = match[0].replace(/[.,;:!?)\]]+$/, "");
+    if (!url) continue;
+    html += escapeHtml(source.slice(last, match.index));
+    html += `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(url)}</a>`;
+    last = match.index + url.length;
+  }
+  return html + escapeHtml(source.slice(last));
 }
 
 function formatearContenidoPasoAPaso(textoPlano) {
@@ -569,7 +642,7 @@ function formatearContenidoPasoAPaso(textoPlano) {
       case 'ul':
         return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
       case 'p':
-        return `<p>${linkify(block.lines.join('<br>'))}</p>`;
+        return `<p>${block.lines.map(linkify).join('<br>')}</p>`;
       default:
         return '';
     }
@@ -775,7 +848,7 @@ class HelpCenter {
    * Muestra un mensaje de error
    */
   showError(message) {
-    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${escapeHtml(message)}</div>`;
   }
 
   applySearch(query) {
@@ -1100,7 +1173,7 @@ class DiagnosticoCenter {
   }
 
   showError(message) {
-    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${message}</div>`;
+    this.elements.itemsList.innerHTML = `<div class="help-empty-list">${escapeHtml(message)}</div>`;
   }
 }
 

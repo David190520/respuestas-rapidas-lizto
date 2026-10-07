@@ -21,8 +21,6 @@ verificado contra el Apps Script desplegado.
 El detalle de cada fase (alcance, archivos, aceptación y riesgos) está en
 `PLAN.md`. Pendientes, en el orden propuesto:
 
-- **TODO-24 — Escapar HTML de Sheets y tema según el SO** (Fase 1)
-- **TODO-25 — Saludo según la hora** (Fase 2)
 - **TODO-26 — Respuestas y Plantillas desde Sheets** (Fase 3; absorbe TODO-10,
   TODO-12 y TODO-18)
 - **TODO-27 — Diagnóstico con checklist y escalamiento** (Fase 5)
@@ -120,6 +118,12 @@ conocidos cuando no hay conexión, en vez de un array vacío.
 
 Detalle e historial completo en `CHANGELOG.md`.
 
+- **TODO-25 — Saludo según la hora** *(2026-10-08)*
+  Tokens `saludoHora`/`SaludoHora`, hora de Colombia, refresco al cruzar de
+  periodo.
+- **TODO-24 — Escapar HTML de Sheets y tema según el SO** *(2026-10-08)*
+  `escapeHtml()` en Paso a paso y Diagnóstico; el tema sigue al sistema
+  operativo hasta que el agente usa el toggle.
 - **TODO-17 — Fallback offline para navegación en el service worker**
   Ya implementado en `networkFirst()` de `sw.js` (si falla la red en una
   navegación, responde con `./index.html` cacheado).

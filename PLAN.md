@@ -8,7 +8,14 @@ decisiones ya tomadas, las reglas y el detalle de cada fase.
 > este archivo → `TODO.md` (estado) → `CHANGELOG.md` (qué cambió y cuándo).
 > Implementar **una fase a la vez**, con su propia rama y PR hacia `develop`.
 
-Última actualización: 2026-10-08.
+Última actualización: 2026-10-08 (Fases 1 y 2 terminadas).
+
+> **Notas de implementación de las Fases 1 y 2:** el saludo usa
+> `00:00–04:59 → buenas noches`, `05:00–11:59 → buen día`,
+> `12:00–18:59 → buenas tardes`, `19:00–23:59 → buenas noches` (en la planeación
+> inicial la madrugada caía en "buen día"). El Apps Script de Google responde un
+> 404 transitorio de vez en cuando; se observó una sola vez y la siguiente
+> recarga cargó bien. Lo cubre la caché offline de la Fase 3 (TODO-18).
 
 ---
 
@@ -272,8 +279,8 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | Fase | Descripción | Estado |
 |---|---|---|
 | 0 | Rediseño lizto.co + modal, pin, fechas sin fines de semana, fix tarjetas especiales, atajos | ✅ En `develop` |
-| 1 | Escapar HTML + tema del SO | ⬜ Pendiente |
-| 2 | Saludo según la hora | ⬜ Pendiente |
+| 1 | Escapar HTML + tema del SO | ✅ En `develop` (2026-10-08) |
+| 2 | Saludo según la hora | ✅ En `develop` (2026-10-08) |
 | 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ⬜ Pendiente |
 | 4 | Atajos desde Sheets | ⬜ Opcional |
 | 5 | Diagnóstico con checklist y escalamiento | ⬜ Pendiente |
