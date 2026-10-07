@@ -80,10 +80,12 @@ valida `Array.isArray(data)` antes de usarlo.
 
 ### Persistencia (localStorage)
 
-Solo dos claves, y son las únicas permitidas hoy:
+Solo tres claves, y son las únicas permitidas hoy:
 
 - `lizto_agent_name`
 - `lizto_client_name`
+- `lizto_pinned_cards` — JSON con los ids de textarea de las tarjetas fijadas
+  (aprobada por el responsable del proyecto al pedir la función de fijar).
 
 Se escriben en cada `input` y se restauran al cargar, antes del primer
 `updateMessages()`. **El tema no se persiste**: la app siempre arranca en
@@ -126,6 +128,10 @@ modo oscuro.
   botones) entre las tarjetas visibles del tab actual, atrapa el foco con
   `Tab`, bloquea el scroll del body (`body.modal-open`) y devuelve el foco a la
   tarjeta al cerrar.
+- Cada tarjeta tiene un botón pin (`.card-pin-btn`): las fijadas suben al
+  inicio de su tab (`reorderCards()` mueve los nodos del DOM, así el modal
+  navega en el orden visible). El resto conserva su orden original, guardado
+  en `data-order` al inicializar. Los ids se guardan en `lizto_pinned_cards`.
 - La tarjeta de Saludo tiene chips de variante (`SALUDO_VARIANTES`) que
   concatenan una frase extra al final del texto base.
 - Las tarjetas con controles propios (enlace de pago, paso a paso, reunión)
@@ -152,8 +158,8 @@ modo oscuro.
   archivos que están en el repo son exactamente los que sirve GitHub Pages.
 - **NO agregar dependencias externas** más allá de las fuentes de Google ya
   enlazadas; nada de CDNs de librerías.
-- **NO ampliar el uso de localStorage** más allá de `lizto_agent_name` y
-  `lizto_client_name` sin acordarlo antes.
+- **NO ampliar el uso de localStorage** más allá de `lizto_agent_name`,
+  `lizto_client_name` y `lizto_pinned_cards` sin acordarlo antes.
 - **NO romper la integración con Google Apps Script** existente (la URL del
   despliegue y la forma de los objetos que devuelve).
 - **El texto copiado al portapapeles SIEMPRE debe ser texto plano.** El

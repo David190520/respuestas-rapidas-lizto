@@ -121,6 +121,9 @@ conocidos cuando no hay conexión, en vez de un array vacío.
 
 Detalle e historial completo en `CHANGELOG.md`.
 
+- **TODO-23 — Fijar tarjetas (pin) y fechas sin fines de semana** *(2026-10-07)*
+  Botón pin por tarjeta con persistencia en `lizto_pinned_cards`; selector de
+  fechas de reunión sin sábados ni domingos. Solicitud directa.
 - **TODO-22 — Rediseño visual alineado con lizto.co** *(2026-10-07)*
   Nueva paleta y tipografía, modo oscuro derivado del teal, barra superior,
   tarjetas y transiciones nuevas, y modal centrado en lugar del drawer.

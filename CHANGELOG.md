@@ -15,6 +15,24 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-07 (tarjetas fijadas)
+
+### Agregado
+
+- **Fijar tarjetas.** Cada tarjeta de Respuestas y Plantillas tiene un botón pin;
+  las fijadas suben al inicio de su tab, con borde y fondo destacados, y se
+  recuerdan entre sesiones en `localStorage` (`lizto_pinned_cards`). El resto
+  mantiene su orden original y el modal navega en el orden visible.
+
+### Corregido
+
+- **Enlace para reunión:** el selector de fechas ya no muestra sábados ni
+  domingos (no se dan capacitaciones esos días).
+- El valor de cada fecha se calculaba con `toISOString()` (UTC); después de las
+  7 p.m. en Colombia podía quedar un día adelantado. Ahora usa la fecha local.
+
+---
+
 ## [Sin publicar] — 2026-10-07
 
 ### Cambiado

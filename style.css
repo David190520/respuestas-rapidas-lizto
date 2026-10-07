@@ -636,6 +636,53 @@ textarea:focus {
   transform: scale(1.08);
 }
 
+.card-pin-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: color var(--dur) ease, border-color var(--dur) ease,
+              background-color var(--dur) ease, transform 200ms var(--ease);
+}
+
+.card-pin-btn svg {
+  transform: rotate(35deg);
+  transition: transform 200ms var(--ease);
+}
+
+.response-card:hover .card-pin-btn {
+  color: var(--text-muted);
+}
+
+.card-pin-btn:hover {
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+}
+
+.card-pin-btn[aria-pressed="true"] {
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+}
+
+.card-pin-btn[aria-pressed="true"] svg {
+  transform: rotate(0deg);
+  fill: currentColor;
+}
+
+.response-card.pinned {
+  border-color: var(--accent-border);
+  background: linear-gradient(180deg, var(--accent-subtle), transparent 70%), var(--bg-surface);
+}
+
 .card-preview {
   margin: 0 0 4px;
   font-size: 13px;
