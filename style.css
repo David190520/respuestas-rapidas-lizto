@@ -813,19 +813,18 @@ textarea:focus {
 
 .special-card-body {
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 14px;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .special-card-body .text-field {
-  flex: 3 1 260px;
+  flex: 0 0 auto;
   max-height: 120px;
 }
 
+/* Los controles (link + copiar) van SIEMPRE debajo del textarea, sin importar
+   el ancho de la tarjeta ni el zoom del navegador. */
 .special-card-controls {
-  flex: 2 1 240px;
   display: flex;
   flex-direction: column;
   gap: 10px;
