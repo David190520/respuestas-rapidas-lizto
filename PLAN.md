@@ -267,7 +267,9 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 
 ## 6. Backlog (sin fecha)
 
-- **Rendimiento del Apps Script:** el 2026-10-09, tras muchas recargas de prueba,
+- **Rendimiento del Apps Script (parcialmente resuelto):** `Codigo.gs` ahora cachea y
+  sirve respaldo, y `sw.js` sirve la última copia buena ante 404 (ver CHANGELOG
+  2026-10-09). Queda lo de abajo. Observación original del 2026-10-09: tras muchas recargas de prueba,
   el script respondió en 7–25 s y con 404 intermitentes (aun en peticiones
   secuenciales). Cada carga de la app hace 4 peticiones (Paso a paso,
   Diagnóstico, Respuestas, Plantillas). Mejoras posibles: servir Paso a paso y

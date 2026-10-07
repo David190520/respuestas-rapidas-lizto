@@ -15,6 +15,28 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-09 (404 intermitentes de Apps Script)
+
+### Corregido
+
+- **404 intermitentes y latencias de 20–40 s del Apps Script.** Diagnóstico: en
+  mediciones secuenciales con pausas, 3 de 12 peticiones devolvieron 404 con la
+  página de Drive "No se pudo abrir el archivo en este momento" (el script no
+  logra abrir el Spreadsheet en esa ejecución, antes de que corra su `try/catch`).
+  No depende del navegador, de la cuenta ni de la app. Cambios:
+  - `apps-script/Codigo.gs`: caché de 15 min por pestaña (`CacheService`), copia
+    de respaldo de 6 h usada si la hoja no abre, `onEdit()` que invalida la caché
+    en ediciones manuales, `limpiarCache()`, `calentarCache()` (para un activador
+    cada 10 min) y `?refrescar=1`. El contrato de datos no cambia.
+    Verificado con una simulación de `SpreadsheetApp`/`CacheService` (15 casos).
+  - `sw.js`: si Google responde 404/5xx o un `{status:"error"}` y hay una copia
+    buena guardada, se sirve esa copia (antes solo se usaba si la red fallaba del
+    todo). Verificado en 7 escenarios.
+- Requiere que David pegue el `Codigo.gs` nuevo y despliegue una **nueva versión**
+  (ver `apps-script/migracion/LEEME.md`, sección 2b).
+
+---
+
 ## [Sin publicar] — 2026-10-09 (Respuestas y Plantillas desde Sheets)
 
 ### Agregado

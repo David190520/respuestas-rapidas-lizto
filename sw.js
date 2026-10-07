@@ -75,24 +75,30 @@ async function cacheFirst(event, url) {
 }
 
 async function datosAppsScript(event) {
+  const copiaGuardada = () => caches.match(event.request, { cacheName: DATA_CACHE });
+
   try {
     const response = await fetch(event.request);
+
     if (response && response.ok) {
       // Apps Script responde 200 incluso con {status:"error"}: solo se guarda
-      // lo que es un array de filas, para no pisar la última copia buena.
-      const paraGuardar = response.clone();
-      const paraLeer = response.clone();
-      event.waitUntil(
-        paraLeer.json()
-          .then((data) => Array.isArray(data)
-            ? caches.open(DATA_CACHE).then((cache) => cache.put(event.request, paraGuardar))
-            : null)
-          .catch(() => null)
-      );
+      // (y se da por buena) una respuesta que sea un array de filas.
+      const data = await response.clone().json().catch(() => null);
+      if (Array.isArray(data)) {
+        const paraGuardar = response.clone();
+        event.waitUntil(
+          caches.open(DATA_CACHE).then((cache) => cache.put(event.request, paraGuardar))
+        );
+        return response;
+      }
     }
-    return response;
+
+    // 404/5xx transitorios de Google o un error en JSON: si hay una copia buena
+    // se usa esa; si no, se deja pasar la respuesta para que la app muestre el error.
+    return (await copiaGuardada()) || response;
   } catch (err) {
-    const cached = await caches.match(event.request, { cacheName: DATA_CACHE });
+    // Sin red: última copia buena y, si nunca hubo una, [] (la app usa su respaldo)
+    const cached = await copiaGuardada();
     if (cached) return cached;
     return new Response(JSON.stringify([]), {
       headers: { "Content-Type": "application/json" }
@@ -123,9 +129,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Peticiones a Google Apps Script: network-first. Cada respuesta buena se
-  // guarda; si la red falla se devuelve la última guardada de esa misma pestaña
-  // y solo si nunca hubo una se devuelve [] (el frontend usa su respaldo).
+  // Peticiones a Google Apps Script: network-first con la última respuesta buena
+  // de cada pestaña como respaldo (ver datosAppsScript).
   if (url.hostname.includes("script.google.com")) {
     event.respondWith(datosAppsScript(event));
     return;
