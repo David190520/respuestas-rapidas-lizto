@@ -1,6 +1,6 @@
 // Subir la versión cada vez que cambie STATIC_ASSETS o un archivo estático,
 // de lo contrario los usuarios siguen recibiendo la copia cacheada anterior.
-const CACHE_NAME = "respuestas-rapidas-v5";
+const CACHE_NAME = "respuestas-rapidas-v6";
 
 // Debe coincidir exactamente con los archivos estáticos del repo.
 const STATIC_ASSETS = [
@@ -9,12 +9,11 @@ const STATIC_ASSETS = [
   "./index.js",
   "./style.css",
   "./manifest.json",
-  "./icon.svg",
-  "./logo-removebg-preview.png"
+  "./icon.svg"
 ];
 
 // El "app shell" (HTML/JS/CSS) va network-first: es lo que cambia en cada
-// despliegue y no puede quedar congelado en caché. El resto (iconos, logo,
+// despliegue y no puede quedar congelado en caché. El resto (iconos,
 // manifest) sigue cache-first porque casi nunca cambia.
 const APP_SHELL_REGEX = /\.(?:html|js|css)$/i;
 
