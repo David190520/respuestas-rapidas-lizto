@@ -15,6 +15,21 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (títulos recortados en Paso a paso y Diagnóstico)
+
+### Corregido
+
+- **Los títulos de las listas de Paso a paso y Diagnóstico se recortaban** cuando la
+  lista no cabía en pantalla (p. ej. con zoom del navegador de 100 % o más).
+  Causa: el rediseño volvió `.help-items-list` una columna flex y los
+  `.help-item` conservaban `flex-shrink: 1`; como tienen `overflow: hidden`, en
+  lugar de hacer scroll se encogían y cortaban el texto. Ahora `.help-item` usa
+  `flex-shrink: 0` y la lista `min-height: 0`, de modo que la lista hace scroll.
+  Verificado con 19 artículos y 10 categorías simuladas: 0 ítems recortados y
+  lista con scroll.
+
+---
+
 ## [Sin publicar] — 2026-10-09 (404 intermitentes de Apps Script)
 
 ### Corregido

@@ -163,6 +163,9 @@ sistema operativo (ver "Sistema de temas").
   `--on-accent` es el de **botones rellenos** (cumplen contraste en ambos temas).
 - Los tokens `--bg-color`, `--principal-color`, `--secondary-color` y
   `--dark-color` existen solo por retrocompatibilidad; no usarlos en código nuevo.
+- Las listas con scroll que son columnas flex (`.help-items-list`) deben dar
+  `flex-shrink: 0` a sus ítems: con `overflow: hidden` un ítem flex se encoge y
+  recorta su texto en vez de provocar scroll.
 - Animaciones: solo `transform`/`opacity`, con `var(--ease)` y `var(--dur)`;
   el bloque `prefers-reduced-motion` las desactiva.
 
