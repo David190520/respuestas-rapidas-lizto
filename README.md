@@ -32,6 +32,8 @@ interna; no maneja datos de clientes ni requiere autenticación.
     desde Google Sheets, con checklist de pasos y mensaje de escalamiento a
     desarrollo.
   - **Atajos** — enlaces a herramientas externas de uso frecuente.
+- **Sugerencias según el uso:** en Respuestas, una fila con las tarjetas que
+  suelen copiarse después de la última y las más usadas (solo en tu navegador).
 - **Personalización automática:** los campos "Nombre del agente" y "Nombre del
   cliente" se inyectan en los textos en tiempo real y se recuerdan entre
   sesiones.
