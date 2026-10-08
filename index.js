@@ -847,11 +847,38 @@ function linkify(text) {
   return html + escapeHtml(source.slice(last));
 }
 
+// Un ítem de lista empieza por "-", "•" o "1." / "1)". Se acepta con espacio
+// ("- Paso", "1. Paso") y también pegado a una letra ("-Paso", "1.Paso"), que es
+// como se suele escribir en las celdas de Sheets. No cuenta "-----", "->" ni "3.5".
+const RE_ITEM_UL = /^[-•](?:\s+|(?=[\p{L}¿¡("'\[]))/u;
+const RE_ITEM_OL = /^\d+[.)](?:\s+|(?=[\p{L}¿¡("'\[]))/u;
+
 /** Divide un texto plano en bloques: callout (⚠️), ol, ul y p. */
 function parsearBloquesContenido(textoPlano) {
   const lines = String(textoPlano).split('\n');
   const blocks = [];
   let i = 0;
+
+  // Lee una lista que empieza en `i`. Las líneas en blanco entre ítems NO la
+  // cortan ("-A\n\n-B" es una sola lista de 2 ítems).
+  const leerLista = (regex, limpiar) => {
+    const items = [];
+    while (i < lines.length) {
+      const t = lines[i].trim();
+      if (regex.test(t)) {
+        items.push(t.replace(limpiar, ''));
+        i++;
+      } else if (!t) {
+        let j = i;
+        while (j < lines.length && !lines[j].trim()) j++;
+        if (j < lines.length && regex.test(lines[j].trim())) i = j;
+        else break;
+      } else {
+        break;
+      }
+    }
+    return items;
+  };
 
   while (i < lines.length) {
     const trimmed = lines[i].trim();
@@ -866,24 +893,14 @@ function parsearBloquesContenido(textoPlano) {
     }
 
     // Lista numerada: 1. o 1)
-    if (/^\d+[.)]\s/.test(trimmed)) {
-      const items = [];
-      while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ''));
-        i++;
-      }
-      blocks.push({ type: 'ol', items });
+    if (RE_ITEM_OL.test(trimmed)) {
+      blocks.push({ type: 'ol', items: leerLista(RE_ITEM_OL, /^\d+[.)]\s*/) });
       continue;
     }
 
     // Lista con viñetas: - o •
-    if (/^[-•]\s/.test(trimmed)) {
-      const items = [];
-      while (i < lines.length && /^[-•]\s/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^[-•]\s+/, ''));
-        i++;
-      }
-      blocks.push({ type: 'ul', items });
+    if (RE_ITEM_UL.test(trimmed)) {
+      blocks.push({ type: 'ul', items: leerLista(RE_ITEM_UL, /^[-•]\s*/) });
       continue;
     }
 
@@ -891,7 +908,7 @@ function parsearBloquesContenido(textoPlano) {
     const paraLines = [];
     while (i < lines.length) {
       const t = lines[i].trim();
-      if (!t || /^⚠️/.test(t) || /^\d+[.)]\s/.test(t) || /^[-•]\s/.test(t)) break;
+      if (!t || /^⚠️/.test(t) || RE_ITEM_OL.test(t) || RE_ITEM_UL.test(t)) break;
       paraLines.push(t);
       i++;
     }

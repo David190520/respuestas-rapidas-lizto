@@ -230,7 +230,12 @@ sistema operativo (ver "Sistema de temas").
 - **El botón Copiar del artículo no cambia:** copia el string crudo del Sheet
   (`subtitulo` + `contenido`), nunca el formato con casillas.
 - Para que el checklist funcione, el contenido del Sheet debe escribir los pasos
-  como lista (una línea por paso, empezando por `-`, `•` o `1.`).
+  como lista: **una línea por paso** (Alt+Enter dentro de la celda) que empiece
+  por `-`, `•`, `1.` o `1)`. Se acepta con o sin espacio (`- Paso`, `-Paso`,
+  `1.Paso`) y **las líneas en blanco entre ítems no cortan la lista**. No cuentan
+  como ítem `-----`, `->`, `3.5 por ciento` ni `-500` (detección en
+  `RE_ITEM_UL` / `RE_ITEM_OL`). El texto en párrafos sin marcador no genera
+  casillas.
 
 ### Buscador y atajos
 
