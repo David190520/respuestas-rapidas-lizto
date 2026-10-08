@@ -29,8 +29,11 @@ interna; no maneja datos de clientes ni requiere autenticación.
     electrónica, nómina, API de WhatsApp, solicitudes por correo).
   - **Paso a paso** — artículos de ayuda cargados desde Google Sheets.
   - **Diagnóstico** — casos de soporte organizados por categoría, también
-    desde Google Sheets.
+    desde Google Sheets, con checklist de pasos y mensaje de escalamiento a
+    desarrollo.
   - **Atajos** — enlaces a herramientas externas de uso frecuente.
+- **Sugerencias según el uso:** en Respuestas, una fila con las tarjetas que
+  suelen copiarse después de la última y las más usadas (solo en tu navegador).
 - **Personalización automática:** los campos "Nombre del agente" y "Nombre del
   cliente" se inyectan en los textos en tiempo real y se recuerdan entre
   sesiones.
@@ -76,7 +79,7 @@ No hay `npm install`, ni compilación, ni variables de entorno.
 ```
 respuestasrapidas/
 ├── index.html                    # Markup: barra superior, tabs, tarjetas, modal
-├── defaults.js                   # Textos de respaldo de Respuestas y Plantillas
+├── defaults.js                   # Textos y atajos de respaldo (Respuestas, Plantillas, Atajos)
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
 ├── manifest.json                 # Metadatos de la PWA
@@ -128,6 +131,7 @@ Google Sheets  ──►  Apps Script (doGet)  ──►  JSON  ──►  fetch
    | Diagnóstico | `.../exec?hoja=diagnostico` | `[{ categoria, subtitulo, contenido }, ...]` |
    | Respuestas | `.../exec?hoja=respuestas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
    | Plantillas | `.../exec?hoja=plantillas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
+   | Atajos | `.../exec?hoja=atajos` | `[{ nombre, url, orden, activo }, ...]` |
 
 4. El frontend agrupa los casos de Diagnóstico por `categoria`; el Apps Script
    devuelve un array plano.

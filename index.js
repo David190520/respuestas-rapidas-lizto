@@ -10,6 +10,17 @@ const modalCardMap = new Map();
 const tarjetasData = { respuestas: [], plantillas: [] };
 const categoriaActiva = { respuestas: '', plantillas: '' };
 
+// Sugerencias según el uso (ver "SUGERENCIAS SEGÚN EL USO")
+const USO_KEY = 'lizto_usage';
+const USO_VIDA_MEDIA_MS = 14 * 24 * 60 * 60 * 1000;  // el peso de cada copia se reduce a la mitad cada 14 días
+const USO_VENTANA_ENCADENADO_MS = 10 * 60 * 1000;    // "B después de A": B se copia <= 10 min tras A
+const USO_PESO_MINIMO = 0.1;                         // por debajo se olvida (~46 días sin repetirse)
+const USO_MAX_TARJETAS = 60;
+const USO_MAX_TRANSICIONES = 200;
+const USO_MIN_COPIAS = 3;                            // copias totales antes de empezar a sugerir
+const USO_MIN_TRANSICION = 1.5;                      // ~2 veces vistas para sugerir "después de A"
+const SUGERIDAS_MAX = 4;
+
 let saludoCard = null;
 let saludoVariante = '';
 const SALUDO_VARIANTES = [
@@ -27,12 +38,9 @@ function buildSaludoText(base) {
 
 const EXTERNAL_LINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
 
-const atajos = [
-  { nombre: "Divisor de archivos", url: "https://tecnologysmith.github.io/Dividir_archivo/" },
-  { nombre: "Asignaciones semanales", url: "https://desk.zoho.com/agent/liztosoftware/soporte-lizto/knowledge-base/page?articlestatus=published#Solutions/dv/578738000018678001/es" },
-  { nombre: "Buscar documento DIAN", url: "https://catalogo-vpfe.dian.gov.co/User/SearchDocument" },
-  { nombre: "Hoja de Excel - Soporte", url: "https://docs.google.com/spreadsheets/d/1VTVHy6EUYLB9_v_zdfg3zM4y-m4OY7REYw-IT5hANGk/edit?pli=1&gid=0#gid=0" },
-];
+// Atajos: se pintan primero los de respaldo (ATAJOS_DEFAULT, defaults.js) y luego
+// los de la pestaña "Atajos" del Sheet (ver cargarAtajosDesdeSheets).
+let atajos = [];
 
 // ============= DATOS DE AGENTES Y HORARIOS =============
 
@@ -173,7 +181,42 @@ function normalizarFilas(rows) {
     });
   });
 
-  return salida.sort((a, b) => (a.orden === b.orden ? 0 : a.orden < b.orden ? -1 : 1) || a.pos - b.pos);
+  return ordenarFilas(salida);
+}
+
+/** Orden por la columna `orden` (vacío = al final) y, en empates, el orden de la hoja. */
+function ordenarFilas(filas) {
+  return filas.sort((a, b) => (a.orden === b.orden ? 0 : a.orden < b.orden ? -1 : 1) || a.pos - b.pos);
+}
+
+/**
+ * Filas de la pestaña "Atajos" (nombre | url | orden | activo) -> atajos válidos.
+ * Solo se aceptan enlaces https:// bien formados: cualquier otra cosa
+ * (javascript:, http://, rutas relativas) se descarta.
+ */
+function normalizarAtajos(rows) {
+  const vistos = new Set();
+  const salida = [];
+
+  (Array.isArray(rows) ? rows : []).forEach((row, i) => {
+    if (!row || typeof row !== "object") return;
+
+    const nombre = String(row.nombre ?? "").trim();
+    const url = String(row.url ?? "").trim();
+    if (!nombre || !/^https:\/\//i.test(url)) return;
+    try { new URL(url); } catch { return; }
+
+    if (VALORES_INACTIVO.includes(String(row.activo ?? "").trim().toLowerCase())) return;
+
+    const clave = `${nombre.toLowerCase()}|${url}`;
+    if (vistos.has(clave)) return;
+    vistos.add(clave);
+
+    const orden = parseFloat(String(row.orden ?? "").replace(",", "."));
+    salida.push({ nombre, url, orden: Number.isFinite(orden) ? orden : Infinity, pos: i });
+  });
+
+  return ordenarFilas(salida);
 }
 
 /** fetch con reintentos: Apps Script devuelve 404/errores transitorios de vez en cuando. */
@@ -337,6 +380,7 @@ function renderTarjetas(tab) {
   refrescarTextos();
   renderCardPreviews();
   reaplicarFiltros();
+  if (tab === "respuestas") refrescarSugeridas();
 }
 
 /** Escribe en cada tarjeta su texto con los tokens ya resueltos. */
@@ -685,20 +729,41 @@ function showNoResults(tabId, show) {
 function renderAtajos() {
   const grid = document.getElementById('atajos')?.querySelector('.atajos-grid');
   if (!grid) return;
-  grid.innerHTML = '';
+  grid.querySelectorAll('.atajo-card').forEach(card => card.remove());
+
   atajos.forEach(({ nombre, url }) => {
     const card = document.createElement('div');
     card.className = 'atajo-card';
     card.dataset.nombre = nombre.toLowerCase();
-    card.innerHTML = `
-      <h3>${nombre}</h3>
-      <a href="${url}" target="_blank" rel="noopener noreferrer" class="atajo-open-btn">
-        ${EXTERNAL_LINK_SVG}
-        Abrir
-      </a>
-    `;
+
+    const titulo = document.createElement('h3');
+    titulo.textContent = nombre;
+
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener noreferrer';
+    enlace.className = 'atajo-open-btn';
+    enlace.insertAdjacentHTML('beforeend', EXTERNAL_LINK_SVG);   // SVG fijo del código
+    enlace.append(' Abrir');
+
+    card.append(titulo, enlace);
     grid.appendChild(card);
   });
+}
+
+/** Lee la pestaña "Atajos"; si falla o no tiene filas válidas se conservan los de respaldo. */
+async function cargarAtajosDesdeSheets() {
+  const filas = await fetchHoja('atajos');
+  if (filas === null) return;
+
+  const nuevos = normalizarAtajos(filas);
+  if (!nuevos.length) return;
+  if (JSON.stringify(nuevos) === JSON.stringify(atajos)) return;
+
+  atajos = nuevos;
+  renderAtajos();
+  reaplicarFiltros();   // un buscador activo debe seguir aplicándose a las tarjetas nuevas
 }
 
 function globalSearchFilter(query) {
@@ -768,6 +833,7 @@ function globalSearchFilter(query) {
   updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
   updateModalAfterSearch();
+  refrescarSugeridas();   // se oculta mientras se busca o hay un chip de categoría activo
 }
 
 // ============= HELP CENTER MODULE - PASO A PASO =============
@@ -834,10 +900,38 @@ function linkify(text) {
   return html + escapeHtml(source.slice(last));
 }
 
-function formatearContenidoPasoAPaso(textoPlano) {
-  const lines = textoPlano.split('\n');
+// Un ítem de lista empieza por "-", "•" o "1." / "1)". Se acepta con espacio
+// ("- Paso", "1. Paso") y también pegado a una letra ("-Paso", "1.Paso"), que es
+// como se suele escribir en las celdas de Sheets. No cuenta "-----", "->" ni "3.5".
+const RE_ITEM_UL = /^[-•](?:\s+|(?=[\p{L}¿¡("'\[]))/u;
+const RE_ITEM_OL = /^\d+[.)](?:\s+|(?=[\p{L}¿¡("'\[]))/u;
+
+/** Divide un texto plano en bloques: callout (⚠️), ol, ul y p. */
+function parsearBloquesContenido(textoPlano) {
+  const lines = String(textoPlano).split('\n');
   const blocks = [];
   let i = 0;
+
+  // Lee una lista que empieza en `i`. Las líneas en blanco entre ítems NO la
+  // cortan ("-A\n\n-B" es una sola lista de 2 ítems).
+  const leerLista = (regex, limpiar) => {
+    const items = [];
+    while (i < lines.length) {
+      const t = lines[i].trim();
+      if (regex.test(t)) {
+        items.push(t.replace(limpiar, ''));
+        i++;
+      } else if (!t) {
+        let j = i;
+        while (j < lines.length && !lines[j].trim()) j++;
+        if (j < lines.length && regex.test(lines[j].trim())) i = j;
+        else break;
+      } else {
+        break;
+      }
+    }
+    return items;
+  };
 
   while (i < lines.length) {
     const trimmed = lines[i].trim();
@@ -852,24 +946,14 @@ function formatearContenidoPasoAPaso(textoPlano) {
     }
 
     // Lista numerada: 1. o 1)
-    if (/^\d+[.)]\s/.test(trimmed)) {
-      const items = [];
-      while (i < lines.length && /^\d+[.)]\s/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ''));
-        i++;
-      }
-      blocks.push({ type: 'ol', items });
+    if (RE_ITEM_OL.test(trimmed)) {
+      blocks.push({ type: 'ol', items: leerLista(RE_ITEM_OL, /^\d+[.)]\s*/) });
       continue;
     }
 
     // Lista con viñetas: - o •
-    if (/^[-•]\s/.test(trimmed)) {
-      const items = [];
-      while (i < lines.length && /^[-•]\s/.test(lines[i].trim())) {
-        items.push(lines[i].trim().replace(/^[-•]\s+/, ''));
-        i++;
-      }
-      blocks.push({ type: 'ul', items });
+    if (RE_ITEM_UL.test(trimmed)) {
+      blocks.push({ type: 'ul', items: leerLista(RE_ITEM_UL, /^[-•]\s*/) });
       continue;
     }
 
@@ -877,21 +961,48 @@ function formatearContenidoPasoAPaso(textoPlano) {
     const paraLines = [];
     while (i < lines.length) {
       const t = lines[i].trim();
-      if (!t || /^⚠️/.test(t) || /^\d+[.)]\s/.test(t) || /^[-•]\s/.test(t)) break;
+      if (!t || /^⚠️/.test(t) || RE_ITEM_OL.test(t) || RE_ITEM_UL.test(t)) break;
       paraLines.push(t);
       i++;
     }
     if (paraLines.length) blocks.push({ type: 'p', lines: paraLines });
   }
 
-  return blocks.map(block => {
+  return blocks;
+}
+
+/** Ítems de lista (ol/ul) de un texto, en orden y como texto plano. */
+function extraerItemsLista(textoPlano) {
+  return parsearBloquesContenido(textoPlano)
+    .filter(block => block.type === 'ol' || block.type === 'ul')
+    .flatMap(block => block.items);
+}
+
+/**
+ * Vista previa con formato (HTML escapado). Con { checklist: true } cada ítem de
+ * lista lleva una casilla (data-idx = posición entre todos los ítems del texto).
+ * Solo afecta a la vista previa: el copiado usa SIEMPRE el string crudo.
+ */
+function formatearContenidoPasoAPaso(textoPlano, { checklist = false } = {}) {
+  let indice = 0;
+
+  return parsearBloquesContenido(textoPlano).map(block => {
     switch (block.type) {
       case 'callout':
         return `<div class="callout-importante">${linkify(block.text)}</div>`;
       case 'ol':
-        return `<ol>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ol>`;
-      case 'ul':
-        return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
+      case 'ul': {
+        if (checklist) {
+          const items = block.items.map(it => {
+            const idx = indice++;
+            return `<li class="check-item"><label><input type="checkbox" class="check-input" data-idx="${idx}">` +
+                   `<span class="check-text">${linkify(it)}</span></label></li>`;
+          }).join('');
+          return `<ul class="checklist">${items}</ul>`;
+        }
+        const tag = block.type;
+        return `<${tag}>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</${tag}>`;
+      }
       case 'p':
         return `<p>${block.lines.map(linkify).join('<br>')}</p>`;
       default:
@@ -1130,6 +1241,11 @@ class DiagnosticoCenter {
     this.searchScope = "level";              // "level" = nivel actual | "global" = resultados planos
     this.apiUrl = `${APPS_SCRIPT_URL}?hoja=diagnostico`;
 
+    // Checklist del caso abierto: solo en memoria, se reinicia al cambiar de caso
+    this.checkItems = [];                    // texto plano de cada ítem de lista
+    this.checks = new Set();                 // índices marcados como revisados
+    this.checklistItem = null;               // caso al que pertenece el estado
+
     this.cacheDOMElements();
     this.initEventListeners();
     this.loadData();
@@ -1149,7 +1265,16 @@ class DiagnosticoCenter {
       copyBtn: document.getElementById("diag-copy-btn"),
       copyFeedback: document.getElementById("diag-copy-feedback"),
       backBtn: document.getElementById("diag-back-btn"),
-      sidebar: document.querySelector("#diagnostico .help-sidebar")
+      sidebar: document.querySelector("#diagnostico .help-sidebar"),
+      progress: document.getElementById("diag-checklist-progress"),
+      progressFill: document.getElementById("diag-progress-fill"),
+      progressText: document.getElementById("diag-progress-text"),
+      progressReset: document.getElementById("diag-progress-reset"),
+      escalarBtn: document.getElementById("diag-escalar-btn"),
+      escalarPanel: document.getElementById("diag-escalar-panel"),
+      escalarText: document.getElementById("diag-escalar-text"),
+      escalarCopy: document.getElementById("diag-escalar-copy"),
+      escalarClose: document.getElementById("diag-escalar-close")
     };
   }
 
@@ -1163,6 +1288,18 @@ class DiagnosticoCenter {
     this.elements.breadcrumb.addEventListener("click", () => this.goToCategorias());
     this.elements.copyBtn.addEventListener("click", () => this.copyContent());
     this.elements.backBtn.addEventListener("click", () => this.goBack());
+
+    // Checklist (delegación: las casillas se redibujan con cada caso)
+    this.elements.articleContent.addEventListener("change", (e) => {
+      const input = e.target.closest(".check-input");
+      if (input) this.toggleCheck(Number(input.dataset.idx), input.checked);
+    });
+    this.elements.progressReset.addEventListener("click", () => this.resetChecks());
+
+    // Escalamiento
+    this.elements.escalarBtn.addEventListener("click", () => this.abrirEscalamiento());
+    this.elements.escalarClose.addEventListener("click", () => this.cerrarEscalamiento());
+    this.elements.escalarCopy.addEventListener("click", () => this.copiarEscalamiento());
   }
 
   async loadData() {
@@ -1373,11 +1510,119 @@ class DiagnosticoCenter {
 
     this.elements.articleCategory.textContent = this.selectedItem.categoria;
     this.elements.articleTitle.textContent = this.selectedItem.subtitulo;
-    this.elements.articleContent.innerHTML = formatearContenidoPasoAPaso(this.selectedItem.contenido);
+    this.elements.articleContent.innerHTML =
+      formatearContenidoPasoAPaso(this.selectedItem.contenido, { checklist: true });
+
+    // Volver a abrir el mismo caso conserva lo marcado; otro caso empieza limpio
+    if (this.checklistItem !== this.selectedItem) {
+      this.checklistItem = this.selectedItem;
+      this.checkItems = extraerItemsLista(this.selectedItem.contenido);
+      this.checks = new Set();
+      this.cerrarEscalamiento();
+    }
+    this.pintarChecks();
 
     this.resetCopyButton();
     const panel = document.querySelector("#diagnostico .help-content");
     if (panel) panel.scrollTop = 0;
+  }
+
+  // ----- Checklist -----
+
+  toggleCheck(idx, marcado) {
+    if (marcado) this.checks.add(idx); else this.checks.delete(idx);
+    this.pintarChecks();
+  }
+
+  resetChecks() {
+    this.checks = new Set();
+    this.pintarChecks();
+  }
+
+  /** Sincroniza casillas, barra de progreso y énfasis del botón de escalamiento. */
+  pintarChecks() {
+    const total = this.checkItems.length;
+    const hechos = this.checks.size;
+
+    this.elements.articleContent.querySelectorAll(".check-input").forEach(input => {
+      const marcado = this.checks.has(Number(input.dataset.idx));
+      input.checked = marcado;
+      input.closest(".check-item")?.classList.toggle("done", marcado);
+    });
+
+    this.elements.progress.hidden = total === 0;
+    if (total > 0) {
+      this.elements.progressFill.style.width = `${Math.round((hechos / total) * 100)}%`;
+      this.elements.progressText.textContent = hechos === total
+        ? `¡Todo revisado! (${total} de ${total}). Si no apareció la causa, prepara el escalamiento.`
+        : `${hechos} de ${total} revisados`;
+      this.elements.progressReset.hidden = hechos === 0;
+    }
+    this.elements.escalarBtn.classList.toggle("destacado", total > 0 && hechos === total);
+  }
+
+  // ----- Escalamiento a desarrollo -----
+
+  /** Mensaje de texto plano con lo revisado y campos vacíos para completar. */
+  construirMensajeEscalamiento() {
+    const caso = this.selectedItem;
+    const agente = document.getElementById("agentInput")?.value.trim() || "";
+    const revisados = this.checkItems.filter((_, i) => this.checks.has(i));
+    const pendientes = this.checkItems.filter((_, i) => !this.checks.has(i));
+    const lista = (items) => items.map(it => `- ${it}`).join("\n");
+
+    const partes = [
+      "Escalamiento a desarrollo",
+      "",
+      `Categoría: ${caso.categoria}`,
+      `Caso: ${caso.subtitulo}`,
+      "",
+      "Negocio:",
+      "NIT:",
+      "Sede / usuario afectado:",
+      "Qué ocurre (detalle y cómo reproducirlo):",
+      ""
+    ];
+
+    if (this.checkItems.length === 0) {
+      partes.push(`Se revisó el caso documentado "${caso.subtitulo}" sin encontrar la causa.`);
+    } else {
+      partes.push("Revisado sin encontrar la causa:");
+      partes.push(revisados.length ? lista(revisados) : "- (ningún paso marcado)");
+      if (pendientes.length) {
+        partes.push("", "No revisado:", lista(pendientes));
+      }
+    }
+
+    partes.push("", `Reportado por: ${agente}`);
+    return partes.join("\n");
+  }
+
+  abrirEscalamiento() {
+    if (!this.selectedItem) return;
+    this.elements.escalarText.value = this.construirMensajeEscalamiento();
+    this.elements.escalarPanel.hidden = false;
+    this.elements.escalarText.focus({ preventScroll: true });
+    this.elements.escalarPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  cerrarEscalamiento() {
+    this.elements.escalarPanel.hidden = true;
+  }
+
+  copiarEscalamiento() {
+    const btn = this.elements.escalarCopy;
+    const texto = this.elements.escalarText.value;   // texto plano, tal como lo editó el agente
+    if (!texto || btn.disabled) return;
+
+    copiarTextoPlano(texto)
+      .then(() => {
+        const original = btn.textContent;
+        btn.textContent = "¡Copiado! ✅";
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
+      })
+      .catch(err => console.error("Error copying to clipboard:", err));
   }
 
   showEmptyState(texto) {
@@ -1451,6 +1696,12 @@ function copyCardText(card, feedbackBtn) {
 
   if (!text) return;
 
+  // Uso para las sugerencias. Si se copió desde una sugerencia, la fila se
+  // redibuja cuando termina el "¡Copiado!" para no destruir el botón con feedback.
+  registrarUso(card.dataset.id);
+  if (btn && btn.classList.contains('sugerida-chip')) setTimeout(refrescarSugeridas, 1600);
+  else refrescarSugeridas();
+
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(showFeedback).catch(() => {
       const ta = document.createElement('textarea');
@@ -1505,6 +1756,144 @@ function renderCardPreviews() {
       setModalContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
     }
   }
+}
+
+// ============= SUGERENCIAS SEGÚN EL USO =============
+// Registra, en este navegador, qué tarjetas se copian y cuál se copia después de
+// cuál, y muestra en Respuestas una fila "Sugeridas". No hay backend: los datos
+// son de cada agente en cada navegador. Persistencia: `lizto_usage` (ver CLAUDE.md).
+//
+// Formato: { v:1, total, cards:{ id:[peso,t] }, trans:{ "a>b":[peso,t] }, last:[id,t]|null }
+// `peso` decae a la mitad cada USO_VIDA_MEDIA_MS (se actualiza al volver a usarse).
+
+function cargarUso() {
+  const vacio = { v: 1, total: 0, cards: {}, trans: {}, last: null };
+  try {
+    const raw = JSON.parse(localStorage.getItem(USO_KEY) || 'null');
+    if (!raw || raw.v !== 1 || typeof raw.cards !== 'object' || typeof raw.trans !== 'object') return vacio;
+    return { v: 1, total: Number(raw.total) || 0, cards: raw.cards, trans: raw.trans,
+             last: Array.isArray(raw.last) ? raw.last : null };
+  } catch {
+    return vacio;
+  }
+}
+
+function guardarUso(uso) {
+  try { localStorage.setItem(USO_KEY, JSON.stringify(uso)); } catch {}
+}
+
+/** Peso de una entrada [peso, t] llevado a `ahora` (decaimiento exponencial). */
+function pesoUso(entrada, ahora) {
+  if (!Array.isArray(entrada)) return 0;
+  const edad = Math.max(0, ahora - (Number(entrada[1]) || 0));
+  return (Number(entrada[0]) || 0) * Math.pow(0.5, edad / USO_VIDA_MEDIA_MS);
+}
+
+/** Suma 1 a la entrada (tras decaerla) y la deja fechada en `ahora`. */
+function sumarUso(mapa, clave, ahora) {
+  mapa[clave] = [Math.round((pesoUso(mapa[clave], ahora) + 1) * 1000) / 1000, ahora];
+}
+
+/** Olvida lo muy viejo y limita el tamaño conservando lo de más peso. */
+function podarUso(uso, ahora) {
+  const podar = (mapa, maximo) => {
+    const pesos = Object.keys(mapa).map(k => [k, pesoUso(mapa[k], ahora)]).filter(([, p]) => p >= USO_PESO_MINIMO);
+    pesos.sort((a, b) => b[1] - a[1]);
+    const nuevo = {};
+    pesos.slice(0, maximo).forEach(([k]) => { nuevo[k] = mapa[k]; });
+    return nuevo;
+  };
+  uso.cards = podar(uso.cards, USO_MAX_TARJETAS);
+  uso.trans = podar(uso.trans, USO_MAX_TRANSICIONES);
+}
+
+/** Llamar cada vez que se copia una tarjeta (id = data-id de la tarjeta). */
+function registrarUso(id, ahora = Date.now()) {
+  if (!id) return;
+  const uso = cargarUso();
+
+  sumarUso(uso.cards, id, ahora);
+  uso.total += 1;
+
+  const [idAnterior, tAnterior] = uso.last || [];
+  if (idAnterior && idAnterior !== id && ahora - tAnterior <= USO_VENTANA_ENCADENADO_MS) {
+    sumarUso(uso.trans, `${idAnterior}>${id}`, ahora);
+  }
+  uso.last = [id, ahora];
+
+  podarUso(uso, ahora);
+  guardarUso(uso);
+}
+
+/**
+ * Hasta SUGERIDAS_MAX ids: primero los que suelen copiarse después de la última
+ * tarjeta copiada (si fue hace <= 10 min), luego los más usados. Excluye la que
+ * se acaba de copiar y las fijadas (ya están arriba). `validos` = ids visibles.
+ */
+function calcularSugeridas(validos, ahora = Date.now()) {
+  const uso = cargarUso();
+  if (uso.total < USO_MIN_COPIAS) return [];
+
+  const fijadas = new Set(loadPinned());
+  const [ultimo, tUltimo] = uso.last || [];
+  const reciente = ultimo && ahora - tUltimo <= USO_VENTANA_ENCADENADO_MS;
+  const sirve = id => validos.includes(id) && !fijadas.has(id) && id !== ultimo;
+
+  const elegidas = [];
+  if (reciente) {
+    Object.keys(uso.trans)
+      .filter(k => k.startsWith(`${ultimo}>`))
+      .map(k => [k.slice(ultimo.length + 1), pesoUso(uso.trans[k], ahora)])
+      .filter(([id, peso]) => peso >= USO_MIN_TRANSICION && sirve(id))
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([id]) => elegidas.push({ id, motivo: 'despues', desde: ultimo }));
+  }
+
+  Object.keys(uso.cards)
+    .map(id => [id, pesoUso(uso.cards[id], ahora)])
+    .filter(([id]) => sirve(id) && !elegidas.some(e => e.id === id))
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([id]) => elegidas.push({ id, motivo: 'frecuente' }));
+
+  return elegidas.slice(0, SUGERIDAS_MAX);
+}
+
+function refrescarSugeridas() {
+  const fila = document.getElementById('sugeridas-respuestas');
+  if (!fila) return;
+  const lista = fila.querySelector('.sugeridas-lista');
+
+  const gs = document.getElementById('globalSearch');
+  const filtrando = (gs && gs.value.trim()) || categoriaActiva.respuestas;
+  const cards = Array.from(document.querySelectorAll('#respuestas .text-fields > .response-card'));
+  const porId = new Map(cards.map(card => [card.dataset.id, card]));
+
+  const sugeridas = filtrando ? [] : calcularSugeridas(Array.from(porId.keys()));
+  if (!sugeridas.length) {
+    fila.hidden = true;
+    lista.replaceChildren();
+    return;
+  }
+
+  lista.replaceChildren(...sugeridas.map(({ id, motivo, desde }) => {
+    const card = porId.get(id);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'sugerida-chip';
+    chip.textContent = card.querySelector('h3')?.textContent || id;
+    chip.title = motivo === 'despues'
+      ? `Suele copiarse después de «${porId.get(desde)?.querySelector('h3')?.textContent || 'la anterior'}»`
+      : 'De las que más usas';
+    chip.addEventListener('click', () => copyCardText(card, chip));
+    return chip;
+  }));
+  fila.hidden = false;
+}
+
+function borrarHistorialUso() {
+  if (!window.confirm('¿Borrar el historial de uso que alimenta las sugerencias? Se empieza de cero.')) return;
+  try { localStorage.removeItem(USO_KEY); } catch {}
+  refrescarSugeridas();
 }
 
 // ============= TARJETAS FIJADAS (pin) =============
@@ -1571,6 +1960,7 @@ function togglePin(card) {
   reorderCards(card.parentElement);
   // El orden visible cambió: refrescar la lista de navegación del modal
   updateModalAfterSearch();
+  refrescarSugeridas();   // una tarjeta recién fijada deja de sugerirse
 }
 
 let modalLastFocus = null;
@@ -1731,8 +2121,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tarjetasData[tab] = normalizarFilas(cfg.defecto());
     renderTarjetas(tab);
   });
+  atajos = normalizarAtajos(typeof ATAJOS_DEFAULT !== "undefined" ? ATAJOS_DEFAULT : []);
   renderAtajos();
   cargarTarjetasDesdeSheets();
+  cargarAtajosDesdeSheets();
 
   // Inicializar saludo card + chips de variantes
   const variantsEl = document.getElementById('modal-variants');
@@ -1754,6 +2146,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Sugerencias: borrar historial de uso
+  document.getElementById('sugeridas-borrar')?.addEventListener('click', borrarHistorialUso);
+
   // Listeners del toggle de densidad
   document.getElementById('densityNormal')?.addEventListener('click', () => applyDensity('normal'));
   document.getElementById('densityCompact')?.addEventListener('click', () => applyDensity('compact'));
@@ -1770,6 +2165,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!textarea || !textarea.value) return;
     const isSaludo = saludoCard && card === saludoCard;
     const text = isSaludo ? buildSaludoText(textarea.value) : textarea.value;
+    registrarUso(card.dataset.id);
+    refrescarSugeridas();
     const btn = this;
     const copied = () => {
       btn.innerHTML = '¡Copiado! ✅';

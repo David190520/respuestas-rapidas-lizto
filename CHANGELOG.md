@@ -15,6 +15,96 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (Fase 4: Atajos desde Sheets)
+
+### Agregado
+
+- **Los Atajos se leen de la pestaña `Atajos`** del Sheet (`?hoja=atajos`, columnas
+  `nombre | url | orden | activo`). Los 4 atajos actuales quedan como respaldo en
+  `defaults.js` (`ATAJOS_DEFAULT`): se pintan al instante y el Sheet los
+  reemplaza solo si trae filas válidas (pestaña vacía, error o sin conexión
+  conservan el respaldo). Solo se redibuja si algo cambió y se respeta el
+  buscador activo.
+- `normalizarAtajos()`: solo enlaces `https://` bien formados (se descartan
+  `javascript:`, `data:`, `http:` y rutas relativas), filas sin nombre/URL o
+  inactivas, y duplicados; orden por `orden`.
+
+### Cambiado
+
+- `renderAtajos()` crea las tarjetas con DOM en vez de `innerHTML` (los datos
+  ahora vienen del Sheet) y conserva el aviso "sin resultados" al redibujar.
+- `apps-script/Codigo.gs`: `atajos: 'Atajos'` en `HOJAS` (requiere pegarlo y
+  desplegar una **nueva versión**; ver `apps-script/migracion/LEEME.md`, 2c).
+- `ordenarFilas()` compartido entre `normalizarFilas()` y `normalizarAtajos()`.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v8`.
+
+---
+
+## [Sin publicar] — 2026-10-08 (detección de listas en Diagnóstico)
+
+### Corregido
+
+- **El checklist de Diagnóstico no aparecía en varios casos reales.** El parser
+  solo reconocía `- Paso` (guion + espacio) y cortaba la lista en cada línea en
+  blanco; en el Sheet muchos pasos están escritos como `-Paso` (guion pegado) o
+  `1.Paso`, separados por líneas en blanco. Ahora `RE_ITEM_UL` / `RE_ITEM_OL`
+  aceptan el marcador pegado a una letra y `parsearBloquesContenido()` une los
+  ítems separados solo por líneas en blanco. No cuentan `-----`, `->`, `3.5` ni
+  `-500`.
+- Con los datos reales (29 casos): casos con checklist **8 → 14**. En Paso a paso
+  cambia la vista previa de 2 de 19 artículos, que pasan de párrafos sueltos a
+  listas. El copiado sigue usando el string crudo.
+
+---
+
+## [Sin publicar] — 2026-10-08 (Fase 6: sugerencias según el uso)
+
+### Agregado
+
+- **Fila "Sugeridas"** en Respuestas (hasta 4 chips): las tarjetas que suelen
+  copiarse **después de la última copiada** (par A → B visto ~2 veces en una
+  ventana de 10 min) y, si faltan, las más usadas. Excluye la recién copiada y
+  las fijadas. Cada chip explica en su tooltip por qué aparece y copia con un
+  clic. Se oculta al buscar o filtrar por categoría; "Borrar historial" la
+  reinicia.
+- **Nueva clave de `localStorage`: `lizto_usage`** (aprobada por David al pedir la
+  Fase 6). Guarda pesos con decaimiento (vida media de 14 días), olvida lo muy
+  viejo y se poda a 60 tarjetas y 200 pares (~0,5 KB con uso normal). Con menos
+  de 3 copias no sugiere nada.
+- Registro de uso en todos los caminos de copiado de tarjetas: botón Copiar, clic
+  en la tarjeta, modal y chips sugeridos.
+
+### Notas
+
+- Los datos son por navegador y por agente; no hay estadísticas del equipo (el
+  Apps Script es de solo lectura). Ver `PLAN.md`, Fase 6.
+
+---
+
+## [Sin publicar] — 2026-10-08 (Fase 5: Diagnóstico con checklist y escalamiento)
+
+### Agregado
+
+- **Checklist en Diagnóstico.** Los ítems de lista de cada caso se muestran como
+  casillas, con barra de progreso ("3 de 5 revisados"), botón "Reiniciar" y
+  mensaje al completarlos. Estado solo en memoria: se conserva al reabrir el mismo
+  caso y se reinicia al abrir otro. Los casos sin listas se ven igual que antes.
+- **"No encontré la causa → preparar escalamiento".** Panel con un mensaje de
+  texto plano **editable** para desarrollo: categoría, caso, campos vacíos
+  (negocio, NIT, sede/usuario afectado, qué ocurre), pasos revisados y no
+  revisados, y quién reporta. Botón "Copiar mensaje". El botón de escalamiento se
+  resalta cuando todos los pasos están marcados.
+
+### Cambiado
+
+- `formatearContenidoPasoAPaso()` se apoya ahora en `parsearBloquesContenido()` y
+  `extraerItemsLista()`, y acepta `{ checklist: true }`. Su salida para Paso a
+  paso es idéntica a la anterior.
+- El botón **Copiar** del artículo de Diagnóstico sigue copiando el string crudo
+  del Sheet (verificado).
+
+---
+
 ## [Sin publicar] — 2026-10-08 (títulos recortados en Paso a paso y Diagnóstico)
 
 ### Corregido

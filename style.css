@@ -790,6 +790,86 @@ textarea:focus {
   color: var(--accent-ink);
 }
 
+/* ============= SUGERIDAS (según el uso) ============= */
+
+.sugeridas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto 14px;
+  padding: 0 20px;
+  animation: fadeInUp 260ms var(--ease);
+}
+
+.sugeridas[hidden] {
+  display: none;
+}
+
+.sugeridas-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.sugeridas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sugerida-chip {
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur) ease, color var(--dur) ease, transform 120ms ease;
+}
+
+.sugerida-chip:hover {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+}
+
+.sugerida-chip:active {
+  transform: scale(0.96);
+}
+
+.sugerida-chip:disabled {
+  cursor: default;
+  color: var(--on-accent);
+  background: var(--accent-solid);
+}
+
+.sugeridas-borrar {
+  margin-left: auto;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sugeridas-borrar:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
 /* ============= CHIPS DE CATEGORÍA ============= */
 
 .category-chips {
@@ -1493,6 +1573,225 @@ textarea:focus {
   color: var(--accent-ink);
 }
 
+/* ============= DIAGNÓSTICO: CHECKLIST Y ESCALAMIENTO ============= */
+
+.checklist-progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.checklist-progress[hidden],
+.progress-reset[hidden] {
+  display: none;
+}
+
+.progress-track {
+  flex: 1 1 140px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border-subtle);
+  overflow: hidden;
+}
+
+.progress-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent-solid);
+  transition: width 260ms var(--ease);
+}
+
+.progress-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.progress-reset {
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border-base);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color var(--dur) ease, color var(--dur) ease;
+}
+
+.progress-reset:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+.help-body ul.checklist {
+  list-style: none;
+  padding-left: 0;
+  margin: 12px 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.check-item {
+  margin: 0;
+}
+
+.check-item label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color var(--dur) ease, background-color var(--dur) ease, opacity var(--dur) ease;
+}
+
+.check-item label:hover {
+  border-color: var(--accent-border);
+}
+
+.check-input {
+  flex-shrink: 0;
+  width: 19px;
+  height: 19px;
+  margin: 2px 0 0;
+  accent-color: var(--accent-solid);
+  cursor: pointer;
+}
+
+.check-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.check-item.done label {
+  background: var(--accent-subtle);
+  border-color: var(--accent-border);
+}
+
+.check-item.done .check-text {
+  opacity: 0.62;
+  text-decoration: line-through;
+  text-decoration-color: var(--accent);
+}
+
+.escalamiento {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border-base);
+}
+
+.escalar-btn {
+  align-self: flex-start;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--dur) ease, color var(--dur) ease,
+              border-color var(--dur) ease, transform 120ms ease;
+}
+
+.escalar-btn:hover,
+.escalar-btn.destacado {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+}
+
+.escalar-btn:active {
+  transform: scale(0.98);
+}
+
+.escalar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--bubble-bg);
+  animation: fadeInUp 260ms var(--ease);
+}
+
+.escalar-panel[hidden] {
+  display: none;
+}
+
+.escalar-ayuda {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.escalar-text {
+  min-height: 260px;
+  max-height: none;
+  resize: vertical;
+  font-size: 14px;
+  line-height: 1.6;
+  scrollbar-width: thin;
+}
+
+.escalar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.escalar-copy {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--on-accent);
+  background: var(--accent-solid);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background-color var(--dur) ease, transform 120ms ease;
+}
+
+.escalar-copy:hover {
+  background: var(--accent-solid-hover);
+}
+
+.escalar-copy:active {
+  transform: scale(0.97);
+}
+
+.escalar-copy:disabled {
+  cursor: default;
+}
+
+.escalar-close {
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.escalar-close:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
 /* ============= MODAL DE MENSAJE (Respuestas y Plantillas) ============= */
 
 .response-modal {
@@ -1810,6 +2109,7 @@ textarea:focus {
   .text-fields,
   .atajos-grid,
   .density-bar,
+  .sugeridas,
   .category-chips {
     padding: 0 14px;
   }

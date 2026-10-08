@@ -88,6 +88,14 @@
             </svg>
           </button>
         </div>
+        <div id="sugeridas-respuestas" class="sugeridas" role="group" aria-label="Tarjetas sugeridas" hidden>
+          <span class="sugeridas-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path></svg>
+            Sugeridas
+          </span>
+          <div class="sugeridas-lista"></div>
+          <button type="button" id="sugeridas-borrar" class="sugeridas-borrar" title="Borrar el historial de uso de este navegador">Borrar historial</button>
+        </div>
         <div id="chips-respuestas" class="category-chips" role="group" aria-label="Filtrar por categoría" hidden></div>
         <div class="text-fields" id="cards-respuestas">
           <!-- Las tarjetas se generan desde Google Sheets (respaldo: defaults.js) -->
@@ -284,7 +292,25 @@
                   <span class="copy-feedback" id="diag-copy-feedback">Copiar</span>
                 </button>
               </div>
+              <div id="diag-checklist-progress" class="checklist-progress" hidden>
+                <div class="progress-track" aria-hidden="true"><span id="diag-progress-fill" class="progress-fill"></span></div>
+                <span id="diag-progress-text" class="progress-text" role="status" aria-live="polite"></span>
+                <button type="button" id="diag-progress-reset" class="progress-reset" hidden>Reiniciar</button>
+              </div>
               <div id="diag-article-content" class="help-body"></div>
+              <section class="escalamiento" aria-label="Escalamiento a desarrollo">
+                <button type="button" id="diag-escalar-btn" class="escalar-btn">
+                  No encontré la causa <span aria-hidden="true">→</span> preparar escalamiento
+                </button>
+                <div id="diag-escalar-panel" class="escalar-panel" hidden>
+                  <p class="escalar-ayuda">Completa los campos vacíos (negocio, NIT, detalle) y copia el mensaje para desarrollo.</p>
+                  <textarea id="diag-escalar-text" class="escalar-text" spellcheck="false" aria-label="Mensaje de escalamiento"></textarea>
+                  <div class="escalar-actions">
+                    <button type="button" id="diag-escalar-copy" class="escalar-copy">Copiar mensaje</button>
+                    <button type="button" id="diag-escalar-close" class="escalar-close">Cerrar</button>
+                  </div>
+                </div>
+              </section>
             </article>
           </div>
         </main>

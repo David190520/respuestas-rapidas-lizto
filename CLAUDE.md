@@ -47,8 +47,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 4. **Diagnóstico** — casos cargados desde Apps Script con `?hoja=diagnostico`.
    Clase `DiagnosticoCenter`, navegación de 2 niveles en el sidebar
    (categorías → casos) + panel de contenido.
-5. **Atajos** — enlaces a herramientas externas, generados desde el array
-   `atajos` en `index.js`.
+5. **Atajos** — enlaces a herramientas externas, leídos de la pestaña `Atajos`
+   del Sheet (respaldo: `ATAJOS_DEFAULT` en `defaults.js`).
 
 ## Fuentes de datos
 
@@ -95,6 +95,11 @@ valida `Array.isArray(data)` antes de usarlo.
   aparición) más "Herramientas" (las special cards, `data-categoria`). Solo se
   muestran si hay 2 o más. El chip activo y el buscador global se **combinan**
   (AND) y los badges cuentan el resultado combinado. El chip no se persiste.
+- **Atajos** (`?hoja=atajos`: `nombre | url | orden | activo`): se pintan primero
+  los de `ATAJOS_DEFAULT` y luego los del Sheet si hay filas válidas.
+  `normalizarAtajos()` solo acepta URLs `https://` bien formadas (descarta
+  `javascript:`, `http:`, rutas relativas) y quita duplicados. Las tarjetas se
+  crean con DOM (`textContent`, `href`), nunca con `innerHTML` y datos del Sheet.
 - Si cambia el contrato del Sheet (columnas) hay que tocar `normalizarFilas()`,
   `defaults.js`, `apps-script/Codigo.gs` y `apps-script/migracion/`.
 
@@ -130,12 +135,14 @@ valida `Array.isArray(data)` antes de usarlo.
 
 ### Persistencia (localStorage)
 
-Solo tres claves, y son las únicas permitidas hoy:
+Solo cuatro claves, y son las únicas permitidas hoy:
 
 - `lizto_agent_name`
 - `lizto_client_name`
-- `lizto_pinned_cards` — JSON con los ids de textarea de las tarjetas fijadas
+- `lizto_pinned_cards` — JSON con los ids de las tarjetas fijadas
   (aprobada por el responsable del proyecto al pedir la función de fijar).
+- `lizto_usage` — historial de uso para las sugerencias (aprobada por el
+  responsable al pedir la Fase 6). JSON de unos pocos KB; ver "Sugerencias".
 
 Se escriben en cada `input` y se restauran al cargar, antes del primer
 `updateMessages()`. **El tema no se persiste**: la app arranca según el tema del
@@ -195,6 +202,46 @@ sistema operativo (ver "Sistema de temas").
 - Las tarjetas con controles propios (enlace de pago, paso a paso, reunión)
   son `.special-card` y **no** pasan por `initResponseCards`.
 
+### Sugerencias según el uso (fila "Sugeridas" en Respuestas)
+
+- Cada copia de una tarjeta (botón Copiar, clic en la tarjeta, modal o chip
+  sugerido) llama a `registrarUso(id)`. Se guarda en `lizto_usage` el peso de cada
+  tarjeta y de cada par "A → B" (B copiada <= 10 min después de A).
+- El peso decae a la mitad cada 14 días y se olvida por debajo de 0,1; se limita
+  a 60 tarjetas y 200 pares. Con menos de 3 copias no se sugiere nada.
+- `calcularSugeridas()` devuelve hasta 4: primero las que suelen ir **después de
+  la última copiada** (si fue hace <= 10 min y el par pesa >= 1,5), luego las más
+  usadas. Excluye la recién copiada y las **fijadas**.
+- La fila se oculta mientras hay búsqueda o un chip de categoría activo.
+  "Borrar historial" elimina la clave.
+- **Son datos locales de cada navegador:** no hay estadísticas del equipo (el
+  Apps Script es de solo lectura).
+- Copiar sigue siendo un clic: las sugerencias no añaden pasos.
+
+### Diagnóstico: checklist y escalamiento
+
+- Cada ítem de lista (`-`, `•`, `1.`) del contenido de un caso se muestra como
+  **casilla marcable** (`formatearContenidoPasoAPaso(texto, { checklist: true })`;
+  Paso a paso no la usa). Hay barra de progreso "X de N revisados" y un botón
+  "Reiniciar". El estado vive **solo en memoria** (`DiagnosticoCenter.checks`):
+  se conserva al reabrir el mismo caso y se reinicia al abrir otro; no se
+  persiste.
+- Los casos sin listas se ven como antes (sin barra ni casillas).
+- **"No encontré la causa → preparar escalamiento"** abre un panel con un mensaje
+  de texto plano editable (categoría, caso, campos vacíos de negocio/NIT/sede/
+  detalle, pasos revisados y no revisados, y el agente). Se copia desde el
+  `textarea`, que es lo que el agente editó. El botón se resalta cuando todos
+  los pasos están marcados.
+- **El botón Copiar del artículo no cambia:** copia el string crudo del Sheet
+  (`subtitulo` + `contenido`), nunca el formato con casillas.
+- Para que el checklist funcione, el contenido del Sheet debe escribir los pasos
+  como lista: **una línea por paso** (Alt+Enter dentro de la celda) que empiece
+  por `-`, `•`, `1.` o `1)`. Se acepta con o sin espacio (`- Paso`, `-Paso`,
+  `1.Paso`) y **las líneas en blanco entre ítems no cortan la lista**. No cuentan
+  como ítem `-----`, `->`, `3.5 por ciento` ni `-500` (detección en
+  `RE_ITEM_UL` / `RE_ITEM_OL`). El texto en párrafos sin marcador no genera
+  casillas.
+
 ### Buscador y atajos
 
 - `#globalSearch` filtra las 5 tabs a la vez y pinta un badge con el conteo
@@ -217,7 +264,7 @@ sistema operativo (ver "Sistema de temas").
 - **NO agregar dependencias externas** más allá de las fuentes de Google ya
   enlazadas; nada de CDNs de librerías.
 - **NO ampliar el uso de localStorage** más allá de `lizto_agent_name`,
-  `lizto_client_name` y `lizto_pinned_cards` sin acordarlo antes.
+  `lizto_client_name`, `lizto_pinned_cards` y `lizto_usage` sin acordarlo antes.
 - **NO romper la integración con Google Apps Script** existente (la URL del
   despliegue y la forma de los objetos que devuelve).
 - **El texto copiado al portapapeles SIEMPRE debe ser texto plano.** El

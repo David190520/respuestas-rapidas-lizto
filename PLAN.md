@@ -8,7 +8,7 @@ decisiones ya tomadas, las reglas y el detalle de cada fase.
 > este archivo → `TODO.md` (estado) → `CHANGELOG.md` (qué cambió y cuándo).
 > Implementar **una fase a la vez**, con su propia rama y PR hacia `develop`.
 
-Última actualización: 2026-10-09 (Fases 1, 2 y 3 terminadas en código).
+Última actualización: 2026-10-08 (Fases 1 a 6 terminadas; solo queda la 7, aplazada).
 
 > **Notas de implementación de la Fase 3:** el Sheet tiene **dos pestañas
 > separadas** (`Respuestas` y `Plantillas`), así que no existe la columna `tab`
@@ -267,6 +267,10 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 
 ## 6. Backlog (sin fecha)
 
+- **Diagnóstico — contenido en párrafos:** al 2026-10-08, 14 de 29 casos tienen
+  checklist; el resto son texto informativo o párrafos sin marcador. Si se
+  quiere checklist en más casos basta escribir cada paso en una línea que empiece
+  por `-` (con o sin espacio) o `1.`; el código no necesita cambios.
 - **Rendimiento del Apps Script (parcialmente resuelto):** `Codigo.gs` ahora cachea y
   sirve respaldo, y `sw.js` sirve la última copia buena ante 404 (ver CHANGELOG
   2026-10-09). Queda lo de abajo. Observación original del 2026-10-09: tras muchas recargas de prueba,
@@ -300,10 +304,10 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | 1 | Escapar HTML + tema del SO | ✅ En `develop` (2026-10-08) |
 | 2 | Saludo según la hora | ✅ En `develop` (2026-10-08) |
 | 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ✅ Código en `develop`; falta que David cargue los CSV y despliegue el Apps Script |
-| 4 | Atajos desde Sheets | ⬜ Opcional |
-| 5 | Diagnóstico con checklist y escalamiento | ⬜ Pendiente |
-| 6 | Sugerencias según el uso | ⬜ Pendiente (requiere aprobar `lizto_usage`) |
-| 7 | Modo Flujo | ⬜ Opcional |
+| 4 | Atajos desde Sheets | ✅ En `develop` (2026-10-08); falta desplegar el Apps Script |
+| 5 | Diagnóstico con checklist y escalamiento | ✅ En `develop` (2026-10-08) |
+| 6 | Sugerencias según el uso | ✅ En `develop` (2026-10-08); `lizto_usage` aprobada |
+| 7 | Modo Flujo | ⏸️ Aplazada por decisión de David |
 
 > Al terminar una fase: marcarla aquí, mover su TODO a ✅ en `TODO.md` y
 > registrar el cambio en `CHANGELOG.md`.
