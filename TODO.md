@@ -21,7 +21,7 @@ verificado contra el Apps Script desplegado.
 El detalle de cada fase (alcance, archivos, aceptación y riesgos) está en
 `PLAN.md`. Pendientes, en el orden propuesto:
 
-- **TODO-29 — Atajos desde Sheets y modo Flujo** (Fases 4 y 7, opcionales)
+- **TODO-29 — Modo Flujo** (Fase 7, opcional; se deja para después)
 
 ---
 
@@ -36,6 +36,8 @@ Detalle e historial completo en `CHANGELOG.md`.
 - **TODO-16 — Persistir tema y densidad** *(descartado 2026-10-09)*
   Se resolvió distinto: el tema sigue al sistema operativo (TODO-24) y la
   densidad no se persiste, por decisión de David.
+- **TODO-31b — Atajos desde Sheets** *(2026-10-08)*
+  Pestaña `Atajos`, respaldo en `defaults.js`, solo enlaces `https://`.
 - **TODO-28 — Sugerencias según el uso** *(2026-10-08)*
   Fila "Sugeridas" con pares A → B y más usadas; clave `lizto_usage` aprobada.
 - **TODO-27 — Diagnóstico con checklist y escalamiento** *(2026-10-08)*

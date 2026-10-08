@@ -47,8 +47,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 4. **Diagnóstico** — casos cargados desde Apps Script con `?hoja=diagnostico`.
    Clase `DiagnosticoCenter`, navegación de 2 niveles en el sidebar
    (categorías → casos) + panel de contenido.
-5. **Atajos** — enlaces a herramientas externas, generados desde el array
-   `atajos` en `index.js`.
+5. **Atajos** — enlaces a herramientas externas, leídos de la pestaña `Atajos`
+   del Sheet (respaldo: `ATAJOS_DEFAULT` en `defaults.js`).
 
 ## Fuentes de datos
 
@@ -95,6 +95,11 @@ valida `Array.isArray(data)` antes de usarlo.
   aparición) más "Herramientas" (las special cards, `data-categoria`). Solo se
   muestran si hay 2 o más. El chip activo y el buscador global se **combinan**
   (AND) y los badges cuentan el resultado combinado. El chip no se persiste.
+- **Atajos** (`?hoja=atajos`: `nombre | url | orden | activo`): se pintan primero
+  los de `ATAJOS_DEFAULT` y luego los del Sheet si hay filas válidas.
+  `normalizarAtajos()` solo acepta URLs `https://` bien formadas (descarta
+  `javascript:`, `http:`, rutas relativas) y quita duplicados. Las tarjetas se
+  crean con DOM (`textContent`, `href`), nunca con `innerHTML` y datos del Sheet.
 - Si cambia el contrato del Sheet (columnas) hay que tocar `normalizarFilas()`,
   `defaults.js`, `apps-script/Codigo.gs` y `apps-script/migracion/`.
 

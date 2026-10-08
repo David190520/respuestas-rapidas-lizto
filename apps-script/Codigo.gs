@@ -7,6 +7,7 @@
  *   /exec?hoja=diagnostico   -> Diagnostico   [categoria, subtitulo, contenido]
  *   /exec?hoja=respuestas    -> Respuestas    [id, categoria, titulo, texto, orden, activo]
  *   /exec?hoja=plantillas    -> Plantillas    [id, categoria, titulo, texto, orden, activo]
+ *   /exec?hoja=atajos        -> Atajos        [nombre, url, orden, activo]
  *   (cualquiera + &refrescar=1 salta la caché de 15 min)
  */
 
@@ -15,7 +16,8 @@ const HOJAS = {
   paso: 'Paso a paso',
   diagnostico: 'Diagnostico',
   respuestas: 'Respuestas',
-  plantillas: 'Plantillas'
+  plantillas: 'Plantillas',
+  atajos: 'Atajos'
 };
 
 const HOJA_POR_DEFECTO = 'paso';

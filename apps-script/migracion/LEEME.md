@@ -82,6 +82,19 @@ a que se abra la hoja.
 Después de pegar el código hay que **Implementar → Administrar implementaciones →
 ✏️ → Nueva versión** (misma URL). La primera vez Google puede pedir autorizar.
 
+## 2c. Atajos desde el Sheet
+
+La pestaña **Atajos** alimenta el tab Atajos. Columnas: `nombre | url | orden | activo`.
+
+- `url` debe empezar por `https://` (las demás se descartan por seguridad).
+- `orden` numérico (menor = primero; vacío = al final) y `activo` en `NO`/`FALSE`
+  para ocultar sin borrar.
+- Si la pestaña falta, está vacía o Google no responde, se muestran los atajos de
+  respaldo de `defaults.js` (`ATAJOS_DEFAULT`).
+- Para activarlo hay que volver a pegar `apps-script/Codigo.gs` (agrega
+  `atajos: 'Atajos'` a `HOJAS`) y **Implementar → Administrar implementaciones →
+  ✏️ → Nueva versión**.
+
 ## 3. Verificar en la app
 
 Recarga la app: el aviso amarillo debe desaparecer. Un cambio en el Sheet se ve

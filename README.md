@@ -79,7 +79,7 @@ No hay `npm install`, ni compilación, ni variables de entorno.
 ```
 respuestasrapidas/
 ├── index.html                    # Markup: barra superior, tabs, tarjetas, modal
-├── defaults.js                   # Textos de respaldo de Respuestas y Plantillas
+├── defaults.js                   # Textos y atajos de respaldo (Respuestas, Plantillas, Atajos)
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
 ├── manifest.json                 # Metadatos de la PWA
@@ -131,6 +131,7 @@ Google Sheets  ──►  Apps Script (doGet)  ──►  JSON  ──►  fetch
    | Diagnóstico | `.../exec?hoja=diagnostico` | `[{ categoria, subtitulo, contenido }, ...]` |
    | Respuestas | `.../exec?hoja=respuestas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
    | Plantillas | `.../exec?hoja=plantillas` | `[{ id, categoria, titulo, texto, orden, activo }, ...]` |
+   | Atajos | `.../exec?hoja=atajos` | `[{ nombre, url, orden, activo }, ...]` |
 
 4. El frontend agrupa los casos de Diagnóstico por `categoria`; el Apps Script
    devuelve un array plano.
