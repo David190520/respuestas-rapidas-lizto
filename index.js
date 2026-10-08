@@ -834,8 +834,9 @@ function linkify(text) {
   return html + escapeHtml(source.slice(last));
 }
 
-function formatearContenidoPasoAPaso(textoPlano) {
-  const lines = textoPlano.split('\n');
+/** Divide un texto plano en bloques: callout (⚠️), ol, ul y p. */
+function parsearBloquesContenido(textoPlano) {
+  const lines = String(textoPlano).split('\n');
   const blocks = [];
   let i = 0;
 
@@ -884,14 +885,41 @@ function formatearContenidoPasoAPaso(textoPlano) {
     if (paraLines.length) blocks.push({ type: 'p', lines: paraLines });
   }
 
-  return blocks.map(block => {
+  return blocks;
+}
+
+/** Ítems de lista (ol/ul) de un texto, en orden y como texto plano. */
+function extraerItemsLista(textoPlano) {
+  return parsearBloquesContenido(textoPlano)
+    .filter(block => block.type === 'ol' || block.type === 'ul')
+    .flatMap(block => block.items);
+}
+
+/**
+ * Vista previa con formato (HTML escapado). Con { checklist: true } cada ítem de
+ * lista lleva una casilla (data-idx = posición entre todos los ítems del texto).
+ * Solo afecta a la vista previa: el copiado usa SIEMPRE el string crudo.
+ */
+function formatearContenidoPasoAPaso(textoPlano, { checklist = false } = {}) {
+  let indice = 0;
+
+  return parsearBloquesContenido(textoPlano).map(block => {
     switch (block.type) {
       case 'callout':
         return `<div class="callout-importante">${linkify(block.text)}</div>`;
       case 'ol':
-        return `<ol>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ol>`;
-      case 'ul':
-        return `<ul>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</ul>`;
+      case 'ul': {
+        if (checklist) {
+          const items = block.items.map(it => {
+            const idx = indice++;
+            return `<li class="check-item"><label><input type="checkbox" class="check-input" data-idx="${idx}">` +
+                   `<span class="check-text">${linkify(it)}</span></label></li>`;
+          }).join('');
+          return `<ul class="checklist">${items}</ul>`;
+        }
+        const tag = block.type;
+        return `<${tag}>${block.items.map(it => `<li>${linkify(it)}</li>`).join('')}</${tag}>`;
+      }
       case 'p':
         return `<p>${block.lines.map(linkify).join('<br>')}</p>`;
       default:
@@ -1130,6 +1158,11 @@ class DiagnosticoCenter {
     this.searchScope = "level";              // "level" = nivel actual | "global" = resultados planos
     this.apiUrl = `${APPS_SCRIPT_URL}?hoja=diagnostico`;
 
+    // Checklist del caso abierto: solo en memoria, se reinicia al cambiar de caso
+    this.checkItems = [];                    // texto plano de cada ítem de lista
+    this.checks = new Set();                 // índices marcados como revisados
+    this.checklistItem = null;               // caso al que pertenece el estado
+
     this.cacheDOMElements();
     this.initEventListeners();
     this.loadData();
@@ -1149,7 +1182,16 @@ class DiagnosticoCenter {
       copyBtn: document.getElementById("diag-copy-btn"),
       copyFeedback: document.getElementById("diag-copy-feedback"),
       backBtn: document.getElementById("diag-back-btn"),
-      sidebar: document.querySelector("#diagnostico .help-sidebar")
+      sidebar: document.querySelector("#diagnostico .help-sidebar"),
+      progress: document.getElementById("diag-checklist-progress"),
+      progressFill: document.getElementById("diag-progress-fill"),
+      progressText: document.getElementById("diag-progress-text"),
+      progressReset: document.getElementById("diag-progress-reset"),
+      escalarBtn: document.getElementById("diag-escalar-btn"),
+      escalarPanel: document.getElementById("diag-escalar-panel"),
+      escalarText: document.getElementById("diag-escalar-text"),
+      escalarCopy: document.getElementById("diag-escalar-copy"),
+      escalarClose: document.getElementById("diag-escalar-close")
     };
   }
 
@@ -1163,6 +1205,18 @@ class DiagnosticoCenter {
     this.elements.breadcrumb.addEventListener("click", () => this.goToCategorias());
     this.elements.copyBtn.addEventListener("click", () => this.copyContent());
     this.elements.backBtn.addEventListener("click", () => this.goBack());
+
+    // Checklist (delegación: las casillas se redibujan con cada caso)
+    this.elements.articleContent.addEventListener("change", (e) => {
+      const input = e.target.closest(".check-input");
+      if (input) this.toggleCheck(Number(input.dataset.idx), input.checked);
+    });
+    this.elements.progressReset.addEventListener("click", () => this.resetChecks());
+
+    // Escalamiento
+    this.elements.escalarBtn.addEventListener("click", () => this.abrirEscalamiento());
+    this.elements.escalarClose.addEventListener("click", () => this.cerrarEscalamiento());
+    this.elements.escalarCopy.addEventListener("click", () => this.copiarEscalamiento());
   }
 
   async loadData() {
@@ -1373,11 +1427,119 @@ class DiagnosticoCenter {
 
     this.elements.articleCategory.textContent = this.selectedItem.categoria;
     this.elements.articleTitle.textContent = this.selectedItem.subtitulo;
-    this.elements.articleContent.innerHTML = formatearContenidoPasoAPaso(this.selectedItem.contenido);
+    this.elements.articleContent.innerHTML =
+      formatearContenidoPasoAPaso(this.selectedItem.contenido, { checklist: true });
+
+    // Volver a abrir el mismo caso conserva lo marcado; otro caso empieza limpio
+    if (this.checklistItem !== this.selectedItem) {
+      this.checklistItem = this.selectedItem;
+      this.checkItems = extraerItemsLista(this.selectedItem.contenido);
+      this.checks = new Set();
+      this.cerrarEscalamiento();
+    }
+    this.pintarChecks();
 
     this.resetCopyButton();
     const panel = document.querySelector("#diagnostico .help-content");
     if (panel) panel.scrollTop = 0;
+  }
+
+  // ----- Checklist -----
+
+  toggleCheck(idx, marcado) {
+    if (marcado) this.checks.add(idx); else this.checks.delete(idx);
+    this.pintarChecks();
+  }
+
+  resetChecks() {
+    this.checks = new Set();
+    this.pintarChecks();
+  }
+
+  /** Sincroniza casillas, barra de progreso y énfasis del botón de escalamiento. */
+  pintarChecks() {
+    const total = this.checkItems.length;
+    const hechos = this.checks.size;
+
+    this.elements.articleContent.querySelectorAll(".check-input").forEach(input => {
+      const marcado = this.checks.has(Number(input.dataset.idx));
+      input.checked = marcado;
+      input.closest(".check-item")?.classList.toggle("done", marcado);
+    });
+
+    this.elements.progress.hidden = total === 0;
+    if (total > 0) {
+      this.elements.progressFill.style.width = `${Math.round((hechos / total) * 100)}%`;
+      this.elements.progressText.textContent = hechos === total
+        ? `¡Todo revisado! (${total} de ${total}). Si no apareció la causa, prepara el escalamiento.`
+        : `${hechos} de ${total} revisados`;
+      this.elements.progressReset.hidden = hechos === 0;
+    }
+    this.elements.escalarBtn.classList.toggle("destacado", total > 0 && hechos === total);
+  }
+
+  // ----- Escalamiento a desarrollo -----
+
+  /** Mensaje de texto plano con lo revisado y campos vacíos para completar. */
+  construirMensajeEscalamiento() {
+    const caso = this.selectedItem;
+    const agente = document.getElementById("agentInput")?.value.trim() || "";
+    const revisados = this.checkItems.filter((_, i) => this.checks.has(i));
+    const pendientes = this.checkItems.filter((_, i) => !this.checks.has(i));
+    const lista = (items) => items.map(it => `- ${it}`).join("\n");
+
+    const partes = [
+      "Escalamiento a desarrollo",
+      "",
+      `Categoría: ${caso.categoria}`,
+      `Caso: ${caso.subtitulo}`,
+      "",
+      "Negocio:",
+      "NIT:",
+      "Sede / usuario afectado:",
+      "Qué ocurre (detalle y cómo reproducirlo):",
+      ""
+    ];
+
+    if (this.checkItems.length === 0) {
+      partes.push(`Se revisó el caso documentado "${caso.subtitulo}" sin encontrar la causa.`);
+    } else {
+      partes.push("Revisado sin encontrar la causa:");
+      partes.push(revisados.length ? lista(revisados) : "- (ningún paso marcado)");
+      if (pendientes.length) {
+        partes.push("", "No revisado:", lista(pendientes));
+      }
+    }
+
+    partes.push("", `Reportado por: ${agente}`);
+    return partes.join("\n");
+  }
+
+  abrirEscalamiento() {
+    if (!this.selectedItem) return;
+    this.elements.escalarText.value = this.construirMensajeEscalamiento();
+    this.elements.escalarPanel.hidden = false;
+    this.elements.escalarText.focus({ preventScroll: true });
+    this.elements.escalarPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  cerrarEscalamiento() {
+    this.elements.escalarPanel.hidden = true;
+  }
+
+  copiarEscalamiento() {
+    const btn = this.elements.escalarCopy;
+    const texto = this.elements.escalarText.value;   // texto plano, tal como lo editó el agente
+    if (!texto || btn.disabled) return;
+
+    copiarTextoPlano(texto)
+      .then(() => {
+        const original = btn.textContent;
+        btn.textContent = "¡Copiado! ✅";
+        btn.disabled = true;
+        setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
+      })
+      .catch(err => console.error("Error copying to clipboard:", err));
   }
 
   showEmptyState(texto) {

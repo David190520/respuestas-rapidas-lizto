@@ -195,6 +195,25 @@ sistema operativo (ver "Sistema de temas").
 - Las tarjetas con controles propios (enlace de pago, paso a paso, reunión)
   son `.special-card` y **no** pasan por `initResponseCards`.
 
+### Diagnóstico: checklist y escalamiento
+
+- Cada ítem de lista (`-`, `•`, `1.`) del contenido de un caso se muestra como
+  **casilla marcable** (`formatearContenidoPasoAPaso(texto, { checklist: true })`;
+  Paso a paso no la usa). Hay barra de progreso "X de N revisados" y un botón
+  "Reiniciar". El estado vive **solo en memoria** (`DiagnosticoCenter.checks`):
+  se conserva al reabrir el mismo caso y se reinicia al abrir otro; no se
+  persiste.
+- Los casos sin listas se ven como antes (sin barra ni casillas).
+- **"No encontré la causa → preparar escalamiento"** abre un panel con un mensaje
+  de texto plano editable (categoría, caso, campos vacíos de negocio/NIT/sede/
+  detalle, pasos revisados y no revisados, y el agente). Se copia desde el
+  `textarea`, que es lo que el agente editó. El botón se resalta cuando todos
+  los pasos están marcados.
+- **El botón Copiar del artículo no cambia:** copia el string crudo del Sheet
+  (`subtitulo` + `contenido`), nunca el formato con casillas.
+- Para que el checklist funcione, el contenido del Sheet debe escribir los pasos
+  como lista (una línea por paso, empezando por `-`, `•` o `1.`).
+
 ### Buscador y atajos
 
 - `#globalSearch` filtra las 5 tabs a la vez y pinta un badge con el conteo
