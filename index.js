@@ -10,6 +10,17 @@ const modalCardMap = new Map();
 const tarjetasData = { respuestas: [], plantillas: [] };
 const categoriaActiva = { respuestas: '', plantillas: '' };
 
+// Sugerencias según el uso (ver "SUGERENCIAS SEGÚN EL USO")
+const USO_KEY = 'lizto_usage';
+const USO_VIDA_MEDIA_MS = 14 * 24 * 60 * 60 * 1000;  // el peso de cada copia se reduce a la mitad cada 14 días
+const USO_VENTANA_ENCADENADO_MS = 10 * 60 * 1000;    // "B después de A": B se copia <= 10 min tras A
+const USO_PESO_MINIMO = 0.1;                         // por debajo se olvida (~46 días sin repetirse)
+const USO_MAX_TARJETAS = 60;
+const USO_MAX_TRANSICIONES = 200;
+const USO_MIN_COPIAS = 3;                            // copias totales antes de empezar a sugerir
+const USO_MIN_TRANSICION = 1.5;                      // ~2 veces vistas para sugerir "después de A"
+const SUGERIDAS_MAX = 4;
+
 let saludoCard = null;
 let saludoVariante = '';
 const SALUDO_VARIANTES = [
@@ -337,6 +348,7 @@ function renderTarjetas(tab) {
   refrescarTextos();
   renderCardPreviews();
   reaplicarFiltros();
+  if (tab === "respuestas") refrescarSugeridas();
 }
 
 /** Escribe en cada tarjeta su texto con los tokens ya resueltos. */
@@ -768,6 +780,7 @@ function globalSearchFilter(query) {
   updateTabBadge("badge-diagnostico", diagCount,  isSearching);
   updateTabBadge("badge-atajos",     atajosCount, isSearching);
   updateModalAfterSearch();
+  refrescarSugeridas();   // se oculta mientras se busca o hay un chip de categoría activo
 }
 
 // ============= HELP CENTER MODULE - PASO A PASO =============
@@ -1613,6 +1626,12 @@ function copyCardText(card, feedbackBtn) {
 
   if (!text) return;
 
+  // Uso para las sugerencias. Si se copió desde una sugerencia, la fila se
+  // redibuja cuando termina el "¡Copiado!" para no destruir el botón con feedback.
+  registrarUso(card.dataset.id);
+  if (btn && btn.classList.contains('sugerida-chip')) setTimeout(refrescarSugeridas, 1600);
+  else refrescarSugeridas();
+
   if (navigator.clipboard) {
     navigator.clipboard.writeText(text).then(showFeedback).catch(() => {
       const ta = document.createElement('textarea');
@@ -1667,6 +1686,144 @@ function renderCardPreviews() {
       setModalContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
     }
   }
+}
+
+// ============= SUGERENCIAS SEGÚN EL USO =============
+// Registra, en este navegador, qué tarjetas se copian y cuál se copia después de
+// cuál, y muestra en Respuestas una fila "Sugeridas". No hay backend: los datos
+// son de cada agente en cada navegador. Persistencia: `lizto_usage` (ver CLAUDE.md).
+//
+// Formato: { v:1, total, cards:{ id:[peso,t] }, trans:{ "a>b":[peso,t] }, last:[id,t]|null }
+// `peso` decae a la mitad cada USO_VIDA_MEDIA_MS (se actualiza al volver a usarse).
+
+function cargarUso() {
+  const vacio = { v: 1, total: 0, cards: {}, trans: {}, last: null };
+  try {
+    const raw = JSON.parse(localStorage.getItem(USO_KEY) || 'null');
+    if (!raw || raw.v !== 1 || typeof raw.cards !== 'object' || typeof raw.trans !== 'object') return vacio;
+    return { v: 1, total: Number(raw.total) || 0, cards: raw.cards, trans: raw.trans,
+             last: Array.isArray(raw.last) ? raw.last : null };
+  } catch {
+    return vacio;
+  }
+}
+
+function guardarUso(uso) {
+  try { localStorage.setItem(USO_KEY, JSON.stringify(uso)); } catch {}
+}
+
+/** Peso de una entrada [peso, t] llevado a `ahora` (decaimiento exponencial). */
+function pesoUso(entrada, ahora) {
+  if (!Array.isArray(entrada)) return 0;
+  const edad = Math.max(0, ahora - (Number(entrada[1]) || 0));
+  return (Number(entrada[0]) || 0) * Math.pow(0.5, edad / USO_VIDA_MEDIA_MS);
+}
+
+/** Suma 1 a la entrada (tras decaerla) y la deja fechada en `ahora`. */
+function sumarUso(mapa, clave, ahora) {
+  mapa[clave] = [Math.round((pesoUso(mapa[clave], ahora) + 1) * 1000) / 1000, ahora];
+}
+
+/** Olvida lo muy viejo y limita el tamaño conservando lo de más peso. */
+function podarUso(uso, ahora) {
+  const podar = (mapa, maximo) => {
+    const pesos = Object.keys(mapa).map(k => [k, pesoUso(mapa[k], ahora)]).filter(([, p]) => p >= USO_PESO_MINIMO);
+    pesos.sort((a, b) => b[1] - a[1]);
+    const nuevo = {};
+    pesos.slice(0, maximo).forEach(([k]) => { nuevo[k] = mapa[k]; });
+    return nuevo;
+  };
+  uso.cards = podar(uso.cards, USO_MAX_TARJETAS);
+  uso.trans = podar(uso.trans, USO_MAX_TRANSICIONES);
+}
+
+/** Llamar cada vez que se copia una tarjeta (id = data-id de la tarjeta). */
+function registrarUso(id, ahora = Date.now()) {
+  if (!id) return;
+  const uso = cargarUso();
+
+  sumarUso(uso.cards, id, ahora);
+  uso.total += 1;
+
+  const [idAnterior, tAnterior] = uso.last || [];
+  if (idAnterior && idAnterior !== id && ahora - tAnterior <= USO_VENTANA_ENCADENADO_MS) {
+    sumarUso(uso.trans, `${idAnterior}>${id}`, ahora);
+  }
+  uso.last = [id, ahora];
+
+  podarUso(uso, ahora);
+  guardarUso(uso);
+}
+
+/**
+ * Hasta SUGERIDAS_MAX ids: primero los que suelen copiarse después de la última
+ * tarjeta copiada (si fue hace <= 10 min), luego los más usados. Excluye la que
+ * se acaba de copiar y las fijadas (ya están arriba). `validos` = ids visibles.
+ */
+function calcularSugeridas(validos, ahora = Date.now()) {
+  const uso = cargarUso();
+  if (uso.total < USO_MIN_COPIAS) return [];
+
+  const fijadas = new Set(loadPinned());
+  const [ultimo, tUltimo] = uso.last || [];
+  const reciente = ultimo && ahora - tUltimo <= USO_VENTANA_ENCADENADO_MS;
+  const sirve = id => validos.includes(id) && !fijadas.has(id) && id !== ultimo;
+
+  const elegidas = [];
+  if (reciente) {
+    Object.keys(uso.trans)
+      .filter(k => k.startsWith(`${ultimo}>`))
+      .map(k => [k.slice(ultimo.length + 1), pesoUso(uso.trans[k], ahora)])
+      .filter(([id, peso]) => peso >= USO_MIN_TRANSICION && sirve(id))
+      .sort((a, b) => b[1] - a[1])
+      .forEach(([id]) => elegidas.push({ id, motivo: 'despues', desde: ultimo }));
+  }
+
+  Object.keys(uso.cards)
+    .map(id => [id, pesoUso(uso.cards[id], ahora)])
+    .filter(([id]) => sirve(id) && !elegidas.some(e => e.id === id))
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([id]) => elegidas.push({ id, motivo: 'frecuente' }));
+
+  return elegidas.slice(0, SUGERIDAS_MAX);
+}
+
+function refrescarSugeridas() {
+  const fila = document.getElementById('sugeridas-respuestas');
+  if (!fila) return;
+  const lista = fila.querySelector('.sugeridas-lista');
+
+  const gs = document.getElementById('globalSearch');
+  const filtrando = (gs && gs.value.trim()) || categoriaActiva.respuestas;
+  const cards = Array.from(document.querySelectorAll('#respuestas .text-fields > .response-card'));
+  const porId = new Map(cards.map(card => [card.dataset.id, card]));
+
+  const sugeridas = filtrando ? [] : calcularSugeridas(Array.from(porId.keys()));
+  if (!sugeridas.length) {
+    fila.hidden = true;
+    lista.replaceChildren();
+    return;
+  }
+
+  lista.replaceChildren(...sugeridas.map(({ id, motivo, desde }) => {
+    const card = porId.get(id);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'sugerida-chip';
+    chip.textContent = card.querySelector('h3')?.textContent || id;
+    chip.title = motivo === 'despues'
+      ? `Suele copiarse después de «${porId.get(desde)?.querySelector('h3')?.textContent || 'la anterior'}»`
+      : 'De las que más usas';
+    chip.addEventListener('click', () => copyCardText(card, chip));
+    return chip;
+  }));
+  fila.hidden = false;
+}
+
+function borrarHistorialUso() {
+  if (!window.confirm('¿Borrar el historial de uso que alimenta las sugerencias? Se empieza de cero.')) return;
+  try { localStorage.removeItem(USO_KEY); } catch {}
+  refrescarSugeridas();
 }
 
 // ============= TARJETAS FIJADAS (pin) =============
@@ -1733,6 +1890,7 @@ function togglePin(card) {
   reorderCards(card.parentElement);
   // El orden visible cambió: refrescar la lista de navegación del modal
   updateModalAfterSearch();
+  refrescarSugeridas();   // una tarjeta recién fijada deja de sugerirse
 }
 
 let modalLastFocus = null;
@@ -1916,6 +2074,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Sugerencias: borrar historial de uso
+  document.getElementById('sugeridas-borrar')?.addEventListener('click', borrarHistorialUso);
+
   // Listeners del toggle de densidad
   document.getElementById('densityNormal')?.addEventListener('click', () => applyDensity('normal'));
   document.getElementById('densityCompact')?.addEventListener('click', () => applyDensity('compact'));
@@ -1932,6 +2093,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!textarea || !textarea.value) return;
     const isSaludo = saludoCard && card === saludoCard;
     const text = isSaludo ? buildSaludoText(textarea.value) : textarea.value;
+    registrarUso(card.dataset.id);
+    refrescarSugeridas();
     const btn = this;
     const copied = () => {
       btn.innerHTML = '¡Copiado! ✅';

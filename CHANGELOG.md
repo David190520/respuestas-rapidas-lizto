@@ -15,6 +15,30 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (Fase 6: sugerencias según el uso)
+
+### Agregado
+
+- **Fila "Sugeridas"** en Respuestas (hasta 4 chips): las tarjetas que suelen
+  copiarse **después de la última copiada** (par A → B visto ~2 veces en una
+  ventana de 10 min) y, si faltan, las más usadas. Excluye la recién copiada y
+  las fijadas. Cada chip explica en su tooltip por qué aparece y copia con un
+  clic. Se oculta al buscar o filtrar por categoría; "Borrar historial" la
+  reinicia.
+- **Nueva clave de `localStorage`: `lizto_usage`** (aprobada por David al pedir la
+  Fase 6). Guarda pesos con decaimiento (vida media de 14 días), olvida lo muy
+  viejo y se poda a 60 tarjetas y 200 pares (~0,5 KB con uso normal). Con menos
+  de 3 copias no sugiere nada.
+- Registro de uso en todos los caminos de copiado de tarjetas: botón Copiar, clic
+  en la tarjeta, modal y chips sugeridos.
+
+### Notas
+
+- Los datos son por navegador y por agente; no hay estadísticas del equipo (el
+  Apps Script es de solo lectura). Ver `PLAN.md`, Fase 6.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (Fase 5: Diagnóstico con checklist y escalamiento)
 
 ### Agregado

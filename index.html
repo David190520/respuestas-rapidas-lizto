@@ -88,6 +88,14 @@
             </svg>
           </button>
         </div>
+        <div id="sugeridas-respuestas" class="sugeridas" role="group" aria-label="Tarjetas sugeridas" hidden>
+          <span class="sugeridas-label">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"></path></svg>
+            Sugeridas
+          </span>
+          <div class="sugeridas-lista"></div>
+          <button type="button" id="sugeridas-borrar" class="sugeridas-borrar" title="Borrar el historial de uso de este navegador">Borrar historial</button>
+        </div>
         <div id="chips-respuestas" class="category-chips" role="group" aria-label="Filtrar por categoría" hidden></div>
         <div class="text-fields" id="cards-respuestas">
           <!-- Las tarjetas se generan desde Google Sheets (respaldo: defaults.js) -->

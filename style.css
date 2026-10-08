@@ -790,6 +790,86 @@ textarea:focus {
   color: var(--accent-ink);
 }
 
+/* ============= SUGERIDAS (según el uso) ============= */
+
+.sugeridas {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  width: 100%;
+  max-width: 1240px;
+  margin: 0 auto 14px;
+  padding: 0 20px;
+  animation: fadeInUp 260ms var(--ease);
+}
+
+.sugeridas[hidden] {
+  display: none;
+}
+
+.sugeridas-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+
+.sugeridas-lista {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sugerida-chip {
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color var(--dur) ease, color var(--dur) ease, transform 120ms ease;
+}
+
+.sugerida-chip:hover {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+}
+
+.sugerida-chip:active {
+  transform: scale(0.96);
+}
+
+.sugerida-chip:disabled {
+  cursor: default;
+  color: var(--on-accent);
+  background: var(--accent-solid);
+}
+
+.sugeridas-borrar {
+  margin-left: auto;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.sugeridas-borrar:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
+
 /* ============= CHIPS DE CATEGORÍA ============= */
 
 .category-chips {
@@ -2029,6 +2109,7 @@ textarea:focus {
   .text-fields,
   .atajos-grid,
   .density-bar,
+  .sugeridas,
   .category-chips {
     padding: 0 14px;
   }

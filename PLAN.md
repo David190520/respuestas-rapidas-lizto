@@ -8,7 +8,7 @@ decisiones ya tomadas, las reglas y el detalle de cada fase.
 > este archivo → `TODO.md` (estado) → `CHANGELOG.md` (qué cambió y cuándo).
 > Implementar **una fase a la vez**, con su propia rama y PR hacia `develop`.
 
-Última actualización: 2026-10-09 (Fases 1, 2 y 3 terminadas en código).
+Última actualización: 2026-10-08 (Fases 1, 2, 3, 5 y 6 terminadas; quedan 4 y 7, opcionales).
 
 > **Notas de implementación de la Fase 3:** el Sheet tiene **dos pestañas
 > separadas** (`Respuestas` y `Plantillas`), así que no existe la columna `tab`
@@ -302,7 +302,7 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ✅ Código en `develop`; falta que David cargue los CSV y despliegue el Apps Script |
 | 4 | Atajos desde Sheets | ⬜ Opcional |
 | 5 | Diagnóstico con checklist y escalamiento | ✅ En `develop` (2026-10-08) |
-| 6 | Sugerencias según el uso | ⬜ Pendiente (requiere aprobar `lizto_usage`) |
+| 6 | Sugerencias según el uso | ✅ En `develop` (2026-10-08); `lizto_usage` aprobada |
 | 7 | Modo Flujo | ⬜ Opcional |
 
 > Al terminar una fase: marcarla aquí, mover su TODO a ✅ en `TODO.md` y
