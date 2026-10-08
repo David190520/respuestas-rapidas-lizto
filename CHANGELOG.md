@@ -15,6 +15,23 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (detección de listas en Diagnóstico)
+
+### Corregido
+
+- **El checklist de Diagnóstico no aparecía en varios casos reales.** El parser
+  solo reconocía `- Paso` (guion + espacio) y cortaba la lista en cada línea en
+  blanco; en el Sheet muchos pasos están escritos como `-Paso` (guion pegado) o
+  `1.Paso`, separados por líneas en blanco. Ahora `RE_ITEM_UL` / `RE_ITEM_OL`
+  aceptan el marcador pegado a una letra y `parsearBloquesContenido()` une los
+  ítems separados solo por líneas en blanco. No cuentan `-----`, `->`, `3.5` ni
+  `-500`.
+- Con los datos reales (29 casos): casos con checklist **8 → 14**. En Paso a paso
+  cambia la vista previa de 2 de 19 artículos, que pasan de párrafos sueltos a
+  listas. El copiado sigue usando el string crudo.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (Fase 6: sugerencias según el uso)
 
 ### Agregado
