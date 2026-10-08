@@ -29,7 +29,8 @@ interna; no maneja datos de clientes ni requiere autenticación.
     electrónica, nómina, API de WhatsApp, solicitudes por correo).
   - **Paso a paso** — artículos de ayuda cargados desde Google Sheets.
   - **Diagnóstico** — casos de soporte organizados por categoría, también
-    desde Google Sheets.
+    desde Google Sheets, con checklist de pasos y mensaje de escalamiento a
+    desarrollo.
   - **Atajos** — enlaces a herramientas externas de uso frecuente.
 - **Personalización automática:** los campos "Nombre del agente" y "Nombre del
   cliente" se inyectan en los textos en tiempo real y se recuerdan entre

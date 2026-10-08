@@ -301,7 +301,7 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | 2 | Saludo según la hora | ✅ En `develop` (2026-10-08) |
 | 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ✅ Código en `develop`; falta que David cargue los CSV y despliegue el Apps Script |
 | 4 | Atajos desde Sheets | ⬜ Opcional |
-| 5 | Diagnóstico con checklist y escalamiento | ⬜ Pendiente |
+| 5 | Diagnóstico con checklist y escalamiento | ✅ En `develop` (2026-10-08) |
 | 6 | Sugerencias según el uso | ⬜ Pendiente (requiere aprobar `lizto_usage`) |
 | 7 | Modo Flujo | ⬜ Opcional |
 

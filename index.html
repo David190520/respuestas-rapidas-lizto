@@ -284,7 +284,25 @@
                   <span class="copy-feedback" id="diag-copy-feedback">Copiar</span>
                 </button>
               </div>
+              <div id="diag-checklist-progress" class="checklist-progress" hidden>
+                <div class="progress-track" aria-hidden="true"><span id="diag-progress-fill" class="progress-fill"></span></div>
+                <span id="diag-progress-text" class="progress-text" role="status" aria-live="polite"></span>
+                <button type="button" id="diag-progress-reset" class="progress-reset" hidden>Reiniciar</button>
+              </div>
               <div id="diag-article-content" class="help-body"></div>
+              <section class="escalamiento" aria-label="Escalamiento a desarrollo">
+                <button type="button" id="diag-escalar-btn" class="escalar-btn">
+                  No encontré la causa <span aria-hidden="true">→</span> preparar escalamiento
+                </button>
+                <div id="diag-escalar-panel" class="escalar-panel" hidden>
+                  <p class="escalar-ayuda">Completa los campos vacíos (negocio, NIT, detalle) y copia el mensaje para desarrollo.</p>
+                  <textarea id="diag-escalar-text" class="escalar-text" spellcheck="false" aria-label="Mensaje de escalamiento"></textarea>
+                  <div class="escalar-actions">
+                    <button type="button" id="diag-escalar-copy" class="escalar-copy">Copiar mensaje</button>
+                    <button type="button" id="diag-escalar-close" class="escalar-close">Cerrar</button>
+                  </div>
+                </div>
+              </section>
             </article>
           </div>
         </main>

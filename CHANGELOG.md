@@ -15,6 +15,30 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (Fase 5: Diagnóstico con checklist y escalamiento)
+
+### Agregado
+
+- **Checklist en Diagnóstico.** Los ítems de lista de cada caso se muestran como
+  casillas, con barra de progreso ("3 de 5 revisados"), botón "Reiniciar" y
+  mensaje al completarlos. Estado solo en memoria: se conserva al reabrir el mismo
+  caso y se reinicia al abrir otro. Los casos sin listas se ven igual que antes.
+- **"No encontré la causa → preparar escalamiento".** Panel con un mensaje de
+  texto plano **editable** para desarrollo: categoría, caso, campos vacíos
+  (negocio, NIT, sede/usuario afectado, qué ocurre), pasos revisados y no
+  revisados, y quién reporta. Botón "Copiar mensaje". El botón de escalamiento se
+  resalta cuando todos los pasos están marcados.
+
+### Cambiado
+
+- `formatearContenidoPasoAPaso()` se apoya ahora en `parsearBloquesContenido()` y
+  `extraerItemsLista()`, y acepta `{ checklist: true }`. Su salida para Paso a
+  paso es idéntica a la anterior.
+- El botón **Copiar** del artículo de Diagnóstico sigue copiando el string crudo
+  del Sheet (verificado).
+
+---
+
 ## [Sin publicar] — 2026-10-08 (títulos recortados en Paso a paso y Diagnóstico)
 
 ### Corregido
