@@ -1,6 +1,11 @@
 // Subir la versión cada vez que cambie STATIC_ASSETS o un archivo estático,
 // de lo contrario los usuarios siguen recibiendo la copia cacheada anterior.
-const CACHE_NAME = "respuestas-rapidas-v6";
+const CACHE_NAME = "respuestas-rapidas-v7";
+
+// Caché aparte para las respuestas de Google Sheets: sobrevive a los cambios de
+// CACHE_NAME (activate no la borra) y guarda la ÚLTIMA respuesta buena de cada
+// pestaña para usarla sin conexión.
+const DATA_CACHE = "respuestas-rapidas-datos";
 
 // Debe coincidir exactamente con los archivos estáticos del repo.
 const STATIC_ASSETS = [
@@ -9,7 +14,8 @@ const STATIC_ASSETS = [
   "./index.js",
   "./style.css",
   "./manifest.json",
-  "./icon.svg"
+  "./icon.svg",
+  "./defaults.js"
 ];
 
 // El "app shell" (HTML/JS/CSS) va network-first: es lo que cambia en cada
@@ -68,6 +74,38 @@ async function cacheFirst(event, url) {
   return response;
 }
 
+async function datosAppsScript(event) {
+  const copiaGuardada = () => caches.match(event.request, { cacheName: DATA_CACHE });
+
+  try {
+    const response = await fetch(event.request);
+
+    if (response && response.ok) {
+      // Apps Script responde 200 incluso con {status:"error"}: solo se guarda
+      // (y se da por buena) una respuesta que sea un array de filas.
+      const data = await response.clone().json().catch(() => null);
+      if (Array.isArray(data)) {
+        const paraGuardar = response.clone();
+        event.waitUntil(
+          caches.open(DATA_CACHE).then((cache) => cache.put(event.request, paraGuardar))
+        );
+        return response;
+      }
+    }
+
+    // 404/5xx transitorios de Google o un error en JSON: si hay una copia buena
+    // se usa esa; si no, se deja pasar la respuesta para que la app muestre el error.
+    return (await copiaGuardada()) || response;
+  } catch (err) {
+    // Sin red: última copia buena y, si nunca hubo una, [] (la app usa su respaldo)
+    const cached = await copiaGuardada();
+    if (cached) return cached;
+    return new Response(JSON.stringify([]), {
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+}
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
@@ -78,7 +116,9 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys.filter((k) => k !== CACHE_NAME && k !== DATA_CACHE).map((k) => caches.delete(k))
+      )
     )
   );
   self.clients.claim();
@@ -89,15 +129,10 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(event.request.url);
 
-  // Peticiones a Google Apps Script: network-first, sin caché (son dinámicas)
+  // Peticiones a Google Apps Script: network-first con la última respuesta buena
+  // de cada pestaña como respaldo (ver datosAppsScript).
   if (url.hostname.includes("script.google.com")) {
-    event.respondWith(
-      fetch(event.request).catch(() =>
-        new Response(JSON.stringify([]), {
-          headers: { "Content-Type": "application/json" }
-        })
-      )
-    );
+    event.respondWith(datosAppsScript(event));
     return;
   }
 

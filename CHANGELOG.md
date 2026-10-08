@@ -15,6 +15,89 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (títulos recortados en Paso a paso y Diagnóstico)
+
+### Corregido
+
+- **Los títulos de las listas de Paso a paso y Diagnóstico se recortaban** cuando la
+  lista no cabía en pantalla (p. ej. con zoom del navegador de 100 % o más).
+  Causa: el rediseño volvió `.help-items-list` una columna flex y los
+  `.help-item` conservaban `flex-shrink: 1`; como tienen `overflow: hidden`, en
+  lugar de hacer scroll se encogían y cortaban el texto. Ahora `.help-item` usa
+  `flex-shrink: 0` y la lista `min-height: 0`, de modo que la lista hace scroll.
+  Verificado con 19 artículos y 10 categorías simuladas: 0 ítems recortados y
+  lista con scroll.
+
+---
+
+## [Sin publicar] — 2026-10-09 (404 intermitentes de Apps Script)
+
+### Corregido
+
+- **404 intermitentes y latencias de 20–40 s del Apps Script.** Diagnóstico: en
+  mediciones secuenciales con pausas, 3 de 12 peticiones devolvieron 404 con la
+  página de Drive "No se pudo abrir el archivo en este momento" (el script no
+  logra abrir el Spreadsheet en esa ejecución, antes de que corra su `try/catch`).
+  No depende del navegador, de la cuenta ni de la app. Cambios:
+  - `apps-script/Codigo.gs`: caché de 15 min por pestaña (`CacheService`), copia
+    de respaldo de 6 h usada si la hoja no abre, `onEdit()` que invalida la caché
+    en ediciones manuales, `limpiarCache()`, `calentarCache()` (para un activador
+    cada 10 min) y `?refrescar=1`. El contrato de datos no cambia.
+    Verificado con una simulación de `SpreadsheetApp`/`CacheService` (15 casos).
+  - `sw.js`: si Google responde 404/5xx o un `{status:"error"}` y hay una copia
+    buena guardada, se sirve esa copia (antes solo se usaba si la red fallaba del
+    todo). Verificado en 7 escenarios.
+- Requiere que David pegue el `Codigo.gs` nuevo y despliegue una **nueva versión**
+  (ver `apps-script/migracion/LEEME.md`, sección 2b).
+
+---
+
+## [Sin publicar] — 2026-10-09 (Respuestas y Plantillas desde Sheets)
+
+### Agregado
+
+- **Respuestas y Plantillas se leen de Google Sheets (Fase 3).** Cada tab usa su
+  pestaña (`?hoja=respuestas` / `?hoja=plantillas`) con las columnas
+  `id | categoria | titulo | texto | orden | activo`. Las tarjetas se generan con
+  `construirTarjeta()` en vez de estar fijas en el HTML.
+- **Respaldo:** `defaults.js` (`RESPUESTAS_DEFAULT`, `PLANTILLAS_DEFAULT`) se pinta
+  al instante y solo lo reemplazan filas válidas del Sheet. Si el fetch falla
+  (con un reintento por los 404 transitorios de Google) aparece un aviso
+  discreto; una pestaña vacía conserva el respaldo.
+- **Tokens nuevos** `holaCliente` y `encabezadoCliente`, resueltos junto con
+  `nombreAgente`/`saludoHora` por `resolverTokens()` en una sola pasada. Se
+  verificó que los textos con tokens generan **exactamente** el mismo mensaje que
+  el código anterior (240 comparaciones: 20 textos × 4 combinaciones de
+  cliente/agente × 3 horas).
+- **Chips de filtro por categoría (TODO-10)** en Respuestas y Plantillas,
+  generados de los datos (+ "Herramientas" para las special cards). Se combinan
+  con el buscador global y los badges cuentan el resultado combinado.
+- **Caché offline de datos (TODO-18):** `sw.js` guarda la última respuesta buena
+  de cada pestaña del Sheet en `respuestas-rapidas-datos` y la usa sin conexión.
+  Solo guarda arrays (Apps Script responde 200 con `{status:"error"}`).
+- `apps-script/migracion/`: `Respuestas.csv`, `Plantillas.csv` y `LEEME.md` con
+  los pasos para cargar los textos actuales y actualizar el Apps Script.
+- Reglas del Sheet: `activo` = `NO`/`FALSE` oculta; `orden` numérico; `id` vacío o
+  repetido se corrige solo; `\n` escrito a mano cuenta como salto de línea.
+
+### Cambiado
+
+- `apps-script/Codigo.gs`: se agregan `respuestas` y `plantillas` al mapa `HOJAS`
+  (`doGet` y `leerHoja` no cambian; Paso a paso y Diagnóstico no se tocan).
+- Los títulos y textos del Sheet se insertan con `textContent`/`value`, nunca con
+  `innerHTML`.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v7` (nuevo `defaults.js`);
+  `activate` conserva la caché de datos.
+- Paso a paso y Diagnóstico reintentan una vez si Apps Script falla
+  (`fetchConReintento()`); su contrato con el script no cambia.
+
+### Corregido
+
+- **TODO-12:** se eliminan los `id="copiarBtn"` duplicados (los 3 de las special
+  cards pasan a `class="copy-btn"`; el resto desaparece al generar las tarjetas).
+
+---
+
 ## [Sin publicar] — 2026-10-08 (seguridad, tema del SO y saludo por hora)
 
 ### Agregado

@@ -24,7 +24,10 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 ## Arquitectura
 
 - `index.html` — estructura y markup de la barra superior, las 5 tabs, el modal y los inputs
-- `index.js` — toda la lógica: textos, eventos, clases `HelpCenter` y
+- `defaults.js` — textos de **respaldo** de Respuestas y Plantillas (se usan solo
+  si Google Sheets no responde)
+- `apps-script/` — copia de referencia de `Codigo.gs` y archivos de migración
+- `index.js` — toda la lógica: eventos, clases `HelpCenter` y
   `DiagnosticoCenter`, modal, buscador global, atajos de teclado
 - `style.css` — estilos globales (ojo: es `style.css`, singular, no `styles.css`)
 - `manifest.json` / `sw.js` / `icon.svg` — PWA
@@ -34,10 +37,11 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 ## Tabs actuales (5)
 
 1. **Respuestas** — saludos, pagos, escalamiento, despedida, enlace de reunión.
-   Textos hardcodeados en `updateMessages()`.
+   Tarjetas generadas desde la pestaña `Respuestas` del Sheet (respaldo:
+   `RESPUESTAS_DEFAULT`); las 3 `special-card` siguen en el HTML.
 2. **Plantillas** — textos largos de preguntas frecuentes (facturación
-   electrónica, nómina, API WhatsApp, solicitudes por correo). También
-   hardcodeados en `updateMessages()`.
+   electrónica, nómina, API WhatsApp, solicitudes por correo). Tarjetas
+   generadas desde la pestaña `Plantillas` (respaldo: `PLANTILLAS_DEFAULT`).
 3. **Paso a paso** — artículos cargados desde Apps Script. Clase `HelpCenter`,
    layout sidebar + panel de detalle.
 4. **Diagnóstico** — casos cargados desde Apps Script con `?hoja=diagnostico`.
@@ -48,8 +52,10 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 
 ## Fuentes de datos
 
-- **Respuestas y Plantillas**: strings hardcodeados en `index.js`, asignados
-  por ID de textarea dentro de `updateMessages()`.
+- **Respuestas y Plantillas**: `GET` a `APPS_SCRIPT_URL?hoja=respuestas` y
+  `?hoja=plantillas` → array plano de `{id, categoria, titulo, texto, orden,
+  activo}` (cada tab es una pestaña distinta del Sheet). Ver "Respuestas y
+  Plantillas desde Sheets" más abajo.
 - **Paso a paso**: `GET` a `APPS_SCRIPT_URL` → array de `{titulo, contenido}`.
 - **Diagnóstico**: `GET` a `APPS_SCRIPT_URL?hoja=diagnostico` → array plano de
   `{categoria, subtitulo, contenido}`. El agrupamiento por categoría se hace
@@ -63,8 +69,40 @@ valida `Array.isArray(data)` antes de usarlo.
 
 ## Convenciones establecidas
 
+### Respuestas y Plantillas desde Sheets
+
+- **Respaldo siempre disponible:** al cargar, la app pinta primero
+  `RESPUESTAS_DEFAULT` / `PLANTILLAS_DEFAULT` (`defaults.js`) y luego pide el
+  Sheet. Si el fetch falla (2 intentos) se muestra un aviso discreto y se queda
+  el respaldo; si la pestaña está vacía o no tiene filas válidas, se queda el
+  respaldo sin aviso. Si el Sheet responde con filas, **reemplazan** a las del
+  respaldo (no se mezclan) y solo se vuelve a dibujar si algo cambió.
+- `normalizarFilas()` descarta filas sin `titulo`/`texto` o con `activo` en
+  `NO`/`FALSE`/`0`, sanea el `id` (`[A-Za-z0-9_-]`, único; vacío → `fila-N`),
+  ordena por `orden` (vacío al final, empates por orden de la hoja) y convierte
+  `\n` escrito a mano en salto de línea.
+- El `id` es la identidad de la tarjeta: las **fijadas** se guardan por `id`
+  (`lizto_pinned_cards`). Los `id` por defecto son los históricos
+  (`daysMessage`, `calificacion`, ...); no renombrarlos sin avisar.
+- La tarjeta con `id` **`daysMessage`** es la del Saludo y la única con chips de
+  variante (`SALUDO_VARIANTES`).
+- Los títulos, textos y categorías del Sheet se muestran siempre con
+  `textContent`/`value`, nunca con `innerHTML`.
+- Las tarjetas se generan con `construirTarjeta()`; el `textarea.card-data`
+  (oculto) sigue siendo la fuente de verdad para búsqueda, vista previa, modal y
+  copiado.
+- **Chips de categoría:** se generan de las categorías de los datos (en orden de
+  aparición) más "Herramientas" (las special cards, `data-categoria`). Solo se
+  muestran si hay 2 o más. El chip activo y el buscador global se **combinan**
+  (AND) y los badges cuentan el resultado combinado. El chip no se persiste.
+- Si cambia el contrato del Sheet (columnas) hay que tocar `normalizarFilas()`,
+  `defaults.js`, `apps-script/Codigo.gs` y `apps-script/migracion/`.
+
 ### Variables dinámicas en los textos
 
+- Tokens disponibles: `nombreAgente`, `holaCliente`, `encabezadoCliente`,
+  `saludoHora`, `SaludoHora` (todos se resuelven en `resolverTokens()`, en una
+  sola pasada).
 - El token literal **`nombreAgente`** dentro de un string se reemplaza por el
   nombre del agente vía `addUserText()` (reemplaza todas las apariciones).
   No se usa sintaxis de llaves (`{{...}}`); es un reemplazo de texto plano.
@@ -74,11 +112,13 @@ valida `Array.isArray(data)` antes de usarlo.
   (12:00–18:59) y `buenas noches` (19:00–23:59). `SaludoHora` va en mayúscula
   inicial (inicio de frase). En textos armados a mano se usa `saludoHora()` /
   `capitalizar()`. Se recalcula al cruzar de periodo y al volver a la pestaña.
-- El nombre del cliente **no es un token**: `addUserText()` antepone
-  `Hola <cliente> 👋\n` al mensaje, y `updateMessages()` arma el prefijo `hola`
-  (`Hola <cliente>,` o `Hola,`) para los mensajes que lo componen a mano.
-- Cualquier texto nuevo que necesite el nombre del agente debe pasar por
-  `addUserText()` o leer `agentInput` directamente.
+- El nombre del cliente se inserta con dos tokens: **`holaCliente`** →
+  `Hola <cliente>,` o `Hola,`, y **`encabezadoCliente`** → `Hola <cliente> 👋` +
+  salto de línea (si no hay cliente se omite junto con el salto que lo sigue;
+  debe ir solo en su línea, antes del texto). `addUserText()` lo aplica a las
+  special cards.
+- Cualquier texto nuevo que necesite datos del agente o del cliente debe usar
+  tokens y pasar por `resolverTokens()` (o `addUserText()` en special cards).
 
 ### Fallback de nombres
 
@@ -123,6 +163,9 @@ sistema operativo (ver "Sistema de temas").
   `--on-accent` es el de **botones rellenos** (cumplen contraste en ambos temas).
 - Los tokens `--bg-color`, `--principal-color`, `--secondary-color` y
   `--dark-color` existen solo por retrocompatibilidad; no usarlos en código nuevo.
+- Las listas con scroll que son columnas flex (`.help-items-list`) deben dar
+  `flex-shrink: 0` a sus ítems: con `overflow: hidden` un ítem flex se encoge y
+  recorta su texto en vez de provocar scroll.
 - Animaciones: solo `transform`/`opacity`, con `var(--ease)` y `var(--dur)`;
   el bloque `prefers-reduced-motion` las desactiva.
 
@@ -185,6 +228,14 @@ sistema operativo (ver "Sistema de temas").
   devuelve HTML seguro). Nunca insertar texto de Sheets sin escapar.
 - Los mensajes de Paso a paso y Diagnóstico se envían directamente a clientes
   en el CRM, por eso deben copiarse sin formato.
+- **La caché de datos de Google Sheets** (`respuestas-rapidas-datos` en `sw.js`)
+  solo guarda respuestas que son un array: Apps Script responde 200 incluso con
+  `{status:"error"}` y eso no debe pisar la última copia buena. Si Google responde
+  404/5xx o un error en JSON y hay copia buena, el service worker sirve la copia.
+  `activate` no borra esa caché.
+- **Apps Script:** abrir el Spreadsheet falla a veces (404 de Drive, antes del
+  `try/catch`). Por eso `Codigo.gs` cachea con `CacheService` (15 min + respaldo
+  6 h). No quitar la caché ni leer la hoja directamente en cada `doGet`.
 - Si se agrega o renombra un archivo estático, **actualizar `STATIC_ASSETS` en
   `sw.js` y subir `CACHE_NAME`** para que el precache offline quede completo.
 - **NO volver el app shell a cache-first.** `index.html`, `index.js`, `style.css`

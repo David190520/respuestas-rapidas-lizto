@@ -8,7 +8,14 @@ decisiones ya tomadas, las reglas y el detalle de cada fase.
 > este archivo → `TODO.md` (estado) → `CHANGELOG.md` (qué cambió y cuándo).
 > Implementar **una fase a la vez**, con su propia rama y PR hacia `develop`.
 
-Última actualización: 2026-10-08 (Fases 1 y 2 terminadas).
+Última actualización: 2026-10-09 (Fases 1, 2 y 3 terminadas en código).
+
+> **Notas de implementación de la Fase 3:** el Sheet tiene **dos pestañas
+> separadas** (`Respuestas` y `Plantillas`), así que no existe la columna `tab`
+> prevista en el diseño. Columnas: `id | categoria | titulo | texto | orden |
+> activo`. Los tokens `holaCliente` y `encabezadoCliente` reemplazan a los
+> prefijos que antes se armaban en código. Las special cards (pago, paso a paso,
+> reunión) siguen en el HTML y forman la categoría "Herramientas".
 
 > **Notas de implementación de las Fases 1 y 2:** el saludo usa
 > `00:00–04:59 → buenas noches`, `05:00–11:59 → buen día`,
@@ -260,6 +267,17 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 
 ## 6. Backlog (sin fecha)
 
+- **Rendimiento del Apps Script (parcialmente resuelto):** `Codigo.gs` ahora cachea y
+  sirve respaldo, y `sw.js` sirve la última copia buena ante 404 (ver CHANGELOG
+  2026-10-09). Queda lo de abajo. Observación original del 2026-10-09: tras muchas recargas de prueba,
+  el script respondió en 7–25 s y con 404 intermitentes (aun en peticiones
+  secuenciales). Cada carga de la app hace 4 peticiones (Paso a paso,
+  Diagnóstico, Respuestas, Plantillas). Mejoras posibles: servir Paso a paso y
+  Diagnóstico con *stale-while-revalidate* desde la caché del service worker
+  (se ven al instante y se actualizan en segundo plano), y/o un único endpoint
+  que devuelva las 4 hojas en una sola petición. Respuestas y Plantillas ya no
+  sufren porque pintan el respaldo al instante.
+
 - Reporte de "texto desactualizado" desde cada tarjeta (formulario/correo con el
   id de la tarjeta). Se pospone: hoy el equipo avisa de palabra.
 - Festivos de Colombia en el selector de reunión (requiere lista oficial).
@@ -281,7 +299,7 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | 0 | Rediseño lizto.co + modal, pin, fechas sin fines de semana, fix tarjetas especiales, atajos | ✅ En `develop` |
 | 1 | Escapar HTML + tema del SO | ✅ En `develop` (2026-10-08) |
 | 2 | Saludo según la hora | ✅ En `develop` (2026-10-08) |
-| 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ⬜ Pendiente |
+| 3 | Respuestas/Plantillas desde Sheets (+ TODO-10, TODO-12, TODO-18) | ✅ Código en `develop`; falta que David cargue los CSV y despliegue el Apps Script |
 | 4 | Atajos desde Sheets | ⬜ Opcional |
 | 5 | Diagnóstico con checklist y escalamiento | ⬜ Pendiente |
 | 6 | Sugerencias según el uso | ⬜ Pendiente (requiere aprobar `lizto_usage`) |
