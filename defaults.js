@@ -40,3 +40,11 @@ const PLANTILLAS_DEFAULT = [
   {"id":"solicitudCambioRazonSocial","categoria":"Solicitudes por correo","titulo":"Solicitud cambio de razón social","texto":"Por medio del correo (ayuda@soportelizto.co) debes enviarnos la solicitud correspondiente y adicional adjuntar los siguientes datos: \n\nNIT: \nRazón social actual: \nNueva razón social (nombre, identificación y demás datos necesarios): \nNombre de la sede (En caso de que cuentes con más de una sede, es importante que nos indiques a cuál de ellas corresponde la solicitud) \nArchivo adjunto de la nueva razón social \n\nEn el asunto del correo por favor indica: Solicitud cambio de razón social [nombre del negocio]"},
   {"id":"solicitudIdSetPruebas","categoria":"Facturación","titulo":"Plantilla solicitud ID Set Pruebas","texto":"SaludoHora.\n\nCordial saludo.\n\nMe comunico con ustedes ya que actualmente utilizamos **Soluciones Alegra SAS** como proveedor tecnológico para la facturación electrónica y requerimos conocer el **código del Set de Pruebas** asociado a nuestra empresa, debido a que este ya fue aceptado por la DIAN y no es posible visualizarlo nuevamente desde el portal.\n\nA continuación, compartimos los datos de la empresa para facilitar la validación:\n\n* **Razón social:**\n* **NIT:**\n* **Nombre del establecimiento (si aplica):**\n* **Correo electrónico registrado:**\n* **Nombre de la persona de contacto:**\n* **Teléfono de contacto:**\n\nAgradecemos su colaboración compartiéndonos el código del Set de Pruebas o la información necesaria para continuar con el proceso.\n\nQuedamos atentos a su respuesta.\n\nMuchas gracias."}
 ];
+
+// Atajos de respaldo (pestaña "Atajos" del Sheet: nombre | url | orden | activo).
+const ATAJOS_DEFAULT = [
+  {"nombre":"Divisor de archivos","url":"https://tecnologysmith.github.io/Dividir_archivo/","orden":1,"activo":"SI"},
+  {"nombre":"Asignaciones semanales","url":"https://desk.zoho.com/agent/liztosoftware/soporte-lizto/knowledge-base/page?articlestatus=published#Solutions/dv/578738000018678001/es","orden":2,"activo":"SI"},
+  {"nombre":"Buscar documento DIAN","url":"https://catalogo-vpfe.dian.gov.co/User/SearchDocument","orden":3,"activo":"SI"},
+  {"nombre":"Hoja de Excel - Soporte","url":"https://docs.google.com/spreadsheets/d/1VTVHy6EUYLB9_v_zdfg3zM4y-m4OY7REYw-IT5hANGk/edit?pli=1&gid=0#gid=0","orden":4,"activo":"SI"}
+];

@@ -15,6 +15,31 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-08 (Fase 4: Atajos desde Sheets)
+
+### Agregado
+
+- **Los Atajos se leen de la pestaña `Atajos`** del Sheet (`?hoja=atajos`, columnas
+  `nombre | url | orden | activo`). Los 4 atajos actuales quedan como respaldo en
+  `defaults.js` (`ATAJOS_DEFAULT`): se pintan al instante y el Sheet los
+  reemplaza solo si trae filas válidas (pestaña vacía, error o sin conexión
+  conservan el respaldo). Solo se redibuja si algo cambió y se respeta el
+  buscador activo.
+- `normalizarAtajos()`: solo enlaces `https://` bien formados (se descartan
+  `javascript:`, `data:`, `http:` y rutas relativas), filas sin nombre/URL o
+  inactivas, y duplicados; orden por `orden`.
+
+### Cambiado
+
+- `renderAtajos()` crea las tarjetas con DOM en vez de `innerHTML` (los datos
+  ahora vienen del Sheet) y conserva el aviso "sin resultados" al redibujar.
+- `apps-script/Codigo.gs`: `atajos: 'Atajos'` en `HOJAS` (requiere pegarlo y
+  desplegar una **nueva versión**; ver `apps-script/migracion/LEEME.md`, 2c).
+- `ordenarFilas()` compartido entre `normalizarFilas()` y `normalizarAtajos()`.
+- `sw.js`: `CACHE_NAME` a `respuestas-rapidas-v8`.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (detección de listas en Diagnóstico)
 
 ### Corregido

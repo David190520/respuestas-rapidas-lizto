@@ -38,12 +38,9 @@ function buildSaludoText(base) {
 
 const EXTERNAL_LINK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>`;
 
-const atajos = [
-  { nombre: "Divisor de archivos", url: "https://tecnologysmith.github.io/Dividir_archivo/" },
-  { nombre: "Asignaciones semanales", url: "https://desk.zoho.com/agent/liztosoftware/soporte-lizto/knowledge-base/page?articlestatus=published#Solutions/dv/578738000018678001/es" },
-  { nombre: "Buscar documento DIAN", url: "https://catalogo-vpfe.dian.gov.co/User/SearchDocument" },
-  { nombre: "Hoja de Excel - Soporte", url: "https://docs.google.com/spreadsheets/d/1VTVHy6EUYLB9_v_zdfg3zM4y-m4OY7REYw-IT5hANGk/edit?pli=1&gid=0#gid=0" },
-];
+// Atajos: se pintan primero los de respaldo (ATAJOS_DEFAULT, defaults.js) y luego
+// los de la pestaña "Atajos" del Sheet (ver cargarAtajosDesdeSheets).
+let atajos = [];
 
 // ============= DATOS DE AGENTES Y HORARIOS =============
 
@@ -184,7 +181,42 @@ function normalizarFilas(rows) {
     });
   });
 
-  return salida.sort((a, b) => (a.orden === b.orden ? 0 : a.orden < b.orden ? -1 : 1) || a.pos - b.pos);
+  return ordenarFilas(salida);
+}
+
+/** Orden por la columna `orden` (vacío = al final) y, en empates, el orden de la hoja. */
+function ordenarFilas(filas) {
+  return filas.sort((a, b) => (a.orden === b.orden ? 0 : a.orden < b.orden ? -1 : 1) || a.pos - b.pos);
+}
+
+/**
+ * Filas de la pestaña "Atajos" (nombre | url | orden | activo) -> atajos válidos.
+ * Solo se aceptan enlaces https:// bien formados: cualquier otra cosa
+ * (javascript:, http://, rutas relativas) se descarta.
+ */
+function normalizarAtajos(rows) {
+  const vistos = new Set();
+  const salida = [];
+
+  (Array.isArray(rows) ? rows : []).forEach((row, i) => {
+    if (!row || typeof row !== "object") return;
+
+    const nombre = String(row.nombre ?? "").trim();
+    const url = String(row.url ?? "").trim();
+    if (!nombre || !/^https:\/\//i.test(url)) return;
+    try { new URL(url); } catch { return; }
+
+    if (VALORES_INACTIVO.includes(String(row.activo ?? "").trim().toLowerCase())) return;
+
+    const clave = `${nombre.toLowerCase()}|${url}`;
+    if (vistos.has(clave)) return;
+    vistos.add(clave);
+
+    const orden = parseFloat(String(row.orden ?? "").replace(",", "."));
+    salida.push({ nombre, url, orden: Number.isFinite(orden) ? orden : Infinity, pos: i });
+  });
+
+  return ordenarFilas(salida);
 }
 
 /** fetch con reintentos: Apps Script devuelve 404/errores transitorios de vez en cuando. */
@@ -697,20 +729,41 @@ function showNoResults(tabId, show) {
 function renderAtajos() {
   const grid = document.getElementById('atajos')?.querySelector('.atajos-grid');
   if (!grid) return;
-  grid.innerHTML = '';
+  grid.querySelectorAll('.atajo-card').forEach(card => card.remove());
+
   atajos.forEach(({ nombre, url }) => {
     const card = document.createElement('div');
     card.className = 'atajo-card';
     card.dataset.nombre = nombre.toLowerCase();
-    card.innerHTML = `
-      <h3>${nombre}</h3>
-      <a href="${url}" target="_blank" rel="noopener noreferrer" class="atajo-open-btn">
-        ${EXTERNAL_LINK_SVG}
-        Abrir
-      </a>
-    `;
+
+    const titulo = document.createElement('h3');
+    titulo.textContent = nombre;
+
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.target = '_blank';
+    enlace.rel = 'noopener noreferrer';
+    enlace.className = 'atajo-open-btn';
+    enlace.insertAdjacentHTML('beforeend', EXTERNAL_LINK_SVG);   // SVG fijo del código
+    enlace.append(' Abrir');
+
+    card.append(titulo, enlace);
     grid.appendChild(card);
   });
+}
+
+/** Lee la pestaña "Atajos"; si falla o no tiene filas válidas se conservan los de respaldo. */
+async function cargarAtajosDesdeSheets() {
+  const filas = await fetchHoja('atajos');
+  if (filas === null) return;
+
+  const nuevos = normalizarAtajos(filas);
+  if (!nuevos.length) return;
+  if (JSON.stringify(nuevos) === JSON.stringify(atajos)) return;
+
+  atajos = nuevos;
+  renderAtajos();
+  reaplicarFiltros();   // un buscador activo debe seguir aplicándose a las tarjetas nuevas
 }
 
 function globalSearchFilter(query) {
@@ -2068,8 +2121,10 @@ document.addEventListener("DOMContentLoaded", () => {
     tarjetasData[tab] = normalizarFilas(cfg.defecto());
     renderTarjetas(tab);
   });
+  atajos = normalizarAtajos(typeof ATAJOS_DEFAULT !== "undefined" ? ATAJOS_DEFAULT : []);
   renderAtajos();
   cargarTarjetasDesdeSheets();
+  cargarAtajosDesdeSheets();
 
   // Inicializar saludo card + chips de variantes
   const variantsEl = document.getElementById('modal-variants');
