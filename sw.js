@@ -1,6 +1,6 @@
 // Subir la versión cada vez que cambie STATIC_ASSETS o un archivo estático,
 // de lo contrario los usuarios siguen recibiendo la copia cacheada anterior.
-const CACHE_NAME = "respuestas-rapidas-v8";
+const CACHE_NAME = "respuestas-rapidas-v9";
 
 // Caché aparte para las respuestas de Google Sheets: sobrevive a los cambios de
 // CACHE_NAME (activate no la borra) y guarda la ÚLTIMA respuesta buena de cada
@@ -15,7 +15,8 @@ const STATIC_ASSETS = [
   "./style.css",
   "./manifest.json",
   "./icon.svg",
-  "./defaults.js"
+  "./defaults.js",
+  "./tickets.js"
 ];
 
 // El "app shell" (HTML/JS/CSS) va network-first: es lo que cambia en cada

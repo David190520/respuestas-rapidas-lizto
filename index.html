@@ -70,6 +70,7 @@
         <button class="tab-button" data-tab="plantillas">Plantillas<span class="tab-badge" id="badge-plantillas"></span></button>
         <button class="tab-button" data-tab="pasoPaso">Paso a paso<span class="tab-badge" id="badge-pasoPaso"></span></button>
         <button class="tab-button" data-tab="diagnostico">Diagnóstico<span class="tab-badge" id="badge-diagnostico"></span></button>
+        <button class="tab-button" data-tab="escalamiento">Escalamiento</button>
         <button class="tab-button" data-tab="atajos">Atajos<span class="tab-badge" id="badge-atajos"></span></button>
       </div>
 
@@ -300,20 +301,56 @@
               <div id="diag-article-content" class="help-body"></div>
               <section class="escalamiento" aria-label="Escalamiento a desarrollo">
                 <button type="button" id="diag-escalar-btn" class="escalar-btn">
-                  No encontré la causa <span aria-hidden="true">→</span> preparar escalamiento
+                  No encontré la causa <span aria-hidden="true">→</span> preparar ticket de escalamiento
                 </button>
-                <div id="diag-escalar-panel" class="escalar-panel" hidden>
-                  <p class="escalar-ayuda">Completa los campos vacíos (negocio, NIT, detalle) y copia el mensaje para desarrollo.</p>
-                  <textarea id="diag-escalar-text" class="escalar-text" spellcheck="false" aria-label="Mensaje de escalamiento"></textarea>
-                  <div class="escalar-actions">
-                    <button type="button" id="diag-escalar-copy" class="escalar-copy">Copiar mensaje</button>
-                    <button type="button" id="diag-escalar-close" class="escalar-close">Cerrar</button>
-                  </div>
-                </div>
+                <p class="escalar-nota">Abre la pestaña Escalamiento con la plantilla sugerida y lo que ya revisaste.</p>
               </section>
             </article>
           </div>
         </main>
+      </div>
+    </div>
+
+    <div id="escalamiento" class="tab-content">
+      <div class="esc-layout">
+        <section class="esc-form" aria-label="Datos del ticket">
+          <div class="esc-cabecera">
+            <div>
+              <h2 class="esc-titulo">Ticket de escalamiento</h2>
+              <p class="esc-sub">Zoho Desk <span aria-hidden="true">›</span> Agregar ticket <span aria-hidden="true">›</span> plantilla de ticket</p>
+            </div>
+            <button type="button" id="esc-nuevo" class="esc-ghost">Nuevo ticket</button>
+          </div>
+
+          <p id="esc-origen" class="esc-origen" hidden></p>
+
+          <div class="esc-grupo">
+            <span class="esc-label" id="esc-label-plantilla">Plantilla</span>
+            <div id="esc-plantillas" class="esc-plantillas" role="radiogroup" aria-labelledby="esc-label-plantilla"></div>
+            <p id="esc-ayuda-plantilla" class="esc-ayuda" hidden></p>
+          </div>
+
+          <p id="esc-agente" class="esc-agente"></p>
+          <div id="esc-campos" class="esc-campos"></div>
+        </section>
+
+        <aside class="esc-preview" aria-label="Vista previa del ticket">
+          <div class="esc-preview-cabecera">
+            <div>
+              <h2 class="esc-titulo">Vista previa</h2>
+              <p id="esc-nombre-plantilla" class="esc-sub"></p>
+            </div>
+          </div>
+          <div id="esc-preview-text" class="esc-preview-text" tabindex="0"></div>
+          <p id="esc-faltantes" class="esc-faltantes" role="status" aria-live="polite"></p>
+          <button type="button" id="esc-copiar" class="esc-copiar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="esc-copiar-texto">Copiar ticket completo</span>
+          </button>
+        </aside>
       </div>
     </div>
 
@@ -348,6 +385,7 @@
   </div>
 
   <script src="defaults.js"></script>
+  <script src="tickets.js"></script>
   <script src="index.js"></script>
   </body>
 </html>

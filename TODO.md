@@ -36,6 +36,8 @@ Detalle e historial completo en `CHANGELOG.md`.
 - **TODO-16 — Persistir tema y densidad** *(descartado 2026-10-09)*
   Se resolvió distinto: el tema sigue al sistema operativo (TODO-24) y la
   densidad no se persiste, por decisión de David.
+- **TODO-32 — Pestaña Escalamiento con las plantillas de Zoho Desk** *(2026-10-09)*
+  Ver CHANGELOG. Pendiente de David: confirmar la plantilla de Importaciones.
 - **TODO-31b — Atajos desde Sheets** *(2026-10-08)*
   Pestaña `Atajos`, respaldo en `defaults.js`, solo enlaces `https://`.
 - **TODO-28 — Sugerencias según el uso** *(2026-10-08)*
