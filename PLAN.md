@@ -277,9 +277,11 @@ propia). Plantillas confirmadas: Genéricos, Facturación ("Caos" en Zoho),
 Reservas, Reportes, Habilitación Electrónica, Importaciones, Solicitudes de
 Clientes y Creación nueva cuenta manual.
 
-Pendiente: confirmar con David los campos de **Importaciones** (provisional) y,
-si lo desea, recortar el bloque de datos genéricos de "Cuenta nueva manual" (la
-plantilla real lo trae, pero allí tenant/sede aún no existen).
+**Actualización (2026-10-10):** Importaciones confirmada (igual a Genéricos con
+el bloque "Casos Varios") y el ticket se copia con el formato de Zoho (HTML +
+texto plano de respaldo), porque la descripción de Zoho es un editor enriquecido.
+Pendiente opcional: recortar el bloque de datos genéricos de "Cuenta nueva
+manual" (la plantilla real lo trae, pero allí tenant/sede aún no existen).
 
 ## 6. Backlog (sin fecha)
 
@@ -324,7 +326,7 @@ plantilla real lo trae, pero allí tenant/sede aún no existen).
 | 5 | Diagnóstico con checklist y escalamiento | ✅ En `develop` (2026-10-08) |
 | 6 | Sugerencias según el uso | ✅ En `develop` (2026-10-08); `lizto_usage` aprobada |
 | 7 | Modo Flujo | ⏸️ Aplazada por decisión de David |
-| 8 | Pestaña Escalamiento (plantillas de ticket de Zoho Desk) | ✅ En `develop` (2026-10-09); Importaciones provisional |
+| 8 | Pestaña Escalamiento (plantillas de ticket de Zoho Desk) | ✅ En `develop` (2026-10-09); formato de Zoho e Importaciones confirmada (2026-10-10) |
 
 > Al terminar una fase: marcarla aquí, mover su TODO a ✅ en `TODO.md` y
 > registrar el cambio en `CHANGELOG.md`.

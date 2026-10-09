@@ -854,6 +854,43 @@ function copiarTextoPlano(texto) {
   return copiarConFallback(texto);
 }
 
+/**
+ * Copia texto ENRIQUECIDO (HTML) con el texto plano como respaldo en el mismo
+ * portapapeles. Solo para destinos con editor de texto enriquecido (la descripción
+ * de un ticket de Zoho Desk): pegado en un campo de texto plano sale el texto plano.
+ * El HTML lo genera tickets.js con TODOS los valores escapados.
+ */
+async function copiarRico(texto, html) {
+  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([texto], { type: "text/plain" })
+      })]);
+      return;
+    } catch (error) {
+      // se prueba el respaldo
+    }
+  }
+
+  // Respaldo: seleccionar el HTML en un contenedor editable y copiar la selección
+  const contenedor = document.createElement("div");
+  contenedor.contentEditable = "true";
+  contenedor.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none;";
+  contenedor.innerHTML = html;
+  document.body.appendChild(contenedor);
+  const seleccion = window.getSelection();
+  const rango = document.createRange();
+  rango.selectNodeContents(contenedor);
+  seleccion.removeAllRanges();
+  seleccion.addRange(rango);
+  let copiado = false;
+  try { copiado = document.execCommand("copy"); } catch (error) { copiado = false; }
+  seleccion.removeAllRanges();
+  document.body.removeChild(contenedor);
+  if (!copiado) await copiarTextoPlano(texto);
+}
+
 function copiarConFallback(texto) {
   return new Promise((resolve, reject) => {
     const ta = document.createElement("textarea");
@@ -1782,7 +1819,6 @@ class EscalamientoCenter {
 
     const textos = [];
     if (this.estado.sugeridaId) textos.push("Sugerida según el caso de Diagnóstico; puedes elegir otra.");
-    if (this.plantilla.provisional) textos.push("Estructura provisional: confirma los encabezados con la plantilla de Zoho Desk.");
     this.el.ayuda.hidden = textos.length === 0;
     this.el.ayuda.textContent = textos.join(" ");
 
@@ -1927,12 +1963,27 @@ class EscalamientoCenter {
   }
 
   renderPreview() {
-    const lineas = construirTicket(this.plantilla, this.valoresCompletos());
+    const lineas = construirTicket(this.plantilla, this.valoresCompletos()).filter(linea => linea.tipo !== "sep");
     this.el.preview.replaceChildren(...lineas.map(linea => {
       const fila = document.createElement("div");
       fila.className = `esc-linea esc-linea--${linea.tipo}`;
       if (linea.tipo === "valor" && !linea.texto) fila.classList.add("esc-linea--vacia");
-      fila.textContent = linea.texto || "\u00a0";   // solo la vista previa; el copiado usa ticketATexto()
+
+      if (linea.tipo === "encabezado") {
+        // Como en Zoho: el título en negrita y lo de paréntesis normal y más pequeño
+        const { titulo, nota } = partirEncabezadoTicket(linea.texto);
+        const fuerte = document.createElement("strong");
+        fuerte.textContent = titulo;
+        fila.append(fuerte);
+        if (nota) {
+          const aclaracion = document.createElement("span");
+          aclaracion.className = "esc-nota";
+          aclaracion.textContent = ` ${nota}`;
+          fila.append(aclaracion);
+        }
+      } else {
+        fila.textContent = linea.texto || "\u00a0";   // solo la vista previa; el copiado usa ticketATexto() / ticketAHtml()
+      }
       return fila;
     }));
 
@@ -2026,9 +2077,14 @@ class EscalamientoCenter {
   copiar() {
     const boton = this.el.copiar;
     if (boton.disabled) return;
-    const texto = ticketATexto(construirTicket(this.plantilla, this.valoresCompletos()));   // texto plano
+    const lineas = construirTicket(this.plantilla, this.valoresCompletos());
+    // Dos formatos a la vez: HTML con el formato de la plantilla de Zoho (títulos en
+    // negrita, líneas, aviso en rojo) y texto plano de respaldo. Es la excepción a
+    // "copiar siempre texto plano": el destino es el editor enriquecido de Zoho.
+    const texto = ticketATexto(lineas);
+    const formato = ticketAHtml(lineas);
 
-    copiarTextoPlano(texto)
+    copiarRico(texto, formato)
       .then(() => {
         const original = this.el.copiarTexto.textContent;
         this.el.copiarTexto.textContent = "¡Copiado! ✅";

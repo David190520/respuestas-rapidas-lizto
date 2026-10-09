@@ -107,20 +107,13 @@ const PLANTILLAS_TICKET = [
     palabras: ['habilitaci']
   },
   {
-    // PROVISIONAL: ningún ticket de feb–oct 2026 usó esta plantilla, así que sus
-    // campos son una propuesta. Confirmar los encabezados con la plantilla de Zoho.
+    // Confirmada por David: igual a Genéricos, pero el bloque se titula "Casos Varios".
     id: 'importaciones',
     corto: 'Importaciones',
     nombre: 'Escalamiento de Casos Importaciones',
-    provisional: true,
     tipo: 'error', ruta: true, verificacion: true,
-    bloque: 'Importaciones',
-    campos: [
-      TK_TENANT, TK_SEDE,
-      { id: 'moduloImportacion', etiqueta: 'Modulo a importar', obligatorio: true, ayuda: 'Clientes, productos, servicios…' },
-      { id: 'archivoImportacion', etiqueta: 'Archivo de importación', obligatorio: true, ayuda: 'Indica que lo adjuntas al ticket' },
-      TK_ERROR, TK_PANTALLAZO_ERROR
-    ],
+    bloque: 'Casos Varios',
+    campos: [TK_TENANT, TK_SEDE, TK_CONSECUTIVO, TK_FECHA, TK_CAJA, TK_TERCERO],
     palabras: ['importa', 'carga masiva']
   },
   {
@@ -221,7 +214,7 @@ function lineasCampoTicket(campo, valores) {
  * Arma el ticket completo, con TODOS los encabezados de la plantilla y en su orden.
  * `valores`: { agente, cliente, explicacionCliente, ruta, explicacion, verificacion,
  *              datos: { [idCampo]: texto } }
- * Devuelve líneas { texto, tipo } (tipo: encabezado | subencabezado | valor | dato | fijo | sep)
+ * Devuelve líneas { texto, tipo } (tipo: encabezado | subencabezado | valor | dato | aviso | fijo | sep)
  * para poder pintar la vista previa; `ticketATexto()` las une en el texto plano a copiar.
  */
 function construirTicket(plantilla, valores = {}) {
@@ -242,7 +235,7 @@ function construirTicket(plantilla, valores = {}) {
   );
 
   const cuerpoDatos = [
-    { texto: TICKET_TEXTOS.datosAviso, tipo: 'fijo' },
+    { texto: TICKET_TEXTOS.datosAviso, tipo: 'aviso' },
     { texto: plantilla.bloque, tipo: 'subencabezado' },
     ...plantilla.campos.flatMap(campo => lineasCampoTicket(campo, valores))
   ];
@@ -274,4 +267,67 @@ function faltantesTicket(plantilla, valores = {}) {
     .filter(campo => (campo.exigir ?? campo.obligatorio))
     .filter(campo => !String(valores.datos?.[campo.id] ?? '').trim())
     .map(campo => campo.etiqueta.replace(/\s*\(.*\)\s*$/, ''));
+}
+
+// ----- Formato de Zoho Desk (HTML para el editor de texto enriquecido) -----
+//
+// La "Descripción" de un ticket de Zoho es un editor de texto enriquecido y la
+// plantilla trae formato: títulos en negrita de 16 px (lo que va entre paréntesis
+// queda normal), una línea horizontal entre secciones, el aviso "SI ES CASO LO
+// REQUIERE…" en blanco sobre rojo y los títulos de bloque / "Uso exclusivo" en
+// negrita. Se reproduce el mismo marcado que Zoho guarda en los tickets reales
+// (verificado en 397 tickets) para que al pegar quede igual a la plantilla.
+// Pegado en un campo de texto plano, el portapapeles cae a ticketATexto().
+
+function escaparHtmlTicket(texto) {
+  return String(texto)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** "Explicación Cliente (Copia y pega…)" -> { titulo: "Explicación Cliente", nota: "(Copia y pega…)" } */
+function partirEncabezadoTicket(texto) {
+  const i = texto.indexOf(' (');
+  return i === -1 ? { titulo: texto, nota: '' } : { titulo: texto.slice(0, i), nota: texto.slice(i + 1) };
+}
+
+const ZOHO_ESTILO_RAIZ = 'direction: ltr; font-size: 13px; font-family: Arial, Helvetica, sans-serif';
+const ZOHO_ESTILO_TITULO = 'font-size: 16px; line-height: normal';
+const ZOHO_ESTILO_AVISO = 'background-color: rgb(255, 51, 51)';
+
+function ticketAHtml(lineas) {
+  const vacia = '<div><br></div>';
+  const esc = escaparHtmlTicket;
+  const linkificar = (texto) => esc(texto).replace(/https?:\/\/[^\s)&]+/g, (url) => `<a href="${url}">${url}</a>`);
+  let html = '';
+  let hayEncabezado = false;
+
+  for (const linea of lineas) {
+    switch (linea.tipo) {
+      case 'sep':
+        break;   // el aire entre secciones lo dan la línea horizontal y las líneas vacías
+      case 'encabezado': {
+        const { titulo, nota } = partirEncabezadoTicket(linea.texto);
+        html += (hayEncabezado ? vacia : '') + '<div><hr></div>';
+        html += `<div><span style="${ZOHO_ESTILO_TITULO}"><b>${esc(titulo)}&nbsp;</b></span>` +
+                (nota ? `<span>${linkificar(nota)}</span>` : '') + '</div>' + vacia;
+        hayEncabezado = true;
+        break;
+      }
+      case 'aviso':
+        html += `<div><font color="#ffffff"><span style="${ZOHO_ESTILO_AVISO}"><b>${esc(linea.texto)}</b></span></font></div>` + vacia;
+        break;
+      case 'subencabezado':
+      case 'fijo':
+        html += `<div><b>${esc(linea.texto)}</b></div>`;
+        break;
+      case 'dato':
+        html += `<div>${esc(linea.texto)}<br></div>`;
+        break;
+      default:   // valor
+        html += linea.texto ? `<div>${esc(linea.texto)}</div>` : vacia;
+    }
+  }
+  html += vacia + '<div><hr></div>';
+  return `<div style="${ZOHO_ESTILO_RAIZ}">${html}</div>`;
 }

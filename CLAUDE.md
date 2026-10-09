@@ -27,7 +27,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 - `defaults.js` — textos de **respaldo** de Respuestas y Plantillas (se usan solo
   si Google Sheets no responde)
 - `tickets.js` — plantillas de ticket de escalamiento de Zoho Desk y la lógica
-  pura para armar el texto (sin DOM); se prueba por separado de la interfaz
+  pura para armar el texto plano y el HTML con formato (sin DOM); se prueba por
+  separado de la interfaz
 - `apps-script/` — copia de referencia de `Codigo.gs` y archivos de migración
 - `index.js` — toda la lógica: eventos, clases `HelpCenter` y
   `DiagnosticoCenter`, modal, buscador global, atajos de teclado
@@ -239,13 +240,28 @@ sistema operativo (ver "Sistema de temas").
   "Emrpesa", "Pantallazo de la factura" también en Reportes): lo que se pega debe
   coincidir con la plantilla. Si Zoho cambia una plantilla, actualizar
   `tickets.js` y volver a comparar contra tickets reales.
-- **Importaciones es provisional** (`provisional: true`): ningún ticket de feb–oct
-  2026 la usó, sus campos son una propuesta y la interfaz lo avisa. Confirmar con
-  la plantilla de Zoho y quitar la marca.
-- El texto copiado incluye **todos los encabezados** de la plantilla en su orden,
-  con los valores debajo y los campos sin datos vacíos, y termina con la sección
-  de "Analisis Equipo Desarrollo" vacía (la llena desarrollo). Es texto plano:
-  `ticketATexto(construirTicket(plantilla, valores))`.
+- **Importaciones** (confirmada por David con la plantilla real) es igual a
+  Genéricos pero su bloque de datos se titula **"Casos Varios"**. Por eso en los
+  tickets antiguos "Casos Varios" aparece como variante: son de Importaciones.
+- El ticket incluye **todos los encabezados** de la plantilla en su orden, con los
+  valores debajo y los campos sin datos vacíos, y termina con la sección de
+  "Analisis Equipo Desarrollo" vacía (la llena desarrollo).
+- **Se copia en dos formatos a la vez** (`copiarRico()`): HTML con el formato de
+  la plantilla de Zoho y texto plano de respaldo. La "Descripción" del ticket es
+  un editor de texto enriquecido, y pegar solo texto plano perdía los títulos en
+  negrita de 16 px, las líneas horizontales y el aviso en rojo.
+  `ticketAHtml()` reproduce el marcado que Zoho guarda en los tickets reales
+  (títulos `<span style="font-size: 16px"><b>`, lo de paréntesis normal,
+  `<hr>` entre secciones, aviso blanco sobre rojo `rgb(255, 51, 51)`, títulos de
+  bloque y líneas "Uso exclusivo" en negrita). Pegado en un campo de texto
+  plano sale `ticketATexto()`. Si el navegador no soporta `ClipboardItem` se usa un
+  contenedor editable + `execCommand('copy')`, y como último recurso texto plano.
+- **Excepción a "copiar siempre texto plano":** solo el ticket de Zoho va con
+  formato, porque su destino es un editor enriquecido y no un mensaje a un
+  cliente. Todo lo demás (respuestas, plantillas, Paso a paso, Diagnóstico) sigue
+  copiándose en texto plano. El HTML se genera con **todos los valores
+  escapados** (`escaparHtmlTicket()`); es la única inserción de HTML que hace la
+  app para el portapapeles.
 - Datos de entrada: `- (*)Etiqueta: valor` (el `(*)` marca los obligatorios);
   `formato: 'encabezado'` pone el valor en la línea siguiente, `'etiqueta'` sin
   guion (`Pais: valor`) y `'plan'` genera `- [x] Plan`. `exigir: false` muestra el
@@ -313,7 +329,9 @@ sistema operativo (ver "Sistema de temas").
   despliegue y la forma de los objetos que devuelve).
 - **El texto copiado al portapapeles SIEMPRE debe ser texto plano.** El
   formateo de `formatearContenidoPasoAPaso()` es exclusivo de la vista previa;
-  al copiar se usa siempre el string crudo del objeto de datos.
+  al copiar se usa siempre el string crudo del objeto de datos. **Única
+  excepción:** el ticket de la pestaña Escalamiento, que se copia además como
+  HTML para el editor de Zoho Desk (ver "Escalamiento de tickets").
 - **El contenido que viene de Google Sheets se escapa siempre** antes de
   mostrarlo con `innerHTML` (`escapeHtml()`; `linkify()` recibe texto plano y
   devuelve HTML seguro). Nunca insertar texto de Sheets sin escapar.
