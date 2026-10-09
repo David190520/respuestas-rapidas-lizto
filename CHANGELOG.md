@@ -15,6 +15,51 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-09 (pestaña Escalamiento)
+
+### Agregado
+
+- **Pestaña "Escalamiento"** para armar el ticket de Zoho Desk con la plantilla
+  correcta. Las **8 plantillas** (Genéricos, Facturación, Reservas, Reportes,
+  Habilitación Electrónica, Importaciones, Solicitudes de clientes y Cuenta nueva
+  manual) reproducen **todos sus encabezados** (Agente, Cliente que reporta,
+  Explicación Cliente, Ruta de acceso, Explicación, Datos de entrada propios,
+  Verificación realizada por agente y Analisis Equipo Desarrollo). Los datos que
+  no se pueden adivinar se piden en campos y se incorporan **en vivo** a la vista
+  previa; un botón copia el ticket completo en texto plano. Aviso de datos
+  obligatorios `(*)` faltantes.
+- **Sugerencia de plantilla por nombre** a partir de la categoría/título del caso
+  de Diagnóstico (Agenda → Reservas, Informe → Reportes, Facturación →
+  Facturación…); se puede elegir cualquier otra.
+- **Desde Diagnóstico:** el botón "No encontré la causa" abre la pestaña con la
+  plantilla sugerida, la "Explicación" con el título del caso y "Verificación
+  realizada por agente" con los pasos marcados. Pide confirmación si ya hay un
+  ticket en preparación.
+- `tickets.js`: plantillas y armado del texto como lógica pura (sin DOM).
+  Verificado contra 397 tickets reales de Zoho (7 plantillas): todas las líneas
+  fijas presentes y en el mismo orden que la mayoría de los tickets.
+
+### Cambiado
+
+- El cuadro de escalamiento genérico de Diagnóstico desaparece (lo reemplaza esta
+  pestaña); el botón conserva su énfasis al marcar todos los pasos.
+- `sw.js`: `tickets.js` en `STATIC_ASSETS`; `CACHE_NAME` a `respuestas-rapidas-v9`.
+
+### Corregido
+
+- **La barra superior y paneles `sticky` no se quedaban fijos.** `overflow-x:
+  hidden` en `body` lo convertía en contenedor de scroll. Ahora es `overflow-x:
+  clip`. En móvil la barra superior queda sin fijar para no ocupar media pantalla.
+
+### Notas
+
+- **Importaciones** es provisional: ningún ticket de feb–oct 2026 la usó. Sus
+  campos son una propuesta y la interfaz lo avisa hasta confirmarlos.
+- Se conservan las erratas de Zoho ("Emrpesa", "Caos Facturacion", "Pantallazo de
+  la factura" en Reportes) para que el texto coincida con la plantilla.
+
+---
+
 ## [Sin publicar] — 2026-10-08 (Fase 4: Atajos desde Sheets)
 
 ### Agregado

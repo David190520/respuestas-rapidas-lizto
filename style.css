@@ -127,7 +127,11 @@
 /* ============= BASE ============= */
 
 html {
+  /* `clip` recorta el desborde horizontal SIN crear un contenedor de scroll:
+     con `hidden` en <body> la barra superior y los paneles `sticky` dejan de
+     pegarse al hacer scroll. */
   overflow-x: hidden;
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
@@ -136,7 +140,7 @@ body {
   padding: 0;
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
   font-family: var(--font);
   color: var(--text-primary);
   background:
@@ -1715,81 +1719,356 @@ textarea:focus {
   transform: scale(0.98);
 }
 
-.escalar-panel {
+.escalar-nota {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* ============= ESCALAMIENTO (tickets de Zoho Desk) ============= */
+
+.esc-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 20px;
+  width: calc(100% - 40px);
+  max-width: 1240px;
+  margin: 0 auto;
+  align-items: start;
+}
+
+.esc-form,
+.esc-preview {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-lg);
+  padding: 22px;
+  box-shadow: var(--shadow-sm);
+}
+
+.esc-preview {
+  position: sticky;
+  top: 92px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius-lg);
-  background: var(--bubble-bg);
-  animation: fadeInUp 260ms var(--ease);
+  max-height: calc(100dvh - 112px);
 }
 
-.escalar-panel[hidden] {
+.esc-cabecera,
+.esc-preview-cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.esc-titulo {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text-primary);
+}
+
+.esc-sub {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.esc-ghost {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--dur) ease, color var(--dur) ease;
+}
+
+.esc-ghost:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+.esc-origen {
+  margin: 14px 0 0;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+}
+
+.esc-origen[hidden],
+.esc-ayuda[hidden] {
   display: none;
 }
 
-.escalar-ayuda {
-  margin: 0;
+.esc-grupo {
+  margin-top: 18px;
+}
+
+.esc-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.esc-plantillas,
+.esc-opciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.esc-pill,
+.esc-opcion {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
   font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background-color var(--dur) ease, border-color var(--dur) ease,
+              color var(--dur) ease, transform 120ms ease;
+}
+
+.esc-pill:hover,
+.esc-opcion:hover {
+  border-color: var(--accent-border);
+  color: var(--text-primary);
+}
+
+.esc-pill:active,
+.esc-opcion:active {
+  transform: scale(0.96);
+}
+
+.esc-pill[aria-checked="true"],
+.esc-opcion[aria-checked="true"] {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+}
+
+.esc-pill-sugerida {
+  padding: 1px 7px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+  background: var(--accent-dim);
+  border-radius: 999px;
+}
+
+.esc-pill[aria-checked="true"] .esc-pill-sugerida {
+  color: var(--on-accent);
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.esc-ayuda {
+  margin: 10px 0 0;
+  font-size: 12.5px;
   font-weight: 600;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.esc-agente {
+  margin: 18px 0 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.esc-agente--vacio {
+  color: var(--warn);
+}
+
+.esc-campos {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.esc-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.esc-campo label {
+  font-size: 12px;
+  font-weight: 700;
   color: var(--text-secondary);
 }
 
-.escalar-text {
-  min-height: 260px;
-  max-height: none;
+.esc-obl {
+  color: var(--highlight);
+}
+
+.esc-textarea {
+  min-height: 92px;
+  max-height: 280px;
   resize: vertical;
-  font-size: 14px;
+}
+
+.esc-datos {
+  margin: 0;
+  padding: 16px;
+  min-width: 0;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
+  background: var(--bg-soft);
+}
+
+.esc-datos legend {
+  padding: 0 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--accent-ink);
+}
+
+.esc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.esc-campo--ancho {
+  grid-column: 1 / -1;
+}
+
+.esc-preview-text {
+  flex: 1;
+  min-height: 240px;
+  overflow: auto;
+  padding: 14px 16px;
+  font-size: 13px;
   line-height: 1.6;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-md);
   scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
-.escalar-actions {
+.esc-linea {
+  min-height: 1.6em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.esc-linea--encabezado {
+  margin-top: 2px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.esc-linea--subencabezado {
+  font-weight: 700;
+  color: var(--accent-ink);
+}
+
+.esc-linea--fijo {
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.esc-linea--dato {
+  color: var(--text-primary);
+}
+
+.esc-linea--vacia {
+  border-bottom: 1px dashed var(--border-base);
+}
+
+.esc-faltantes {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--warn);
+}
+
+.esc-faltantes--ok {
+  color: var(--ok);
+}
+
+.esc-copiar {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.escalar-copy {
-  padding: 10px 20px;
-  font-size: 14px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 48px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--on-accent);
   background: var(--accent-solid);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
+  box-shadow: 0 10px 24px -10px var(--accent);
   transition: background-color var(--dur) ease, transform 120ms ease;
 }
 
-.escalar-copy:hover {
+.esc-copiar:hover {
   background: var(--accent-solid-hover);
 }
 
-.escalar-copy:active {
-  transform: scale(0.97);
+.esc-copiar:active {
+  transform: scale(0.98);
 }
 
-.escalar-copy:disabled {
+.esc-copiar:disabled {
   cursor: default;
 }
 
-.escalar-close {
-  padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  background: transparent;
-  border: 1px solid var(--border-base);
-  border-radius: var(--radius-md);
-  cursor: pointer;
+@media screen and (max-width: 1024px) {
+  .esc-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .esc-preview {
+    position: static;
+    max-height: none;
+  }
 }
 
-.escalar-close:hover {
-  border-color: var(--border-strong);
-  color: var(--text-primary);
+@media screen and (max-width: 768px) {
+  .esc-layout {
+    width: calc(100% - 28px);
+  }
+
+  .esc-form,
+  .esc-preview {
+    padding: 16px;
+  }
+
+  .esc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* ============= MODAL DE MENSAJE (Respuestas y Plantillas) ============= */
@@ -2061,6 +2340,8 @@ textarea:focus {
 
 @media screen and (max-width: 768px) {
   .app-bar {
+    /* En móvil son dos filas (~180 px): fija se comería media pantalla */
+    position: static;
     flex-wrap: wrap;
     gap: 10px 12px;
     padding: 10px 14px;

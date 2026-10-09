@@ -26,6 +26,8 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 - `index.html` — estructura y markup de la barra superior, las 5 tabs, el modal y los inputs
 - `defaults.js` — textos de **respaldo** de Respuestas y Plantillas (se usan solo
   si Google Sheets no responde)
+- `tickets.js` — plantillas de ticket de escalamiento de Zoho Desk y la lógica
+  pura para armar el texto (sin DOM); se prueba por separado de la interfaz
 - `apps-script/` — copia de referencia de `Codigo.gs` y archivos de migración
 - `index.js` — toda la lógica: eventos, clases `HelpCenter` y
   `DiagnosticoCenter`, modal, buscador global, atajos de teclado
@@ -34,7 +36,7 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 - El logo de la barra superior es un SVG inline en `index.html` (no hay
   imágenes de marca como archivos estáticos).
 
-## Tabs actuales (5)
+## Tabs actuales (6)
 
 1. **Respuestas** — saludos, pagos, escalamiento, despedida, enlace de reunión.
    Tarjetas generadas desde la pestaña `Respuestas` del Sheet (respaldo:
@@ -47,7 +49,9 @@ Sin backend propio. Solo HTML + CSS + JS vanilla.
 4. **Diagnóstico** — casos cargados desde Apps Script con `?hoja=diagnostico`.
    Clase `DiagnosticoCenter`, navegación de 2 niveles en el sidebar
    (categorías → casos) + panel de contenido.
-5. **Atajos** — enlaces a herramientas externas, leídos de la pestaña `Atajos`
+5. **Escalamiento** — formulario + vista previa para armar el ticket de
+   Zoho Desk con la plantilla elegida. Clase `EscalamientoCenter`.
+6. **Atajos** — enlaces a herramientas externas, leídos de la pestaña `Atajos`
    del Sheet (respaldo: `ATAJOS_DEFAULT` en `defaults.js`).
 
 ## Fuentes de datos
@@ -170,6 +174,10 @@ sistema operativo (ver "Sistema de temas").
   `--on-accent` es el de **botones rellenos** (cumplen contraste en ambos temas).
 - Los tokens `--bg-color`, `--principal-color`, `--secondary-color` y
   `--dark-color` existen solo por retrocompatibilidad; no usarlos en código nuevo.
+- **No poner `overflow-x: hidden` en `html`/`body`:** convierte a `body` en
+  contenedor de scroll y rompe `position: sticky` (barra superior, vista previa de
+  Escalamiento). Se usa `overflow-x: clip`. En móvil la barra superior no es fija
+  (ocuparía ~180 px).
 - Las listas con scroll que son columnas flex (`.help-items-list`) deben dar
   `flex-shrink: 0` a sus ítems: con `overflow: hidden` un ítem flex se encoge y
   recorta su texto en vez de provocar scroll.
@@ -218,6 +226,43 @@ sistema operativo (ver "Sistema de temas").
   Apps Script es de solo lectura).
 - Copiar sigue siendo un clic: las sugerencias no añaden pasos.
 
+### Escalamiento de tickets (pestaña Escalamiento, Zoho Desk)
+
+- Las **8 plantillas** de "Agregar ticket > Elegir plantilla de ticket" están en
+  `PLANTILLAS_TICKET` (`tickets.js`): Genéricos, Facturación, Reservas, Reportes,
+  Habilitación Electrónica, Importaciones, Solicitudes de clientes y Cuenta nueva
+  manual. `nombre` es el nombre **exacto** en Zoho (con la errata "Caos") y se
+  muestra como tooltip; `corto` es la etiqueta de la interfaz. "Casos Varios" ya
+  no existe.
+- Se reconstruyeron a partir de tickets reales (conector de Zoho Desk) y el
+  texto de los encabezados se conserva **tal cual**, con sus erratas (p. ej.
+  "Emrpesa", "Pantallazo de la factura" también en Reportes): lo que se pega debe
+  coincidir con la plantilla. Si Zoho cambia una plantilla, actualizar
+  `tickets.js` y volver a comparar contra tickets reales.
+- **Importaciones es provisional** (`provisional: true`): ningún ticket de feb–oct
+  2026 la usó, sus campos son una propuesta y la interfaz lo avisa. Confirmar con
+  la plantilla de Zoho y quitar la marca.
+- El texto copiado incluye **todos los encabezados** de la plantilla en su orden,
+  con los valores debajo y los campos sin datos vacíos, y termina con la sección
+  de "Analisis Equipo Desarrollo" vacía (la llena desarrollo). Es texto plano:
+  `ticketATexto(construirTicket(plantilla, valores))`.
+- Datos de entrada: `- (*)Etiqueta: valor` (el `(*)` marca los obligatorios);
+  `formato: 'encabezado'` pone el valor en la línea siguiente, `'etiqueta'` sin
+  guion (`Pais: valor`) y `'plan'` genera `- [x] Plan`. `exigir: false` muestra el
+  `(*)` pero no lo exige en el aviso de faltantes.
+- **Sugerencia por nombre:** `sugerirPlantillaTicket(categoria, subtitulo)`
+  compara palabras clave (`palabras`) con prioridad de lo más específico a lo más
+  general (habilitación, importaciones, cuenta, reportes, reservas, facturación,
+  solicitud) y cae en Genéricos. El agente puede elegir cualquier otra.
+- **Desde Diagnóstico**, "No encontré la causa" abre esta pestaña con la plantilla
+  sugerida, "Explicación" = título del caso y "Verificación realizada por agente"
+  = pasos marcados en el checklist. Si ya hay un borrador pide confirmación.
+- "Agente" sale de la barra superior y "Cliente que reporta" parte del cliente de
+  la barra mientras no se edite a mano. El estado vive solo en memoria (sin
+  `localStorage`).
+- La app **no crea el ticket**: es estática y no tiene credenciales; el agente
+  pega el texto en Zoho.
+
 ### Diagnóstico: checklist y escalamiento
 
 - Cada ítem de lista (`-`, `•`, `1.`) del contenido de un caso se muestra como
@@ -227,11 +272,9 @@ sistema operativo (ver "Sistema de temas").
   se conserva al reabrir el mismo caso y se reinicia al abrir otro; no se
   persiste.
 - Los casos sin listas se ven como antes (sin barra ni casillas).
-- **"No encontré la causa → preparar escalamiento"** abre un panel con un mensaje
-  de texto plano editable (categoría, caso, campos vacíos de negocio/NIT/sede/
-  detalle, pasos revisados y no revisados, y el agente). Se copia desde el
-  `textarea`, que es lo que el agente editó. El botón se resalta cuando todos
-  los pasos están marcados.
+- **"No encontré la causa → preparar ticket de escalamiento"** abre la pestaña
+  Escalamiento (ver arriba) con la plantilla sugerida y lo ya revisado. El botón
+  se resalta cuando todos los pasos están marcados.
 - **El botón Copiar del artículo no cambia:** copia el string crudo del Sheet
   (`subtitulo` + `contenido`), nunca el formato con casillas.
 - Para que el checklist funcione, el contenido del Sheet debe escribir los pasos
@@ -244,7 +287,8 @@ sistema operativo (ver "Sistema de temas").
 
 ### Buscador y atajos
 
-- `#globalSearch` filtra las 5 tabs a la vez y pinta un badge con el conteo
+- `#globalSearch` filtra las 5 tabs de contenido a la vez (Escalamiento es un
+  formulario y no se busca) y pinta un badge con el conteo
   por tab. Los buscadores locales de Paso a paso y Diagnóstico siguen
   existiendo y se sincronizan con el global.
 - Atajos: `/` y `Ctrl+F` enfocan el buscador; `Esc` cierra el modal o limpia

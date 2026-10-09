@@ -22,7 +22,7 @@ interna; no maneja datos de clientes ni requiere autenticación.
 
 ## Funcionalidades
 
-- **5 tabs de contenido:**
+- **6 tabs:**
   - **Respuestas** — mensajes cortos del día a día (saludo, pagos,
     escalamiento, despedida, agendamiento de reuniones con enlace de Zoom).
   - **Plantillas** — textos largos de preguntas frecuentes (facturación
@@ -31,6 +31,10 @@ interna; no maneja datos de clientes ni requiere autenticación.
   - **Diagnóstico** — casos de soporte organizados por categoría, también
     desde Google Sheets, con checklist de pasos y mensaje de escalamiento a
     desarrollo.
+  - **Escalamiento** — arma el ticket de Zoho Desk con la plantilla correcta
+    (8 plantillas): campos que se rellenan y vista previa con todos los
+    encabezados, listo para copiar. Desde Diagnóstico llega con la plantilla
+    sugerida y lo ya revisado.
   - **Atajos** — enlaces a herramientas externas de uso frecuente.
 - **Sugerencias según el uso:** en Respuestas, una fila con las tarjetas que
   suelen copiarse después de la última y las más usadas (solo en tu navegador).
@@ -79,6 +83,7 @@ No hay `npm install`, ni compilación, ni variables de entorno.
 ```
 respuestasrapidas/
 ├── index.html                    # Markup: barra superior, tabs, tarjetas, modal
+├── tickets.js                    # Plantillas de ticket de Zoho Desk (lógica pura)
 ├── defaults.js                   # Textos y atajos de respaldo (Respuestas, Plantillas, Atajos)
 ├── index.js                      # Toda la lógica de la app
 ├── style.css                     # Estilos + design tokens (light/dark)
