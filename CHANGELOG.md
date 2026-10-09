@@ -15,6 +15,35 @@ Formato: `## [versión o estado] — AAAA-MM-DD`, con secciones
 
 ---
 
+## [Sin publicar] — 2026-10-10 (formato de Zoho en el ticket)
+
+### Corregido
+
+- **Al pegar el ticket en Zoho Desk se perdía el formato** (títulos en negrita de
+  16 px, líneas horizontales, aviso en rojo): se copiaba solo texto plano y la
+  "Descripción" del ticket es un editor de texto enriquecido. Ahora se copia en
+  **dos formatos a la vez** (HTML + texto plano) con `copiarRico()`. `ticketAHtml()`
+  reproduce el marcado real que Zoho guarda en los tickets: título en negrita de
+  16 px con lo de paréntesis normal, `<hr>` entre secciones, aviso blanco sobre
+  rojo, y títulos de bloque y "Uso exclusivo" en negrita. Pegado en un campo de
+  texto plano sigue saliendo texto plano. Respaldo si no hay `ClipboardItem`.
+  Verificado contra 397 tickets reales (42 comprobaciones: mismos títulos de 16 px
+  y mismo nº de líneas horizontales por plantilla).
+- **Importaciones** ya es la plantilla real confirmada por David: igual a
+  Genéricos pero con el bloque titulado **"Casos Varios"** (así se explican los 6
+  tickets que parecían una variante "Casos Varios"). Se quita la marca de
+  provisional; comparada con 7 tickets reales.
+
+### Cambiado
+
+- La vista previa se parece más a Zoho: título en negrita con lo de paréntesis más
+  pequeño, línea entre secciones y el aviso en rojo. Nota bajo el botón de copiar.
+- **Excepción documentada** a "copiar siempre texto plano": solo el ticket de
+  Escalamiento (destino: editor enriquecido de Zoho). El HTML se genera con todos
+  los valores escapados.
+
+---
+
 ## [Sin publicar] — 2026-10-09 (pestaña Escalamiento)
 
 ### Agregado
