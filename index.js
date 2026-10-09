@@ -696,6 +696,7 @@ function applyDensity(mode) {
 // ============= BUSCADOR GLOBAL =============
 
 let helpCenterInstance;
+let escalamientoInstance;
 let diagnosticoInstance;
 
 function updateTabBadge(badgeId, count, isSearching) {
@@ -851,6 +852,43 @@ function copiarTextoPlano(texto) {
     return navigator.clipboard.writeText(texto).catch(() => copiarConFallback(texto));
   }
   return copiarConFallback(texto);
+}
+
+/**
+ * Copia texto ENRIQUECIDO (HTML) con el texto plano como respaldo en el mismo
+ * portapapeles. Solo para destinos con editor de texto enriquecido (la descripción
+ * de un ticket de Zoho Desk): pegado en un campo de texto plano sale el texto plano.
+ * El HTML lo genera tickets.js con TODOS los valores escapados.
+ */
+async function copiarRico(texto, html) {
+  if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([texto], { type: "text/plain" })
+      })]);
+      return;
+    } catch (error) {
+      // se prueba el respaldo
+    }
+  }
+
+  // Respaldo: seleccionar el HTML en un contenedor editable y copiar la selección
+  const contenedor = document.createElement("div");
+  contenedor.contentEditable = "true";
+  contenedor.style.cssText = "position:fixed;left:-9999px;top:0;opacity:0;pointer-events:none;";
+  contenedor.innerHTML = html;
+  document.body.appendChild(contenedor);
+  const seleccion = window.getSelection();
+  const rango = document.createRange();
+  rango.selectNodeContents(contenedor);
+  seleccion.removeAllRanges();
+  seleccion.addRange(rango);
+  let copiado = false;
+  try { copiado = document.execCommand("copy"); } catch (error) { copiado = false; }
+  seleccion.removeAllRanges();
+  document.body.removeChild(contenedor);
+  if (!copiado) await copiarTextoPlano(texto);
 }
 
 function copiarConFallback(texto) {
@@ -1270,11 +1308,7 @@ class DiagnosticoCenter {
       progressFill: document.getElementById("diag-progress-fill"),
       progressText: document.getElementById("diag-progress-text"),
       progressReset: document.getElementById("diag-progress-reset"),
-      escalarBtn: document.getElementById("diag-escalar-btn"),
-      escalarPanel: document.getElementById("diag-escalar-panel"),
-      escalarText: document.getElementById("diag-escalar-text"),
-      escalarCopy: document.getElementById("diag-escalar-copy"),
-      escalarClose: document.getElementById("diag-escalar-close")
+      escalarBtn: document.getElementById("diag-escalar-btn")
     };
   }
 
@@ -1298,8 +1332,6 @@ class DiagnosticoCenter {
 
     // Escalamiento
     this.elements.escalarBtn.addEventListener("click", () => this.abrirEscalamiento());
-    this.elements.escalarClose.addEventListener("click", () => this.cerrarEscalamiento());
-    this.elements.escalarCopy.addEventListener("click", () => this.copiarEscalamiento());
   }
 
   async loadData() {
@@ -1518,7 +1550,6 @@ class DiagnosticoCenter {
       this.checklistItem = this.selectedItem;
       this.checkItems = extraerItemsLista(this.selectedItem.contenido);
       this.checks = new Set();
-      this.cerrarEscalamiento();
     }
     this.pintarChecks();
 
@@ -1563,66 +1594,14 @@ class DiagnosticoCenter {
 
   // ----- Escalamiento a desarrollo -----
 
-  /** Mensaje de texto plano con lo revisado y campos vacíos para completar. */
-  construirMensajeEscalamiento() {
-    const caso = this.selectedItem;
-    const agente = document.getElementById("agentInput")?.value.trim() || "";
-    const revisados = this.checkItems.filter((_, i) => this.checks.has(i));
-    const pendientes = this.checkItems.filter((_, i) => !this.checks.has(i));
-    const lista = (items) => items.map(it => `- ${it}`).join("\n");
-
-    const partes = [
-      "Escalamiento a desarrollo",
-      "",
-      `Categoría: ${caso.categoria}`,
-      `Caso: ${caso.subtitulo}`,
-      "",
-      "Negocio:",
-      "NIT:",
-      "Sede / usuario afectado:",
-      "Qué ocurre (detalle y cómo reproducirlo):",
-      ""
-    ];
-
-    if (this.checkItems.length === 0) {
-      partes.push(`Se revisó el caso documentado "${caso.subtitulo}" sin encontrar la causa.`);
-    } else {
-      partes.push("Revisado sin encontrar la causa:");
-      partes.push(revisados.length ? lista(revisados) : "- (ningún paso marcado)");
-      if (pendientes.length) {
-        partes.push("", "No revisado:", lista(pendientes));
-      }
-    }
-
-    partes.push("", `Reportado por: ${agente}`);
-    return partes.join("\n");
-  }
-
+  /** Abre la pestaña Escalamiento con la plantilla sugerida y lo ya revisado. */
   abrirEscalamiento() {
-    if (!this.selectedItem) return;
-    this.elements.escalarText.value = this.construirMensajeEscalamiento();
-    this.elements.escalarPanel.hidden = false;
-    this.elements.escalarText.focus({ preventScroll: true });
-    this.elements.escalarPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  }
-
-  cerrarEscalamiento() {
-    this.elements.escalarPanel.hidden = true;
-  }
-
-  copiarEscalamiento() {
-    const btn = this.elements.escalarCopy;
-    const texto = this.elements.escalarText.value;   // texto plano, tal como lo editó el agente
-    if (!texto || btn.disabled) return;
-
-    copiarTextoPlano(texto)
-      .then(() => {
-        const original = btn.textContent;
-        btn.textContent = "¡Copiado! ✅";
-        btn.disabled = true;
-        setTimeout(() => { btn.textContent = original; btn.disabled = false; }, 1500);
-      })
-      .catch(err => console.error("Error copying to clipboard:", err));
+    if (!this.selectedItem || !escalamientoInstance) return;
+    escalamientoInstance.prepararDesdeDiagnostico({
+      categoria: this.selectedItem.categoria,
+      subtitulo: this.selectedItem.subtitulo,
+      revisados: this.checkItems.filter((_, i) => this.checks.has(i))
+    });
   }
 
   showEmptyState(texto) {
@@ -1755,6 +1734,364 @@ function renderCardPreviews() {
       const isSaludo = saludoCard && card === saludoCard;
       setModalContent(isSaludo ? buildSaludoText(textarea.value) : textarea.value);
     }
+  }
+}
+
+// ============= ESCALAMIENTO: TICKETS DE ZOHO DESK =============
+// Pestaña "Escalamiento": formulario + vista previa del ticket con TODOS los
+// encabezados de la plantilla elegida (ver tickets.js). Los datos que no se pueden
+// adivinar se piden en campos y se incorporan en vivo al texto. Se copia texto
+// plano. El estado vive solo en memoria (no se persiste).
+
+class EscalamientoCenter {
+  constructor() {
+    this.estado = this.crearEstado();
+    this.el = {
+      plantillas: document.getElementById("esc-plantillas"),
+      ayuda: document.getElementById("esc-ayuda-plantilla"),
+      origen: document.getElementById("esc-origen"),
+      agente: document.getElementById("esc-agente"),
+      campos: document.getElementById("esc-campos"),
+      preview: document.getElementById("esc-preview-text"),
+      faltantes: document.getElementById("esc-faltantes"),
+      copiar: document.getElementById("esc-copiar"),
+      copiarTexto: document.getElementById("esc-copiar-texto"),
+      nuevo: document.getElementById("esc-nuevo"),
+      nombrePlantilla: document.getElementById("esc-nombre-plantilla")
+    };
+
+    this.el.copiar.addEventListener("click", () => this.copiar());
+    this.el.nuevo.addEventListener("click", () => this.nuevo());
+    // El agente y el cliente se toman de la barra superior
+    document.getElementById("agentInput").addEventListener("input", () => this.sincronizarAgente());
+    document.getElementById("userInput").addEventListener("input", () => this.sincronizarCliente());
+
+    this.sincronizarCliente();
+    this.renderTodo();
+  }
+
+  crearEstado() {
+    return {
+      plantillaId: "genericos",
+      sugeridaId: null,
+      origen: "",
+      clienteTocado: false,
+      valores: { cliente: "", explicacionCliente: "", ruta: "", explicacion: "", verificacion: "", datos: {} }
+    };
+  }
+
+  get plantilla() {
+    return plantillaTicketPorId(this.estado.plantillaId);
+  }
+
+  valoresCompletos() {
+    return { ...this.estado.valores, agente: document.getElementById("agentInput").value.trim() };
+  }
+
+  // ----- Render -----
+
+  renderTodo() {
+    this.renderPlantillas();
+    this.renderCampos();
+    this.renderPreview();
+    this.sincronizarAgente();
+  }
+
+  renderPlantillas() {
+    this.el.plantillas.replaceChildren(...PLANTILLAS_TICKET.map(plantilla => {
+      const activa = plantilla.id === this.estado.plantillaId;
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "esc-pill";
+      boton.setAttribute("role", "radio");
+      boton.setAttribute("aria-checked", String(activa));
+      boton.title = plantilla.nombre;   // nombre exacto en Zoho Desk
+      boton.append(plantilla.corto);
+      if (plantilla.id === this.estado.sugeridaId) {
+        const marca = document.createElement("span");
+        marca.className = "esc-pill-sugerida";
+        marca.textContent = "Sugerida";
+        boton.append(marca);
+      }
+      boton.addEventListener("click", () => this.seleccionarPlantilla(plantilla.id));
+      return boton;
+    }));
+
+    const textos = [];
+    if (this.estado.sugeridaId) textos.push("Sugerida según el caso de Diagnóstico; puedes elegir otra.");
+    this.el.ayuda.hidden = textos.length === 0;
+    this.el.ayuda.textContent = textos.join(" ");
+
+    this.el.origen.hidden = !this.estado.origen;
+    this.el.origen.textContent = this.estado.origen;
+    this.el.nombrePlantilla.textContent = this.plantilla.nombre;
+  }
+
+  /** Campo de texto o de párrafo con su etiqueta. */
+  crearCampo({ id, etiqueta, valor, ayuda, multilinea, marca, alCambiar }) {
+    const envoltorio = document.createElement("div");
+    envoltorio.className = "esc-campo";
+
+    const label = document.createElement("label");
+    label.htmlFor = `esc-f-${id}`;
+    label.textContent = etiqueta;
+    if (marca) {
+      const asterisco = document.createElement("span");
+      asterisco.className = "esc-obl";
+      asterisco.textContent = " *";
+      label.append(asterisco);
+    }
+
+    const control = document.createElement(multilinea ? "textarea" : "input");
+    control.id = `esc-f-${id}`;
+    control.value = valor || "";
+    control.placeholder = ayuda || "";
+    control.autocomplete = "off";
+    if (multilinea) control.className = "esc-textarea";
+    else { control.type = "text"; control.className = "input"; }
+    control.addEventListener("input", () => alCambiar(control.value));
+
+    envoltorio.append(label, control);
+    return envoltorio;
+  }
+
+  /** Elección de una opción (plan de la cuenta) con casillas tipo chip. */
+  crearOpciones(campo) {
+    const envoltorio = document.createElement("div");
+    envoltorio.className = "esc-campo esc-campo--ancho";
+
+    const etiqueta = document.createElement("span");
+    etiqueta.className = "esc-label";
+    etiqueta.textContent = campo.etiqueta.replace(/\s*\(.*\)\s*$/, "");
+    if (campo.exigir) {
+      const asterisco = document.createElement("span");
+      asterisco.className = "esc-obl";
+      asterisco.textContent = " *";
+      etiqueta.append(asterisco);
+    }
+
+    const grupo = document.createElement("div");
+    grupo.className = "esc-opciones";
+    grupo.setAttribute("role", "radiogroup");
+    campo.opciones.forEach(opcion => {
+      const boton = document.createElement("button");
+      boton.type = "button";
+      boton.className = "esc-opcion";
+      boton.textContent = opcion;
+      const pintar = () => boton.setAttribute("aria-checked", String(this.estado.valores.datos[campo.id] === opcion));
+      boton.setAttribute("role", "radio");
+      pintar();
+      boton.addEventListener("click", () => {
+        const datos = this.estado.valores.datos;
+        datos[campo.id] = datos[campo.id] === opcion ? "" : opcion;   // volver a pulsar la desmarca
+        grupo.querySelectorAll(".esc-opcion").forEach(b =>
+          b.setAttribute("aria-checked", String(datos[campo.id] === b.textContent)));
+        this.renderPreview();
+      });
+      grupo.append(boton);
+    });
+
+    envoltorio.append(etiqueta, grupo);
+    return envoltorio;
+  }
+
+  renderCampos() {
+    const plantilla = this.plantilla;
+    const v = this.estado.valores;
+    const cambia = (clave) => (valor) => { v[clave] = valor; this.renderPreview(); };
+    const hijos = [];
+
+    hijos.push(this.crearCampo({
+      id: "cliente", etiqueta: "Cliente que reporta", valor: v.cliente,
+      ayuda: "Nombre y celular de quien reporta",
+      alCambiar: (valor) => { this.estado.clienteTocado = true; v.cliente = valor; this.renderPreview(); }
+    }));
+    hijos.push(this.crearCampo({
+      id: "explicacionCliente", etiqueta: "Explicación del cliente", valor: v.explicacionCliente, multilinea: true,
+      ayuda: "Copia y pega lo que el cliente escribió", alCambiar: cambia("explicacionCliente")
+    }));
+    if (plantilla.ruta) {
+      hijos.push(this.crearCampo({
+        id: "ruta", etiqueta: "Ruta de acceso", valor: v.ruta,
+        ayuda: "URL de la función con el problema, p. ej. https://app.lizto.co/transactions", alCambiar: cambia("ruta")
+      }));
+    }
+    hijos.push(this.crearCampo({
+      id: "explicacion",
+      etiqueta: plantilla.tipo === "solicitud" ? "Explicación (breve descripción de la solicitud)" : "Explicación (breve descripción del error)",
+      valor: v.explicacion, multilinea: true, ayuda: "Qué ocurre, en pocas palabras", alCambiar: cambia("explicacion")
+    }));
+
+    // ----- Datos de entrada -----
+    const grupoDatos = (titulo, campos) => {
+      const bloque = document.createElement("fieldset");
+      bloque.className = "esc-datos";
+      const leyenda = document.createElement("legend");
+      leyenda.textContent = titulo;
+      bloque.append(leyenda);
+      const cuadricula = document.createElement("div");
+      cuadricula.className = "esc-grid";
+      campos.forEach(campo => {
+        if (campo.formato === "plan") { cuadricula.append(this.crearOpciones(campo)); return; }
+        const control = this.crearCampo({
+          id: campo.id, etiqueta: campo.etiqueta.replace(/\s*\(.*\)\s*$/, ""), valor: v.datos[campo.id],
+          ayuda: campo.ayuda || campo.etiqueta.match(/\((.*)\)/)?.[1] || "",
+          marca: campo.exigir ?? campo.obligatorio,
+          alCambiar: (valor) => { v.datos[campo.id] = valor; this.renderPreview(); }
+        });
+        cuadricula.append(control);
+      });
+      bloque.append(cuadricula);
+      return bloque;
+    };
+    hijos.push(grupoDatos(`Datos de entrada · ${plantilla.bloque}`, plantilla.campos));
+    if (plantilla.extra) hijos.push(grupoDatos(plantilla.extra.titulo, plantilla.extra.campos));
+
+    if (plantilla.verificacion) {
+      hijos.push(this.crearCampo({
+        id: "verificacion", etiqueta: "Verificación realizada por el agente", valor: v.verificacion, multilinea: true,
+        ayuda: "Qué validaste antes de escalar", alCambiar: cambia("verificacion")
+      }));
+    }
+
+    const nota = document.createElement("p");
+    nota.className = "esc-ayuda";
+    nota.textContent = "«Análisis Equipo Desarrollo» se deja vacío en el ticket: lo completa el equipo de desarrollo.";
+    hijos.push(nota);
+
+    this.el.campos.replaceChildren(...hijos);
+  }
+
+  renderPreview() {
+    const lineas = construirTicket(this.plantilla, this.valoresCompletos()).filter(linea => linea.tipo !== "sep");
+    this.el.preview.replaceChildren(...lineas.map(linea => {
+      const fila = document.createElement("div");
+      fila.className = `esc-linea esc-linea--${linea.tipo}`;
+      if (linea.tipo === "valor" && !linea.texto) fila.classList.add("esc-linea--vacia");
+
+      if (linea.tipo === "encabezado") {
+        // Como en Zoho: el título en negrita y lo de paréntesis normal y más pequeño
+        const { titulo, nota } = partirEncabezadoTicket(linea.texto);
+        const fuerte = document.createElement("strong");
+        fuerte.textContent = titulo;
+        fila.append(fuerte);
+        if (nota) {
+          const aclaracion = document.createElement("span");
+          aclaracion.className = "esc-nota";
+          aclaracion.textContent = ` ${nota}`;
+          fila.append(aclaracion);
+        }
+      } else {
+        fila.textContent = linea.texto || "\u00a0";   // solo la vista previa; el copiado usa ticketATexto() / ticketAHtml()
+      }
+      return fila;
+    }));
+
+    const faltan = faltantesTicket(this.plantilla, this.estado.valores);
+    this.el.faltantes.classList.toggle("esc-faltantes--ok", faltan.length === 0);
+    this.el.faltantes.textContent = faltan.length
+      ? `Faltan datos obligatorios (*): ${faltan.join(", ")}`
+      : "✓ Datos obligatorios completos";
+  }
+
+  // ----- Estado -----
+
+  seleccionarPlantilla(id) {
+    const anterior = this.plantilla;
+    this.estado.plantillaId = id;
+    const nueva = this.plantilla;
+    // La ruta por defecto (p. ej. Reservas) solo se cambia si el agente no la tocó
+    if (!this.estado.valores.ruta || this.estado.valores.ruta === anterior.rutaPorDefecto) {
+      this.estado.valores.ruta = nueva.rutaPorDefecto || "";
+    }
+    this.renderTodo();
+  }
+
+  sincronizarAgente() {
+    const agente = document.getElementById("agentInput").value.trim();
+    this.el.agente.textContent = agente
+      ? `Agente: ${agente}`
+      : "Agente: escribe tu nombre en la barra superior para que aparezca en el ticket.";
+    this.el.agente.classList.toggle("esc-agente--vacio", !agente);
+    this.renderPreview();
+  }
+
+  /** "Cliente que reporta" parte del nombre de la barra superior mientras no se edite a mano. */
+  sincronizarCliente() {
+    if (this.estado.clienteTocado) return;
+    this.estado.valores.cliente = document.getElementById("userInput").value.trim();
+    const campo = document.getElementById("esc-f-cliente");
+    if (campo) campo.value = this.estado.valores.cliente;
+    this.renderPreview();
+  }
+
+  tieneContenido() {
+    const v = this.estado.valores;
+    const rutaPorDefecto = this.plantilla.rutaPorDefecto || "";
+    return Boolean(
+      v.explicacionCliente.trim() || v.explicacion.trim() || v.verificacion.trim() ||
+      (v.ruta.trim() && v.ruta !== rutaPorDefecto) ||
+      Object.values(v.datos).some(valor => String(valor).trim())
+    );
+  }
+
+  nuevo({ confirmar = true } = {}) {
+    if (confirmar && this.tieneContenido() && !window.confirm("¿Borrar lo escrito y empezar un ticket nuevo?")) return false;
+    const plantillaId = this.estado.plantillaId;
+    this.estado = this.crearEstado();
+    this.estado.plantillaId = plantillaId;
+    this.estado.valores.ruta = this.plantilla.rutaPorDefecto || "";
+    this.sincronizarCliente();
+    this.renderTodo();
+    return true;
+  }
+
+  /** Desde Diagnóstico: plantilla sugerida por nombre y "Verificación" con los pasos marcados. */
+  prepararDesdeDiagnostico({ categoria, subtitulo, revisados }) {
+    const hayBorrador = this.tieneContenido();
+    if (hayBorrador && !window.confirm("Ya hay un ticket en preparación. ¿Reemplazarlo con este caso de Diagnóstico?")) {
+      this.activarPestana();
+      return;
+    }
+
+    const sugerida = sugerirPlantillaTicket(categoria, subtitulo);
+    this.nuevo({ confirmar: false });
+    this.estado.plantillaId = sugerida;
+    this.estado.sugeridaId = sugerida;
+    this.estado.origen = `Desde Diagnóstico: ${categoria} › ${subtitulo}`;
+    this.estado.valores.ruta = this.plantilla.rutaPorDefecto || "";
+    this.estado.valores.explicacion = subtitulo;
+    this.estado.valores.verificacion = revisados.length
+      ? revisados.map(paso => `- ${paso}`).join("\n")
+      : `Se consultó el caso documentado «${subtitulo}» en Diagnóstico y no se encontró la causa.`;
+
+    this.renderTodo();
+    this.activarPestana();
+  }
+
+  activarPestana() {
+    document.querySelector('.tab-button[data-tab="escalamiento"]')?.click();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  copiar() {
+    const boton = this.el.copiar;
+    if (boton.disabled) return;
+    const lineas = construirTicket(this.plantilla, this.valoresCompletos());
+    // Dos formatos a la vez: HTML con el formato de la plantilla de Zoho (títulos en
+    // negrita, líneas, aviso en rojo) y texto plano de respaldo. Es la excepción a
+    // "copiar siempre texto plano": el destino es el editor enriquecido de Zoho.
+    const texto = ticketATexto(lineas);
+    const formato = ticketAHtml(lineas);
+
+    copiarRico(texto, formato)
+      .then(() => {
+        const original = this.el.copiarTexto.textContent;
+        this.el.copiarTexto.textContent = "¡Copiado! ✅";
+        boton.disabled = true;
+        setTimeout(() => { this.el.copiarTexto.textContent = original; boton.disabled = false; }, 1500);
+      })
+      .catch(err => console.error("Error copying to clipboard:", err));
   }
 }
 
@@ -2062,6 +2399,7 @@ function updateModalAfterSearch() {
 document.addEventListener("DOMContentLoaded", () => {
   helpCenterInstance = new HelpCenter();
   diagnosticoInstance = new DiagnosticoCenter();
+  escalamientoInstance = new EscalamientoCenter();
 
   const globalSearch = document.getElementById("globalSearch");
 

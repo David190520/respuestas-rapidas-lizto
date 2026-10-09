@@ -8,7 +8,7 @@ decisiones ya tomadas, las reglas y el detalle de cada fase.
 > este archivo → `TODO.md` (estado) → `CHANGELOG.md` (qué cambió y cuándo).
 > Implementar **una fase a la vez**, con su propia rama y PR hacia `develop`.
 
-Última actualización: 2026-10-08 (Fases 1 a 6 terminadas; solo queda la 7, aplazada).
+Última actualización: 2026-10-09 (Fases 1 a 6 y 8 terminadas; solo queda la 7, aplazada).
 
 > **Notas de implementación de la Fase 3:** el Sheet tiene **dos pestañas
 > separadas** (`Respuestas` y `Plantillas`), así que no existe la columna `tab`
@@ -265,6 +265,24 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 
 ---
 
+### Fase 8 — Escalamiento con plantillas de Zoho Desk (hecha)
+
+Origen: el cuadro de escalamiento genérico de Diagnóstico no coincidía con las
+**8 plantillas** de ticket que usa el equipo (Zoho Desk > Agregar ticket >
+Elegir plantilla de ticket). Decisiones de David: copiar **todo el ticket de una
+vez** con **todos los encabezados**; campos que se rellenan y se incorporan a la
+plantilla; sugerir la plantilla por nombre pero permitir elegir cualquiera;
+descartar "Casos Varios"; tener el armado también **fuera de Diagnóstico** (pestaña
+propia). Plantillas confirmadas: Genéricos, Facturación ("Caos" en Zoho),
+Reservas, Reportes, Habilitación Electrónica, Importaciones, Solicitudes de
+Clientes y Creación nueva cuenta manual.
+
+**Actualización (2026-10-10):** Importaciones confirmada (igual a Genéricos con
+el bloque "Casos Varios") y el ticket se copia con el formato de Zoho (HTML +
+texto plano de respaldo), porque la descripción de Zoho es un editor enriquecido.
+Pendiente opcional: recortar el bloque de datos genéricos de "Cuenta nueva
+manual" (la plantilla real lo trae, pero allí tenant/sede aún no existen).
+
 ## 6. Backlog (sin fecha)
 
 - **Diagnóstico — contenido en párrafos:** al 2026-10-08, 14 de 29 casos tienen
@@ -308,6 +326,7 @@ calificación): al copiar un paso se resalta el siguiente con una tecla o botón
 | 5 | Diagnóstico con checklist y escalamiento | ✅ En `develop` (2026-10-08) |
 | 6 | Sugerencias según el uso | ✅ En `develop` (2026-10-08); `lizto_usage` aprobada |
 | 7 | Modo Flujo | ⏸️ Aplazada por decisión de David |
+| 8 | Pestaña Escalamiento (plantillas de ticket de Zoho Desk) | ✅ En `develop` (2026-10-09); formato de Zoho e Importaciones confirmada (2026-10-10) |
 
 > Al terminar una fase: marcarla aquí, mover su TODO a ✅ en `TODO.md` y
 > registrar el cambio en `CHANGELOG.md`.
