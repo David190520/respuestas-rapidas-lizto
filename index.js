@@ -58,10 +58,10 @@ const agentesData = {
   },
   paola: {
     nombre: "Paola",
-    horas: ["09:00", "12:00", "16:00"],
+    horas: ["09:00", "13:00", "16:00"],
     enlaces: {
       "09:00": "https://us06web.zoom.us/j/84560427915",
-      "12:00": "https://us06web.zoom.us/j/87186962523",
+      "13:00": "https://us06web.zoom.us/j/87186962523",
       "16:00": "https://us06web.zoom.us/j/81938853734"
     }
   },
