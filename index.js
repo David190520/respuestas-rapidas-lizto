@@ -56,22 +56,21 @@ const agentesData = {
       "17:00": "https://us06web.zoom.us/j/89901352812"
     }
   },
-  paola: {
-    nombre: "Paola",
+  handoff: {
+    nombre: "Handoff",
     horas: ["09:00", "13:00", "16:00"],
     enlaces: {
-      "09:00": "https://us06web.zoom.us/j/84560427915",
-      "13:00": "https://us06web.zoom.us/j/87186962523",
-      "16:00": "https://us06web.zoom.us/j/81938853734"
+      "09:00": "https://us06web.zoom.us/j/84078053887",
+      "13:00": "https://us06web.zoom.us/j/86730028381",
+      "16:00": "https://us06web.zoom.us/j/83524214820"
     }
   },
   backup: {
     nombre: "Backup",
     horas: ["09:00", "11:00", "16:00"],
     enlaces: {
-      "09:00": "https://us06web.zoom.us/j/84078053887",
-      "11:00": "https://us06web.zoom.us/j/89414325009",
-      "16:00": "https://us06web.zoom.us/j/83524214820"
+      "11:00": "https://us06web.zoom.us/j/88205557071",
+      "16:00": "https://us06web.zoom.us/j/87572828604"
     }
   }
 };
